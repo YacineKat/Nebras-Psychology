@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Psychologues - Nebras</title>
+    <link rel="stylesheet" href="./css/patient_style.css">
+    <link rel="icon" type="image/png" href="./assets/image/logo.png">
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo">
+                <img src="./assets/image/logo.png" alt="Nebras Logo">
+            </div>
+            
+            <nav class="nav-menu">
+                <a href="dashboard.html" class="nav-item">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" fill="currentColor"/></svg>
+                    <span>Tableau de bord</span>
+                </a>
+                <a href="psychologue.html" class="nav-item">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" fill="currentColor"/></svg>
+                    <span>Psychologues</span>
+                </a>
+                <a href="rendez_vous.html" class="nav-item">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zM9 14H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2zm-8 4H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2z" fill="currentColor"/></svg>
+                    <span>Rendez-vous</span>
+                    <span class="badge">0</span>
+                </a>
+                <a href="messagerie.html" class="nav-item">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z" fill="currentColor"/></svg>
+                    <span>Messagerie</span>
+                    <span class="badge">0</span>
+                </a>
+                 <a href="therapie.html" class="nav-item active">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" fill="currentColor"/>
+                    </svg>
+                    <span>Group Therapy</span>
+                </a>
+            </nav>
+
+            <div class="nav-item">
+                <div class="user-avatar">:)</div>
+                <div class="user-info"><span class="user-name">Maria</span></div>
+                <a href="profil.html" class="settings-icon"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" fill="currentColor"/></svg></a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <header class="page-header">
+                <div>
+                    <h1>Psychologues</h1>
+                    <p class="breadcrumb">Accueil › Psychologues</p>
+                </div>
+            </header>
+
+            <div class="search-section">
+                <div class="search-bar">
+                    <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zM10 14a4 4 0 110-8 4 4 0 010 8z" fill="currentColor"/></svg>
+                    <input type="text" placeholder="Rechercher par nom" id="searchInput" onkeyup="filterPsychologues()">
+                </div>
+                <button class="filter-button" id="vipButton" onclick="toggleVipFilter()"><span class="button-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l2 4 4 .6-3 3 1 4-4-2.4L8 15.6l1-4-3-3 4-.6z" fill="currentColor"/></svg></span><span class="button-text">VIP</span></button>
+            </div>
+
+            <p class="result-count" id="resultCount">9 psychologues correspondent à votre recherche</p>
+
+            <div class="psychologues-grid" id="psychologuesGrid">
+                <!-- Psychologue 1 - EN LIGNE -->
+                <div class="psy-card" data-name="sarah amrani" data-online="true" onclick="openPsyDetail('sarah')">
+                    <div class="psy-image">
+                        <img src="./assets/image/24d0759cbb02c3157112d0ef0f8463b1.jpg" alt="Psychologue">
+                        <div class="online-badge">En ligne</div>
+                        <div class="psy-badges">
+                            <span class="badge-time">45 min.</span>
+                        </div>
+                    </div>
+                    <div class="psy-info">
+                        <h3>Dr. Sarah Amrani</h3>
+                        <p class="availability">Disponible maintenant</p>
+                    </div>
+                </div>
+
+                <!-- Psychologue 2 - HORS LIGNE -->
+                <div class="psy-card" data-name="karim benali" data-online="false" onclick="openPsyDetail('karim')">
+                    <div class="psy-image">
+                        <img src="./assets/image/24d0759cbb02c3157112d0ef0f8463b1.jpg" alt="Psychologue">
+                        <div class="psy-badges">
+                            <span class="badge-time">45 min.</span>
+                        </div>
+                    </div>
+                    <div class="psy-info">
+                        <h3>Dr. Karim Benali</h3>
+                        <p class="availability">Disponible le 27/02/2026</p>
+                    </div>
+                </div>
+
+                <!-- Psychologue 3 - EN LIGNE -->
+                <div class="psy-card" data-name="amina mansouri" data-online="true" onclick="openPsyDetail('amina')">
+                    <div class="psy-image">
+                        <img src="./assets/image/24d0759cbb02c3157112d0ef0f8463b1.jpg" alt="Psychologue">
+                        <div class="online-badge">En ligne</div>
+                        <div class="psy-badges">
+                            <span class="badge-time">1 heure</span>
+                        </div>
+                    </div>
+                    <div class="psy-info">
+                        <h3>Dr. Amina Mansouri</h3>
+                        <p class="availability">Disponible maintenant</p>
+                    </div>
+                </div>
+
+                <!-- Psychologue 4 - HORS LIGNE -->
+                <div class="psy-card" data-name="mehdi bouazza" data-online="false" onclick="openPsyDetail('mehdi')">
+                    <div class="psy-image">
+                        <img src="./assets/image/24d0759cbb02c3157112d0ef0f8463b1.jpg" alt="Psychologue">
+                        <div class="psy-badges">
+                            <span class="badge-time">45 min.</span>
+                        </div>
+                    </div>
+                    <div class="psy-info">
+                        <h3>Dr. Mehdi Bouazza</h3>
+                        <p class="availability">Disponible le 28/02/2026</p>
+                    </div>
+                </div>
+
+                <!-- Psychologue 5 - EN LIGNE -->
+                <div class="psy-card" data-name="leila zerouali" data-online="true" onclick="openPsyDetail('leila')">
+                    <div class="psy-image">
+                        <img src="./assets/image/24d0759cbb02c3157112d0ef0f8463b1.jpg" alt="Psychologue">
+                        <div class="online-badge">En ligne</div>
+                        <div class="psy-badges">
+                            <span class="badge-time">45 min.</span>
+                        </div>
+                    </div>
+                    <div class="psy-info">
+                        <h3>Dr. Leila Zerouali</h3>
+                        <p class="availability">Disponible maintenant</p>
+                    </div>
+                </div>
+
+                <!-- Psychologue 6 - HORS LIGNE -->
+                <div class="psy-card" data-name="youcef hamdi" data-online="false" onclick="openPsyDetail('youcef')">
+                    <div class="psy-image">
+                        <img src="./assets/image/24d0759cbb02c3157112d0ef0f8463b1.jpg" alt="Psychologue">
+                        <div class="psy-badges">
+                            <span class="badge-time">1 heure</span>
+                        </div>
+                    </div>
+                    <div class="psy-info">
+                        <h3>Dr. Youcef Hamdi</h3>
+                        <p class="availability">Disponible le 03/03/2026</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Side Panel Detail Psychologue (modifié pour afficher le statut en ligne) -->
+    <div id="psyDetailPanel" class="psy-detail-panel">
+        <div class="psy-detail-overlay" onclick="closePsyDetail()"></div>
+        <div class="psy-detail-content">
+            <div class="psy-detail-header">
+                <div class="psy-detail-profile">
+                    <img src="./assets/image/24d0759cbb02c3157112d0ef0f8463b1.jpg" alt="Psychologue" class="psy-detail-avatar">
+                    <div class="psy-detail-name">
+                        <h2 id="detailName">Dr. Sarah Amrani</h2>
+                        <span id="detailOnlineStatus" class="online-status">En ligne</span>
+                        <div class="psy-rating">
+                            <div class="stars">
+                                <span class="star filled">★</span>
+                                <span class="star filled">★</span>
+                                <span class="star filled">★</span>
+                                <span class="star filled">★</span>
+                                <span class="star half">★</span>
+                            </div>
+                            <span class="rating-text">4.5/5</span>
+                        </div>
+                    </div>
+                </div>
+                <button class="close-detail-btn" onclick="closePsyDetail()">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill="currentColor"/>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="psy-detail-tabs">
+                <button class="tab-detail-btn active" onclick="switchTab('apercu')">Aperçu</button>
+                <button class="tab-detail-btn" onclick="switchTab('avis')">Avis (18)</button>
+            </div>
+
+            <div id="apercuContent" class="tab-content active">
+                <div class="quick-info">
+                    <div class="info-item-detail">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z" fill="currentColor"/>
+                        </svg>
+                        <span>45 min.</span>
+                    </div>
+                    <div class="info-item-detail">
+                        <span>2000 DA</span>
+                    </div>
+                </div>
+
+                <div class="consultation-modes">
+                    <div class="mode-item">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z" fill="currentColor"/>
+                        </svg>
+                        <span>Webcam</span>
+                    </div>
+                    <div class="mode-item">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56-.35-.12-.74-.03-1.01.24l-1.57 1.97c-2.83-1.35-5.48-3.9-6.89-6.83l1.95-1.66c.27-.28.35-.67.24-1.02-.37-1.11-.56-2.3-.56-3.53 0-.54-.45-.99-.99-.99H4.19C3.65 3 3 3.24 3 3.99 3 13.28 10.73 21 20.01 21c.71 0 .99-.63.99-1.18v-3.45c0-.54-.45-.99-.99-.99z" fill="currentColor"/>
+                        </svg>
+                        <span>Téléphone</span>
+                    </div>
+                    <div class="mode-item">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z" fill="currentColor"/>
+                        </svg>
+                        <span>Chat</span>
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <h3>Langues :</h3>
+                    <div class="tags-list">
+                        <span class="tag">Français</span>
+                        <span class="tag">Anglais</span>
+                        <span class="tag">Arabe</span>
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <h3>Voies d'approches :</h3>
+                    <div class="tags-list">
+                        <span class="tag">Psychologie clinique</span>
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <h3>Motifs de consultation :</h3>
+                    <div class="tags-list">
+                        <span class="tag">Anxiété</span>
+                        <span class="tag">Couple</span>
+                        <span class="tag">Dépression</span>
+                        <span class="tag">Deuil</span>
+                        <span class="tag">Problèmes de communication</span>
+                        <span class="tag">Public enfants / ados</span>
+                        <span class="tag">Stress</span>
+                        <span class="tag">Problèmes au travail</span>
+                        <span class="tag">Confiance en soi</span>
+                        <span class="tag">Isolement social</span>
+                        <span class="tag">Gestion des émotions</span>
+                        <span class="tag">Famille</span>
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <h3>Description :</h3>
+                    <p class="description-text">
+                        Bonjour,<br><br>
+                        Je suis psychologue clinicienne diplômée avec plus de 10 ans d'expérience dans l'accompagnement thérapeutique. 
+                        Mon approche est centrée sur la personne et j'adapte mes méthodes en fonction des besoins spécifiques de chaque patient.<br><br>
+                        Je propose un espace d'écoute bienveillant et sans jugement où vous pourrez exprimer librement vos difficultés. 
+                        Ensemble, nous travaillerons à identifier vos ressources et à développer des stratégies adaptées pour surmonter vos challenges.
+                    </p>
+                </div>
+
+                <div class="detail-actions">
+                    <button class="contact-btn">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z" fill="currentColor"/>
+                        </svg>
+                        Prendre contact
+                    </button>
+                    <button class="appointment-btn">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10z" fill="currentColor"/>
+                        </svg>
+                        Prendre rendez-vous
+                    </button>
+                </div>
+            </div>
+
+            <div id="avisContent" class="tab-content">
+                <div class="avis-empty">
+                    <p>Les avis des patients seront affichés ici.</p>
+                    <p class="avis-note">Cette section contiendra les commentaires et évaluations des patients.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Variable pour suivre l'état du filtre VIP
+        let vipFilterActive = false;
+
+        // Fonction pour filtrer les psychologues (VIP = En ligne uniquement)
+        function toggleVipFilter() {
+            vipFilterActive = !vipFilterActive;
+            const vipButton = document.getElementById('vipButton');
+            
+            if (vipFilterActive) {
+                vipButton.classList.add('active');
+                vipButton.querySelector('.button-text').textContent = 'VIP (En ligne)';
+            } else {
+                vipButton.classList.remove('active');
+                vipButton.querySelector('.button-text').textContent = 'VIP';
+            }
+            
+            filterPsychologues();
+        }
+
+        // Fonction principale de filtrage
+        function filterPsychologues() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const cards = document.querySelectorAll('.psy-card');
+            let visibleCount = 0;
+            
+            cards.forEach(card => {
+                const name = card.getAttribute('data-name') || '';
+                const isOnline = card.getAttribute('data-online') === 'true';
+                
+                let showBySearch = name.includes(searchTerm);
+                let showByVip = !vipFilterActive || (vipFilterActive && isOnline);
+                
+                if (showBySearch && showByVip) {
+                    card.style.display = 'block';
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+            
+            // Mettre à jour le compteur
+            const resultCount = document.getElementById('resultCount');
+            if (vipFilterActive) {
+                resultCount.innerHTML = `${visibleCount} psychologue(s) EN LIGNE correspondent à votre recherche`;
+            } else {
+                resultCount.innerHTML = `${visibleCount} psychologue(s) correspondent à votre recherche`;
+            }
+        }
+
+        // Fonction pour ouvrir le détail du psychologue
+        function openPsyDetail(psyId) {
+            const psyData = {
+                sarah: { name: 'Dr. Sarah Amrani', online: true },
+                karim: { name: 'Dr. Karim Benali', online: false },
+                amina: { name: 'Dr. Amina Mansouri', online: true },
+                mehdi: { name: 'Dr. Mehdi Bouazza', online: false },
+                leila: { name: 'Dr. Leila Zerouali', online: true },
+                youcef: { name: 'Dr. Youcef Hamdi', online: false }
+            };
+            
+            const data = psyData[psyId];
+            if (data) {
+                document.getElementById('detailName').innerText = data.name;
+                const statusSpan = document.getElementById('detailOnlineStatus');
+                if (data.online) {
+                    statusSpan.innerText = 'En ligne';
+                    statusSpan.style.background = '#27ae60';
+                } else {
+                    statusSpan.innerText = 'Hors ligne';
+                    statusSpan.style.background = '#999';
+                }
+            }
+            
+            document.getElementById('psyDetailPanel').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closePsyDetail() {
+            document.getElementById('psyDetailPanel').classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-detail-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+            if (tab === 'apercu') {
+                document.querySelector('.tab-detail-btn:first-child').classList.add('active');
+                document.getElementById('apercuContent').classList.add('active');
+            } else {
+                document.querySelector('.tab-detail-btn:last-child').classList.add('active');
+                document.getElementById('avisContent').classList.add('active');
+            }
+        }
+
+        // Recherche en temps réel
+        document.getElementById('searchInput').addEventListener('keyup', filterPsychologues);
+
+        // Fermer avec la touche Echap
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closePsyDetail();
+            }
+        });
+    </script>
+</body>
+</html>

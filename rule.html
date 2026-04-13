@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Nebras - Règles</title>
+    <link rel="stylesheet" href="./css/hom.css"/>
+    <link rel="icon" type="image" href="./assets/image/logo.png">
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="logo">
+            <img src="./assets/image/logo.png" alt="Nebras Logo"/>
+        </div>
+        <div class="nav-links">
+            <a href="home.html">Accueil</a>
+            <a href="rule.html">Règles</a>
+        </div>
+        <div class="button-group">
+            <button onclick="auth()" class="btn-signin">Commencer</button>
+        </div>
+    </div>
+
+    <!-- Section des règles -->
+    <section class="rules-section">
+        <div class="rules-container">
+            <h1><span class="rule-heading-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1H5C3.9 1 3 1.9 3 3v18c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H5V5h14v16zm-5-13h-4V3h4v5z" fill="currentColor"/></svg></span>Règles à respecter</h1>
+            <p class="rules-subtitle">Pour une expérience thérapeutique de qualité, veuillez respecter les règles suivantes</p>
+
+            <div class="rules-grid">
+                <!-- Règle 1 -->
+                <div class="rule-card">
+                    <div class="rule-number">01</div>
+                    <div class="rule-content">
+                        <h3><span class="rule-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 11.7V7h-2v6.3l4.2 2.52.8-1.32L13 13.7z" fill="currentColor"/></svg></span>Respecter le temps de consultation</h3>
+                        <p>Le patient doit respecter la durée de la séance fixée par le psychologue. Arriver à l'heure et terminer dans les délais permet d'assurer un suivi de qualité pour tous.</p>
+                    </div>
+                </div>
+
+                <!-- Règle 2 -->
+                <div class="rule-card">
+                    <div class="rule-number">02</div>
+                    <div class="rule-content">
+                        <h3><span class="rule-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0C9.66 11 11 9.66 11 8S9.66 5 8 5 5 6.34 5 8 6.34 11 8 11zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5C15 14.17 10.33 13 8 13zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5C21 14.17 16.33 13 14 13z" fill="currentColor"/></svg></span>Respecter le psychologue</h3>
+                        <p>Le patient doit faire preuve de respect envers le psychologue : écoute active, politesse, et engagement dans la démarche thérapeutique.</p>
+                    </div>
+                </div>
+
+                <!-- Règle 3 -->
+                <div class="rule-card">
+                    <div class="rule-number">03</div>
+                    <div class="rule-content">
+                        <h3><span class="rule-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17a2 2 0 100-4 2 2 0 000 4zm6-6h-1V8a5 5 0 00-10 0v3H6c-1.1 0-2 .9-2 2v9c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-9c0-1.1-.9-2-2-2zm-6-4a3 3 0 013 3v3H9V8a3 3 0 013-3z" fill="currentColor"/></svg></span>Confidentialité</h3>
+                        <p>Le patient s'engage à ne pas partager les informations personnelles du psychologue et à respecter le cadre confidentiel des séances.</p>
+                    </div>
+                </div>
+
+                <!-- Règle 4 -->
+                <div class="rule-card">
+                    <div class="rule-number">04</div>
+                    <div class="rule-content">
+                        <h3><span class="rule-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zm-9-9h-2v2h2V11zm4 0h-2v2h2V11z" fill="currentColor"/></svg></span>Annulation et ponctualité</h3>
+                        <p>Le patient doit prévenir au moins 24h à l'avance en cas d'annulation. Tout retard ou absence non justifiée sera comptabilisé.</p>
+                    </div>
+                </div>
+            </div>
+
+            
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2025 Nebras - Psychologie en ligne</p>
+    </footer>
+
+    <script>
+        function auth() {
+            window.location.href = "auth.html";
+        }
+    </script>
+</body>
+</html>

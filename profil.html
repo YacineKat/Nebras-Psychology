@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mon profil - Nebras</title>
+    <link rel="stylesheet" href="./css/patient_style.css">
+    <link rel="icon" type="image/png" href="./assets/image/logo.png">
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo">
+                <img src="./assets/image/logo.png" alt="Nebras Logo">
+            </div>
+            
+            <nav class="nav-menu">
+                <a href="dashboard.html" class="nav-item">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" fill="currentColor"/></svg>
+                    <span>Tableau de bord</span>
+                </a>
+                <a href="psychologue.html" class="nav-item">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" fill="currentColor"/></svg>
+                    <span>Psychologues</span>
+                </a>
+                <a href="rendez_vous.html" class="nav-item">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zM9 14H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2zm-8 4H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2z" fill="currentColor"/></svg>
+                    <span>Rendez-vous</span>
+                    <span class="badge">0</span>
+                </a>
+                <a href="messagerie.html" class="nav-item">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z" fill="currentColor"/></svg>
+                    <span>Messagerie</span>
+                    <span class="badge">0</span>
+                </a>
+                <a href="therapie.html" class="nav-item">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" fill="currentColor"/>
+                    </svg>
+                    <span>Group Therapy</span>
+                </a>
+            </nav>
+
+            <div class="nav-item">
+                <div class="user-avatar">:) </div>
+                <div class="user-info"><span class="user-name">Maria</span></div>
+                <a href="profil.html" class="settings-icon"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" fill="currentColor"/></svg></a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <header class="page-header">
+                <div>
+                    <h1>Mon profil</h1>
+                    <p class="breadcrumb">Accueil › Mon profil</p>
+                </div>
+            </header>
+
+            <div class="profile-content">
+                <!-- Profile Header -->
+                <div class="profile-header">
+                    <div class="profile-avatar-large">
+                        <img src="./assets/image/24d0759cbb02c3157112d0ef0f8463b1.jpg" alt="Avatar" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">
+                    </div>
+                    <div class="profile-info">
+                        <h2>Maria Benbernou</h2>
+                        <div class="stats">
+                            <div class="stat-item">
+                                <span class="stat-number">0</span>
+                                <span class="stat-label">Rendez-vous</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-number">0</span>
+                                <span class="stat-label">Thérapies suivies</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-number">VIP</span>
+                                <span class="stat-label">Statut</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="profile-tabs">
+                    <button class="tab-btn active" onclick="showTab('profil')"><span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12c2.21 0 4-1.79 4-4S14.21 4 12 4 8 5.79 8 8s1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" fill="currentColor"/></svg></span>Informations personnelles</button>
+                    <button class="tab-btn" onclick="showTab('besoins')"><span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 3H5c-1.1 0-2 .9-2 2v14l4-4h12c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 10H7.83L5 17.83V5h14v8z" fill="currentColor"/></svg></span>Mes besoins</button>
+                    <button class="tab-btn" onclick="showTab('therapie')"><span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-8-5.33-8-10c0-2.77 2.23-5 5-5 1.66 0 3.11.84 4 2.09C13.89 6.84 15.34 6 17 6c2.77 0 5 2.23 5 5 0 4.67-8 10-8 10z" fill="currentColor"/></svg></span>Mon suivi</button>
+                    <button class="tab-btn" onclick="showTab('securite')"><span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17a2 2 0 100-4 2 2 0 000 4zm6-6h-1V8a5 5 0 00-10 0v3H6c-1.1 0-2 .9-2 2v9c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-9c0-1.1-.9-2-2-2zm-6-4a3 3 0 013 3v3H9V8a3 3 0 013-3z" fill="currentColor"/></svg></span>Sécurité</button>
+                </div>
+
+                <!-- TAB 1 - Informations personnelles -->
+                <div id="tabProfil" class="profile-tab-content active">
+                    <div class="profile-section">
+                        <h3>Informations personnelles</h3>
+                        <div class="form-group">
+                            <label>Nom complet *</label>
+                            <div class="name-row">
+                                <input type="text" value="Maria" placeholder="Prénom">
+                                <input type="text" value="Benbernou" placeholder="Nom">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Date de naissance</label>
+                            <input type="date" value="1995-06-15" class="input">
+                        </div>
+                        <div class="form-group">
+                            <label>Genre</label>
+                            <select class="input">
+                                <option>Femme</option>
+                                <option>Homme</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Téléphone *</label>
+                            <div class="phone-input">
+                                <select class="country-code">
+                                    <option>DZ +213</option>
+                                    <option>FR +33</option>
+                                    <option>CA +1</option>
+                                </select>
+                                <input type="tel" value="0798 96 98 24">
+                            </div>
+                        </div>
+                        <button class="update-btn" onclick="alert('Informations mises à jour !')">Mettre à jour</button>
+                    </div>
+                </div>
+
+                <!-- TAB 2 - Mes besoins -->
+                <div id="tabBesoins" class="profile-tab-content">
+                    <div class="profile-section">
+                        <h3>Mes préférences thérapeutiques</h3>
+                        
+                        <div class="info-card">
+                            <div class="info-card-header">
+                                <span><span class="info-card-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 14.5V14h-2v2.5c-1.1-.4-2-1.42-2-2.5 0-1.66 1.34-3 3-3s3 1.34 3 3c0 1.08-.9 2.1-2 2.5z" fill="currentColor"/></svg></span>Motifs de consultation</span>
+                                <button class="edit-btn" onclick="alert('Modifier les motifs')">Modifier</button>
+                            </div>
+                            <div class="tags-list">
+                                <span class="tag">Anxiété</span>
+                                <span class="tag">Stress</span>
+                                <span class="tag">Confiance en soi</span>
+                            </div>
+                        </div>
+
+
+                        <div class="info-card">
+                            <div class="info-card-header">
+                                <span><span class="info-card-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm4.9 15.5c-.2 1.5-1.14 2.79-2.5 3.47-2.1-1.1-3.77-2.76-4.81-4.75-.5-.97-.8-2.02-.9-3.12h8.21c.12 1.18.44 2.26.99 3.4zM12 4c1.68 0 3.21.62 4.35 1.64H7.65C8.79 4.62 10.32 4 12 4zm-4.9 3h9.8c.12.86.33 1.7.62 2.5H6.48c.28-.8.5-1.64.62-2.5zm-1.43 4h12.66c-.06.73-.21 1.45-.44 2.12H6.11c-.23-.67-.38-1.39-.44-2.12z" fill="currentColor"/></svg></span>Langue</span>
+                                <button class="edit-btn" onclick="alert('Modifier la langue')">Modifier</button>
+                            </div>
+                            <p>Français</p>
+                        </div>
+
+                        <div class="info-card">
+                            <div class="info-card-header">
+                                <span><span class="info-card-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12c2.21 0 4-1.79 4-4S14.21 4 12 4 8 5.79 8 8s1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" fill="currentColor"/></svg></span>Préférence psychologue</span>
+                                <button class="edit-btn" onclick="alert('Modifier la préférence')">Modifier</button>
+                            </div>
+                            <p>Femme - Consultations individuelles</p>
+                        </div>
+                        <button class="update-btn" onclick="alert('Préférences mises à jour !')">Enregistrer mes préférences</button>
+                    </div>
+                </div>
+
+                <!-- TAB 3 - Mon suivi -->
+                <div id="tabTherapie" class="profile-tab-content">
+                    <div class="profile-section">
+                        <h3>Mon suivi psychologique</h3>
+                        
+                        <div class="empty-state-suivi">
+                            <div class="empty-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zm-9-9H7v2h3V11zm5 0h-3v2h3V11z" fill="currentColor"/></svg></div>
+                            <p>Vous n'avez pas encore de séances programmées</p>
+                            <button class="cta-small" onclick="window.location.href='psychologue.html'">Trouver un psychologue</button>
+                        </div>
+
+                        <div class="historique-container">
+                            <h4>Historique des séances</h4>
+                            <div class="historique-item">
+                                <div class="historique-date">Aucune séance pour le moment</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 4 - Sécurité -->
+                <div id="tabSecurite" class="profile-tab-content">
+                    <div class="profile-section">
+                        <h3>Informations de connexion</h3>
+                        <div class="info-row">
+                            <div>
+                                <p class="info-label">Adresse email</p>
+                                <p class="info-value">maria.benbernou@email.com</p>
+                            </div>
+                            <button class="link-btn" onclick="alert('Modifier email')">Modifier</button>
+                        </div>
+                        <div class="info-row">
+                            <div>
+                                <p class="info-label">Mot de passe</p>
+                                <p class="info-value">************</p>
+                            </div>
+                            <button class="link-btn" onclick="alert('Modifier mot de passe')">Modifier</button>
+                        </div>
+                    </div>
+
+                    <div class="profile-section danger-section">
+                        <h3 style="color: #e74c3c;">⚠️ Suppression du compte</h3>
+                        <p>Cette action est irréversible. Toutes vos données personnelles et votre historique seront définitivement supprimés.</p>
+                        <button class="delete-btn" onclick="confirmDelete()">Supprimer mon compte</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showTab(tabName) {
+            // Cacher tous les onglets
+            document.getElementById('tabProfil').classList.remove('active');
+            document.getElementById('tabBesoins').classList.remove('active');
+            document.getElementById('tabTherapie').classList.remove('active');
+            document.getElementById('tabSecurite').classList.remove('active');
+            
+            // Désactiver tous les boutons
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            
+            // Afficher l'onglet sélectionné
+            if(tabName === 'profil') {
+                document.getElementById('tabProfil').classList.add('active');
+                document.querySelector('.tab-btn:nth-child(1)').classList.add('active');
+            } else if(tabName === 'besoins') {
+                document.getElementById('tabBesoins').classList.add('active');
+                document.querySelector('.tab-btn:nth-child(2)').classList.add('active');
+            } else if(tabName === 'therapie') {
+                document.getElementById('tabTherapie').classList.add('active');
+                document.querySelector('.tab-btn:nth-child(3)').classList.add('active');
+            } else if(tabName === 'securite') {
+                document.getElementById('tabSecurite').classList.add('active');
+                document.querySelector('.tab-btn:nth-child(4)').classList.add('active');
+            }
+        }
+        
+        function confirmDelete() {
+            if(confirm('⚠️ Êtes-vous sûr de vouloir supprimer définitivement votre compte ? Cette action est irréversible.')) {
+                alert('Votre compte a été supprimé. Nous espérons vous revoir bientôt.');
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Nebras - Authentification</title>
+    <link rel="stylesheet" href="./css/hom.css"/>
+    <link rel="icon" type="image" href="./assets/image/logo.png">
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="logo">
+            <img src="./assets/image/logo.png" alt="Nebras Logo"/>
+        </div>
+        <div class="nav-links">
+            <a href="home.html">Accueil</a>
+            <a href="rule.html">Règles</a>
+            <a href="#">steps</a>
+        </div>
+        <div class="button-group">
+            <button onclick="goToHome()" class="btn-signin">Accueil</button>
+        </div>
+    </div>
+
+    <!-- Formulaire d'authentification -->
+    <div class="auth-box">
+        <!-- Formulaire Connexion -->
+        <div id="login" class="form active">
+            <h2>Connexion</h2>
+            <input type="email" placeholder="Email" class="input">
+            <input type="password" placeholder="Mot de passe" class="input">
+            <button class="btn" onclick="handleLogin()">Se connecter</button>
+            <p>Pas de compte ? <a href="#" onclick="showRegister()">S'inscrire</a></p>
+        </div>
+
+        <!-- Formulaire Inscription -->
+        <div id="register" class="form">
+            <h2>Inscription</h2>
+            
+            <select class="input">
+                <option value="patient">Patient</option>
+                <option value="psychologue">Psychologue</option>
+                <option value="counselor">Counselor</option>
+            </select>
+
+            <input type="text" placeholder="Nom complet" class="input">
+            <input type="email" placeholder="Email" class="input">
+            <input type="password" placeholder="Mot de passe" class="input">
+            <input type="password" placeholder="Confirmer le mot de passe" class="input">
+
+            <div class="check-box">
+                <input type="checkbox" id="rules">
+                <label for="rules">J'accepte les <a href="rule.html">règles</a> du site</label>
+            </div>
+
+            <button class="btn" onclick="handleRegister()">S'inscrire</button>
+            
+            <p>Déjà un compte ? <a href="#" onclick="showLogin()">Se connecter</a></p>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2025 Nebras - Psychologie en ligne</p>
+    </footer>
+
+    <script>
+        function showLogin() {
+            document.getElementById('login').classList.add('active');
+            document.getElementById('register').classList.remove('active');
+        }
+
+        function showRegister() {
+            document.getElementById('login').classList.remove('active');
+            document.getElementById('register').classList.add('active');
+        }
+
+        function handleLogin() {
+            alert("Tentative de connexion");
+            window.location.href = "dashboard.html";
+        }
+
+        function handleRegister() {
+            const rules = document.getElementById('rules');
+            if (!rules.checked) {
+                alert("❌ Vous devez accepter les règles du site pour vous inscrire !");
+                return;
+            }
+            alert("Inscription réussie !");
+            window.location.href = "dashboard.html";
+        }
+
+        function goToHome() {
+            window.location.href = "home.html";
+        }
+    </script>
+</body>
+</html>

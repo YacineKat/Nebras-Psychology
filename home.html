@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Nebras - Psychologie en ligne</title>
+    <link rel="stylesheet" href="./css/hom.css"/>
+    <link rel="icon" type="image" href="./assets/image/logo.png">
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="logo">
+            <img src="./assets/image/logo.png" alt="Nebras Logo"/>
+        </div>
+        <div class="nav-links">
+            <a href="home.html">Accueil</a>
+            <a href="rule.html">Règles</a>
+            <a href="#etapes">Étapes</a>
+            <a href="#psychologues">Psychologues</a>
+        </div>
+        <div class="button-group">
+            <button onclick="auth()" class="btn-signin">Commencer</button>
+        </div>
+    </div>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <img src="image/blob1.png" alt="" class="blob-img blob-img1">
+        <img src="image/blob2.png" alt="" class="blob-img blob-img2">
+        <div class="hero-content">
+            <h1>Your Mental Health Matters</h1>
+            <p>Book secure online therapy sessions with licensed psychologists in Algeria.</p>
+            <button class="cta-button" onclick="auth()">Commencer maintenant →</button>
+        </div>
+    </section>
+
+    
+
+    <!-- Section Pourquoi nous choisir -->
+    <section class="why-us">
+        <h2>Pourquoi choisir Nebras ?</h2>
+        <div class="why-container">
+            <div class="why-card">
+                <div class="why-icon">
+                    <svg viewBox="0 0 64 64" aria-hidden="true">
+                        <path d="M16 18h32v20H16z" stroke="currentColor" stroke-width="4" fill="none" stroke-linejoin="round"/>
+                        <path d="M16 22h32" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+                        <path d="M22 38l6 8 10-12 6 8" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <h3>Psychologues certifiés</h3>
+                <p>Tous nos psychologues sont diplômés et agréés par l'ordre des psychologues.</p>
+            </div>
+            <div class="why-card">
+                <div class="why-icon">
+                    <svg viewBox="0 0 64 64" aria-hidden="true">
+                        <path d="M20 28v-8a12 12 0 0124 0v8" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round"/>
+                        <rect x="16" y="28" width="32" height="24" rx="6" stroke="currentColor" stroke-width="4" fill="none"/>
+                        <circle cx="32" cy="42" r="3" fill="currentColor"/>
+                    </svg>
+                </div>
+                <h3>Confidentialité totale</h3>
+                <p>Vos séances sont 100% privées et sécurisées. Vos données ne sont jamais partagées.</p>
+            </div>
+            <div class="why-card">
+                <div class="why-icon">
+                    <svg viewBox="0 0 64 64" aria-hidden="true">
+                        <path d="M16 30c0-8 6-14 16-14s16 6 16 14c0 10-16 18-16 18S16 40 16 30z" stroke="currentColor" stroke-width="4" fill="none"/>
+                        <path d="M24 24c0-3 2-5 4-5s4 2 4 5" stroke="currentColor" stroke-width="4" fill="none"/>
+                    </svg>
+                </div>
+                <h3>Accès 24h/24 7j/7</h3>
+                <p>Consultez à tout moment, où que vous soyez. Prenez rendez-vous en quelques clics.</p>
+            </div>
+            <div class="why-card">
+                <div class="why-icon">
+                    <svg viewBox="0 0 64 64" aria-hidden="true">
+                        <rect x="14" y="22" width="36" height="20" rx="5" stroke="currentColor" stroke-width="4" fill="none"/>
+                        <path d="M18 32h28" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+                        <path d="M32 22v20" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <h3>Tarifs abordables</h3>
+                <p>Séance à partir de 1000 DA. Pas d'abonnement, pas d'engagement.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section des 4 étapes -->
+    <section id="etapes" class="etapes-section">
+        <h2>The 4 steps to follow to register</h2>
+        <div class="etapes-container">
+            <div class="etape-card">
+                <div class="etape-number">1</div>
+                <h3>signing up</h3>
+                <p class="etape-placeholder">Would you like to see a psychologist online? Nothing simpler: register for free and let yourself be guided by our user journey designed for your needs.</p>
+            </div>
+            <div class="etape-card">
+                <div class="etape-number">2</div>
+                <h3>Find your psychologist</h3>
+                <p class="etape-placeholder">Once logged in, indicate your preferences: we will present you the psychologists who correspond to you (specialty, availability, etc), and you can write to them for free.</p>
+            </div>
+            <div class="etape-card">
+                <div class="etape-number">3</div>
+                <h3>make an appointment</h3>
+                <p class="etape-placeholder">Have you chosen your psychologist? Now choose a slot on their agenda and pre-pay for your session (45 minutes to 1 hour) at the flat rate of 1000 DA.</p>
+            </div>
+            <div class="etape-card">
+                <div class="etape-number">4</div>
+                <h3>your therapy</h3>
+                <p class="etape-placeholder">No subscription or commitment, your psychologist will be present at the appointment, you can reschedule whenever you wish and exchange for free by messaging during the therapy.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section Psychologues en vedette -->
+    <section id="psychologues" class="featured-psychologists">
+        <h2>Nos psychologues en vedette</h2>
+        <div class="psycho-container">
+            <div class="psycho-card">
+                <div class="psycho-img">
+                    <img src="./assets/icons/doctor-svgrepo-com.svg" alt="Doctor icon">
+                </div>
+                <h3>Dr. Sarah Amrani</h3>
+                <p class="specialty">Psychologue clinicienne</p>
+                <p class="desc">Spécialisée en anxiété, dépression et confiance en soi.</p>
+                <div class="rating">★★★★★ 5.0</div>
+                <button class="psycho-btn" onclick="auth()">Prendre RDV</button>
+            </div>
+            <div class="psycho-card">
+                <div class="psycho-img">
+                    <img src="./assets/icons/doctor-svgrepo-com.svg" alt="Doctor icon">
+                </div>
+                <h3>Dr. Karim Benali</h3>
+                <p class="specialty">Psychologue TCC</p>
+                <p class="desc">Spécialisé en thérapie comportementale et cognitive.</p>
+                <div class="rating">★★★★☆ 4.8</div>
+                <button class="psycho-btn" onclick="auth()">Prendre RDV</button>
+            </div>
+            <div class="psycho-card">
+                <div class="psycho-img">
+                    <img src="./assets/icons/doctor-svgrepo-com.svg" alt="Doctor icon">
+                </div>
+                <h3>Dr. Leila Zerouali</h3>
+                <p class="specialty">Psychologue couple & famille</p>
+                <p class="desc">Spécialisée en thérapie de couple et relation familiale.</p>
+                <div class="rating">★★★★★ 4.9</div>
+                <button class="psycho-btn" onclick="auth()">Prendre RDV</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section Témoignages -->
+    <section class="testimonials">
+        <h2>Ce que nos patients disent</h2>
+        <div class="testimonials-container">
+            <div class="testimonial-card">
+                <div class="testimonial-text">"Nebras m'a changé la vie. J'ai trouvé un psychologue qui me correspond parfaitement."</div>
+                <div class="testimonial-author">- Amira B.</div>
+                <div class="testimonial-rating">★★★★★</div>
+            </div>
+            <div class="testimonial-card">
+                <div class="testimonial-text">"Une plateforme professionnelle et sécurisée. Je recommande vivement !"</div>
+                <div class="testimonial-author">- Mohamed K.</div>
+                <div class="testimonial-rating">★★★★★</div>
+            </div>
+            <div class="testimonial-card">
+                <div class="testimonial-text">"Enfin un service de qualité accessible à tous en Algérie. Merci Nebras."</div>
+                <div class="testimonial-author">- Lina S.</div>
+                <div class="testimonial-rating">★★★★★</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section Tarifs -->
+    
+    <section class="pricing">
+        <h2>Nos offres</h2>
+        <div class="pricing-container">
+            <div class="pricing-card">
+                <h3>Standard</h3>
+                <div class="price">1000 DA</div>
+                <p class="price-desc">par séance</p>
+                <ul>
+                    <li>✓ Séance de 45 min</li>
+                    <li>✓ Messagerie illimitée</li>
+                    <li>✓ Psychologue certifié</li>
+                </ul>
+                <button class="pricing-btn" onclick="auth()">Choisir</button>
+            </div>
+            <div class="pricing-card featured">
+                <div class="popular-tag">Populaire</div>
+                <h3>VIP</h3>
+                <div class="price">5000 DA</div>
+                <p class="price-desc">par mois</p>
+                <ul>
+                    <li>✓ Séances illimitées</li>
+                    <li>✓ Appel d'urgence 24/7</li>
+                    <li>✓ Psychologue dédié</li>
+                </ul>
+                <button class="pricing-btn" onclick="auth()">Choisir</button>
+            </div>
+            
+        </div>
+    </section>
+
+    <!-- Section FAQ -->
+    <section id="faq" class="faq-section">
+        <h2>Questions fréquentes</h2>
+        <div class="faq-container">
+            <div class="faq-item" onclick="toggleFaq(this)">
+                <div class="faq-question">Comment se déroule une séance ?</div>
+                <div class="faq-answer">La séance dure 45 minutes à 1 heure. Vous pouvez choisir entre visio, téléphone ou chat selon vos préférences.</div>
+            </div>
+            <div class="faq-item" onclick="toggleFaq(this)">
+                <div class="faq-question">Est-ce que mes données sont sécurisées ?</div>
+                <div class="faq-answer">Oui, toutes vos données sont cryptées et confidentielles. Nous respectons le RGPD.</div>
+            </div>
+            <div class="faq-item" onclick="toggleFaq(this)">
+                <div class="faq-question">Puis-je changer de psychologue ?</div>
+                <div class="faq-answer">Absolument ! Vous pouvez changer de psychologue à tout moment, sans frais supplémentaires.</div>
+            </div>
+            <div class="faq-item" onclick="toggleFaq(this)">
+                <div class="faq-question">Comment annuler un rendez-vous ?</div>
+                <div class="faq-answer">Vous pouvez annuler jusqu'à 24h avant la séance. Au-delà, la séance sera comptabilisée.</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section CTA (Appel à l'action) -->
+    <section class="cta-banner">
+        <div class="cta-content">
+            <h2>Prêt à prendre soin de votre santé mentale ?</h2>
+            <p>Rejoignez plus de 5000 patients qui ont déjà fait confiance à Nebras.</p>
+            <button class="cta-banner-btn" onclick="auth()">Créer un compte gratuit →</button>
+        </div>
+    </section>
+
+    <!-- Section Contact -->
+    <section id="contact" class="contact-section">
+        <div class="contact-container">
+            <div class="contact-info">
+                <h3>Contactez-nous</h3>
+                <p><span class="contact-icon contact-email" aria-hidden="true"></span>contact@nebras.dz</p>
+                <p><span class="contact-icon contact-phone" aria-hidden="true"></span>+213 5XX XX XX XX</p>
+                <p><span class="contact-icon contact-clock" aria-hidden="true"></span>24h/24 7j/7</p>
+            </div>
+            <div class="contact-form">
+                <input type="text" placeholder="Votre nom" class="contact-input">
+                <input type="email" placeholder="Votre email" class="contact-input">
+                <textarea placeholder="Votre message" rows="3" class="contact-textarea"></textarea>
+                <button class="contact-btn" onclick="alert('Message envoyé ! Nous vous répondrons rapidement.')">Envoyer</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2025 Nebras - Psychologie en ligne. Tous droits réservés.</p>
+    </footer>
+
+    <script>
+        function auth() {
+            window.location.href = "auth.html";
+        }
+
+        function toggleFaq(element) {
+            element.classList.toggle('active');
+        }
+    </script>
+</body>
+</html>
