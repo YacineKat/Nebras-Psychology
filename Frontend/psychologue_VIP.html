@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Espace VIP - Psychologue | Nebras</title>
+    <link rel="stylesheet" href="./css/psychologue_style.css">
+    <link rel="icon" type="image/png" href="./assets/image/logo.png">
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo">
+                <img src="./assets/image/logo.png" alt="Nebras Logo">
+            </div>
+            <nav class="nav-menu">
+                <a href="psychologue_dashboard.html" class="nav-item">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" fill="currentColor"/></svg>
+                    <span>Tableau de bord</span>
+                </a>
+                <a href="psychologue_mes_patients.html" class="nav-item">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" fill="currentColor"/></svg>
+                    <span>Mes patients</span>
+                    <span class="badge">12</span>
+                </a>
+                <a href="psychologue_emploi_du_temps.html" class="nav-item">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zM9 14H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2zm-8 4H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2z" fill="currentColor"/></svg>
+                    <span>Emploi du temps</span>
+                </a>
+                <a href="psychologue_messagerie.html" class="nav-item">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z" fill="currentColor"/></svg>
+                    <span>Messagerie</span>
+                    <span class="badge">3</span>
+                </a>
+                <a href="psychologue_honoraires.html" class="nav-item">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.5 15h-3v-2h3v2zm0-4h-3V7h3v6z" fill="currentColor"/></svg>
+                    <span>Honoraires</span>
+                </a>
+                <a href="psychologue_groupes.html" class="nav-item">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" fill="currentColor"/></svg>                    
+                       <span>Thérapie de groupe</span>
+                </a>
+                <a href="psychologue_vip.html" class="nav-item active">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15 9 22 9 16 14 19 22 12 17 5 22 8 14 2 9 9 9 12 2"/></svg>
+                    <span>Espace VIP</span>
+                    <span class="vip-status-badge" id="vipStatusBadge">Non activé</span>
+                </a>
+            </nav>
+            <a href="psychologue_profil.html" class="nav-item profile-link">
+                <div class="user-avatar">
+                    <img src="./image/24d0759cbb02c3157112d0ef0f8463b1.jpg" alt="Photo profil" style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover;">
+                </div>
+                <div class="user-info"><span class="user-name">Dr. Karim Benali</span></div>
+            </a>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <header class="page-header">
+                <div>
+                    <h1>Espace VIP</h1>
+                    <p class="breadcrumb">Espace › VIP</p>
+                </div>
+            </header>
+
+            <div id="vipFormContainer" class="espace-vip-container">
+                <h2>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><polygon points="12 2 15 9 22 9 16 14 19 22 12 17 5 22 8 14 2 9 9 9 12 2"/></svg>
+                    Formulaire pré-consultation VIP
+                </h2>
+                <p class="subtitle">Ce formulaire sera rempli par vos patients avant chaque séance VIP.</p>
+
+                <div class="info-note">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+                    Ce questionnaire permet de mieux connaître vos patients avant la séance.
+                </div>
+
+                <div class="form-group">
+                    <label>Question 1 : Quel est le motif principal de la consultation ?</label>
+                    <input type="text" class="vip-input" id="q1" placeholder="Ex: Anxiété, Stress, Dépression...">
+                </div>
+
+                <div class="form-group">
+                    <label>Question 2 : Depuis combien de temps ressentez-vous ces symptômes ?</label>
+                    <input type="text" class="vip-input" id="q2" placeholder="Ex: 2 semaines, 3 mois, 1 an...">
+                </div>
+
+                <div class="form-group">
+                    <label>Question 3 : Avez-vous déjà consulté un psychologue auparavant ?</label>
+                    <select class="vip-input" id="q3">
+                        <option>Oui</option>
+                        <option>Non</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Question 4 : Qu'attendez-vous de cette séance ?</label>
+                    <textarea rows="3" class="vip-input" id="q4" placeholder="Décrivez vos attentes..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Question 5 : Y a-t-il des informations importantes que le psychologue doit connaître ?</label>
+                    <textarea rows="3" class="vip-input" id="q5" placeholder="Traitements en cours, antécédents, etc."></textarea>
+                </div>
+
+                <button class="update-btn" onclick="saveVipForm()">Enregistrer le formulaire VIP</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL PAIEMENT VIP -->
+    <div id="vipPaymentModal" class="vip-modal">
+        <div class="vip-modal-content">
+            <div class="vip-modal-header">
+                <h2><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#091346" stroke-width="2"><polygon points="12 2 15 9 22 9 16 14 19 22 12 17 5 22 8 14 2 9 9 9 12 2"/></svg> Activation VIP</h2>
+                <button class="close-modal" onclick="closeVipPaymentModal()">&times;</button>
+            </div>
+            <div class="vip-modal-body">
+                <p>Devenez psychologue VIP et bénéficiez de :</p>
+                <ul class="vip-benefits">
+                    <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Formulaire pré-rempli pour vos patients</li>
+                    <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Gain de temps en séance</li>
+                    <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Meilleure connaissance du patient</li>
+                    <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Badge VIP sur votre profil</li>
+                </ul>
+                
+                <div class="vip-offers">
+                    <div class="vip-offer" onclick="selectVipOffer(this, 'mensuel')">
+                        <h3>Mensuel</h3>
+                        <div class="price">5 000 DA</div>
+                        <small>/mois</small>
+                    </div>
+                    <div class="vip-offer" onclick="selectVipOffer(this, 'annuel')">
+                        <h3>Annuel</h3>
+                        <div class="price">50 000 DA</div>
+                        <small>/an (2 mois offerts)</small>
+                    </div>
+                </div>
+                
+                <div class="payment-form-vip">
+                    <div class="form-group">
+                        <label>Numéro CCP</label>
+                        <input type="text" id="ccpNumber" class="vip-input" placeholder="1234 5678 9012 3456">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Date d'expiration</label>
+                            <input type="month" id="expDate" class="vip-input">
+                        </div>
+                        <div class="form-group">
+                            <label>CVV</label>
+                            <input type="password" id="cvv" maxlength="3" class="vip-input" placeholder="123">
+                        </div>
+                    </div>
+                    <button class="pay-vip-btn" onclick="activateVIP()">Activer VIP</button>
+                </div>
+            </div>
+</div>
+    </div>
+
+<script src="js/api.js"></script>
+<script>
+(function() {
+    var userStr = localStorage.getItem('nebras_user');
+    if (userStr) {
+        try {
+            var user = JSON.parse(userStr);
+            var name = user.fullname || user.email || '';
+            document.querySelectorAll('.user-name').forEach(function(el) { el.textContent = name; });
+        } catch(e) {}
+    }
+})();
+function showToast(message, type = 'success') {
+    const container = document.querySelector('.toast-container') || (() => {
+        const c = document.createElement('div');
+        c.className = 'toast-container';
+        document.body.appendChild(c);
+        return c;
+    })();
+    const toast = document.createElement('div');
+    toast.className = 'toast ' + type;
+    toast.textContent = message;
+    container.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+</script>
+<script src="js/psychologue_VIP.js" defer></script>
+</body>
+</html>

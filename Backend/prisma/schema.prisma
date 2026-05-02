@@ -1,0 +1,131 @@
+// This is your Prisma schema file
+// Learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ============== USERS TABLE ==============
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  fullname  String
+  userType  String   @default("patient") // patient, psychologue, counselor, admin
+  createdAt DateTime @default(now())
+
+  // Relations
+  profile        Profile?
+  appointmentsAsPatient Appointment[] @relation("PatientAppointments")
+  appointmentsAsDoctor   Appointment[] @relation("DoctorAppointments")
+  timeSlots      TimeSlot[]
+  sentMessages      Message[] @relation("SentMessages")
+  receivedMessages  Message[] @relation("ReceivedMessages")
+  groupMemberships GroupMember[]
+}
+
+// ============== PROFILES TABLE ==============
+model Profile {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Patient fields
+  birthDate   DateTime?
+  gender      String?
+  
+  // Doctor/Counselor fields
+  specialite  String?
+  universite  String?
+  bio         String?
+  rating      Decimal  @default(0) @db.Decimal(3, 2)
+  isAvailable Boolean  @default(true)
+  
+  // Additional fields
+  phone       String?
+  adresse     String?
+  diplomes    String?
+  agrement    String?
+  tarif       Int?
+  
+  // Therapeutic preferences
+  language    String?  // langue preferree
+  motifs      String?  // motifs de consultation (stored as comma-separated)
+  prefGender  String?  // preference genre psychologue
+  prefType    String?  // preference type consultation
+}
+
+// ============== APPOINTMENTS TABLE ==============
+model Appointment {
+  id               String    @id @default(uuid())
+  patientId        String
+  patient          User      @relation("PatientAppointments", fields: [patientId], references: [id])
+  doctorId         String
+  doctor           User      @relation("DoctorAppointments", fields: [doctorId], references: [id])
+  appointmentDate  DateTime
+  appointmentTime  String    // Store as "HH:MM" string
+  mediaType        String    @default("video") // video, phone, chat
+  status           String    @default("pending") // pending, confirmed, completed, cancelled
+  notes            String?   // Session notes (doctor only)
+  createdAt        DateTime  @default(now())
+}
+
+// ============== TIME SLOTS TABLE ==============
+model TimeSlot {
+  id          String   @id @default(uuid())
+  doctorId    String
+  doctor      User     @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  dayOfWeek   Int      // 0=Sunday, 1=Monday, ..., 6=Saturday
+  startTime   String   // "09:00"
+  endTime     String   // "10:00"
+  isBooked    Boolean  @default(false)
+
+  @@unique([doctorId, dayOfWeek, startTime])
+}
+
+// ============== MESSAGES TABLE ==============
+model Message {
+  id          String   @id @default(uuid())
+  senderId    String
+  sender      User     @relation("SentMessages", fields: [senderId], references: [id])
+  receiverId  String
+  receiver    User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  content     String
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+// ============== THERAPY GROUPS TABLE ==============
+model TherapyGroup {
+  id          String   @id @default(uuid())
+  name        String
+  description String
+  dayOfWeek   Int      // 0=Sunday, 1=Monday, ..., 6=Saturday
+  time        String   // "19:00"
+  duration    Int      // minutes (e.g., 90)
+  maxParticipants Int @default(10)
+  currentParticipants Int @default(0)
+  icon        String   @default("group")
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  
+  members     GroupMember[]
+}
+
+// ============== GROUP MEMBERS TABLE ==============
+model GroupMember {
+  id          String   @id @default(uuid())
+  groupId     String
+  group       TherapyGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  joinedAt    DateTime @default(now())
+
+  @@unique([groupId, userId])
+}

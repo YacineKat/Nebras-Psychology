@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gérer les groupes - Psychologue | Nebras</title>
+    <link rel="stylesheet" href="./css/psychologue_style.css">
+    <link rel="icon" type="image/png" href="./assets/image/logo.png">
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo">
+                <img src="./assets/image/logo.png" alt="Nebras Logo">
+            </div>
+            <nav class="nav-menu">
+                <a href="psychologue_dashboard.html" class="nav-item">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" fill="currentColor"/></svg>
+                    <span>Tableau de bord</span>
+                </a>
+                <a href="psychologue_mes_patients.html" class="nav-item">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" fill="currentColor"/></svg>
+                    <span>Mes patients</span>
+                    <span class="badge">12</span>
+                </a>
+                <a href="psychologue_emploi_du_temps.html" class="nav-item">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zM9 14H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2zm-8 4H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2z" fill="currentColor"/></svg>
+                    <span>Emploi du temps</span>
+                </a>
+                <a href="psychologue_messagerie.html" class="nav-item">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z" fill="currentColor"/></svg>
+                    <span>Messagerie</span>
+                    <span class="badge">3</span>
+                </a>
+                <a href="psychologue_honoraires.html" class="nav-item">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.5 15h-3v-2h3v2zm0-4h-3V7h3v6z" fill="currentColor"/></svg>
+                    <span>Honoraires</span>
+                </a>
+                <a href="psychologue_groupes.html" class="nav-item active">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" fill="currentColor"/></svg>                    
+                       <span>Thérapie de groupe</span>
+                </a>
+                <a href="psychologue_VIP.html" class="nav-item" onclick="checkVIPStatus(event)">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15 9 22 9 16 14 19 22 12 17 5 22 8 14 2 9 9 9 12 2"/></svg>
+                    <span>Espace VIP</span>
+                    <span class="vip-status-badge" id="vipStatusBadge">Non activé</span>
+                </a>
+            </nav>
+            <a href="psychologue_profil.html" class="nav-item profile-link">
+                <div class="user-avatar">
+                    <img src="./image/24d0759cbb02c3157112d0ef0f8463b1.jpg" alt="Photo profil" style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover;">
+                </div>
+                <div class="user-info"><span class="user-name">Dr. Karim Benali</span></div>
+            </a>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <header class="page-header">
+                <div>
+                    <h1>Thérapie de groupe</h1>
+                    <p class="subtitle">Créez et gérez vos groupes thérapeutiques</p>
+                </div>
+                <div class="header-icons">
+                    <button class="icon-btn" onclick="openCreateGroupModal()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Mes groupes -->
+            <div class="dashboard-section">
+                <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20" height="20"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Mes groupes</h2>
+                <div id="groupsList" class="groups-list-psycho"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL CRÉER UN GROUPE -->
+    <div id="createGroupModal" class="vip-modal">
+        <div class="vip-modal-content">
+            <div class="vip-modal-header">
+                <h2><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#091346" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Créer un groupe</h2>
+                <button class="close-modal" onclick="closeCreateGroupModal()">&times;</button>
+            </div>
+            <div class="vip-modal-body">
+                <div class="form-group"><label>Titre du groupe</label><input type="text" id="groupTitle" class="vip-input" placeholder="Ex: Gestion du stress"></div>
+                <div class="form-group"><label>Description</label><textarea id="groupDesc" rows="3" class="vip-input" placeholder="Décrivez le thème et les objectifs du groupe..."></textarea></div>
+                <div class="form-row">
+                    <div class="form-group"><label>Thème</label><select id="groupTheme" class="vip-input"><option value="Stress">Stress</option><option value="Anxiété">Anxiété</option><option value="Confiance en soi">Confiance en soi</option><option value="Couple">Couple</option><option value="Méditation">Méditation</option><option value="Art-thérapie">Art-thérapie</option></select></div>
+                    <div class="form-group"><label>Jour</label><select id="groupDay" class="vip-input"><option value="Lundi">Lundi</option><option value="Mardi">Mardi</option><option value="Mercredi">Mercredi</option><option value="Jeudi">Jeudi</option><option value="Vendredi">Vendredi</option><option value="Samedi">Samedi</option></select></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Heure</label><input type="time" id="groupTime" class="vip-input" value="19:00"></div>
+                    <div class="form-group"><label>Durée</label><select id="groupDuration" class="vip-input"><option value="1h">1 heure</option><option value="1h30" selected>1h30</option><option value="2h">2 heures</option></select></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Places max</label><input type="number" id="groupMaxPlaces" class="vip-input" value="8" min="2" max="20"></div>
+                    <div class="form-group"><label>Prix par séance</label><input type="number" id="groupPrice" class="vip-input" value="1000" placeholder="DA"></div>
+                </div>
+                <button class="save-form-btn" onclick="createGroup()">Créer le groupe</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DÉTAIL GROUPE -->
+    <div id="groupDetailModal" class="vip-modal">
+        <div class="vip-modal-content" style="max-width: 700px;">
+            <div class="vip-modal-header">
+                <h2 id="detailGroupTitle"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#091346" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg> Détail du groupe</h2>
+                <button class="close-modal" onclick="closeGroupDetailModal()">&times;</button>
+            </div>
+            <div class="vip-modal-body">
+                <div class="group-detail-tabs">
+                    <button class="group-detail-tab active" onclick="switchGroupTab('waiting')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Demandes en attente <span id="waitingCount" class="tab-badge">0</span></button>
+                    <button class="group-detail-tab" onclick="switchGroupTab('participants')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Participants <span id="participantsCount" class="tab-badge">0</span>/<span id="maxPlacesSpan">8</span></button>
+                </div>
+                <div id="waitingListPanel" class="group-tab-panel active">
+                    <div id="waitingListContainer"></div>
+                </div>
+                <div id="participantsPanel" class="group-tab-panel">
+                    <div id="participantsListContainer"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL MODIFIER GROUPE -->
+    <div id="editGroupModal" class="vip-modal">
+        <div class="vip-modal-content">
+            <div class="vip-modal-header"><h2><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#091346" stroke-width="2"><path d="M17 3l4 4-7 7H10v-4l7-7z"/><path d="M3 21h18"/></svg> Modifier le groupe</h2><button class="close-modal" onclick="closeEditGroupModal()">&times;</button></div>
+            <div class="vip-modal-body">
+                <input type="hidden" id="editGroupId">
+                <div class="form-group"><label>Titre</label><input type="text" id="editGroupTitle" class="vip-input"></div>
+                <div class="form-group"><label>Description</label><textarea id="editGroupDesc" rows="3" class="vip-input"></textarea></div>
+                <div class="form-row"><div class="form-group"><label>Jour</label><select id="editGroupDay" class="vip-input"><option>Lundi</option><option>Mardi</option><option>Mercredi</option><option>Jeudi</option><option>Vendredi</option><option>Samedi</option></select></div>
+                <div class="form-group"><label>Heure</label><input type="time" id="editGroupTime" class="vip-input"></div></div>
+                <div class="form-row"><div class="form-group"><label>Places max</label><input type="number" id="editGroupMaxPlaces" class="vip-input" min="2" max="20"></div>
+                <div class="form-group"><label>Prix</label><input type="number" id="editGroupPrice" class="vip-input"></div></div>
+                <button class="save-form-btn" onclick="updateGroup()">Enregistrer</button>
+                <button class="delete-group-btn" onclick="deleteGroup()">Supprimer le groupe</button>
+            </div>
+        </div>
+    </div>
+    <script src="js/psychologue_groupes.js" defer></script>
+                id: 2,
+                title: "Confiance en soi",
+                description: "Développez votre estime personnelle dans un cadre sécurisant.",
+                theme: "Confiance en soi",
+                day: "Lundi",
+                time: "18:00",
+                duration: "1h30",
+                maxPlaces: 6,
+                currentPlaces: 3,
+                price: 1000,
+                waitingList: [
+                    { id: 103, name: "Mehdi Bouazza", requestDate: "13/04/2025", hasIndividualSession: true },
+                    { id: 104, name: "Lina Zerouali", requestDate: "12/04/2025", hasIndividualSession: false }
+                ],
+                participants: [
+                    { id: 3, name: "Youcef Hamdi", joinedDate: "09/04/2025" },
+                    { id: 4, name: "Leila Mansouri", joinedDate: "10/04/2025" },
+                    { id: 5, name: "Nadia Kaci", joinedDate: "11/04/2025" }
+                ]
+            }
+        ];
+
+        let currentGroupId = null;
+
+        function renderGroups() {
+            const container = document.getElementById('groupsList');
+            if (!container) return;
+            if (groups.length === 0) {
+                container.innerHTML = '<div style="text-align: center; padding: 40px; color: #666;">Aucun groupe créé. Cliquez sur le bouton + pour créer un groupe.</div>';
+                return;
+            }
+            container.innerHTML = groups.map(group => `
+                <div class="group-card-psycho">
+                    <div class="group-header-psycho">
+                        <span class="group-title-psycho">${group.title}</span>
+                        <span class="group-theme-badge">${group.theme}</span>
+                    </div>
+                    <div class="group-details-psycho">
+                        <span class="group-detail-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> ${group.day} ${group.time}</span>
+                        <span class="group-detail-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> ${group.duration}</span>
+                        <span class="group-detail-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> ${group.currentPlaces}/${group.maxPlaces} places</span>
+                        <span class="group-detail-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M16 8l-4 8-4-8"/></svg> ${group.price} DA</span>
+                        <span class="group-detail-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg> ${group.waitingList.length} demandes</span>
+                    </div>
+                    <div class="group-desc-psycho">${group.description}</div>
+                    <div class="group-actions">
+                        <button class="group-action-btn edit" onclick="openEditGroupModal(${group.id})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3l4 4-7 7H10v-4l7-7z"/><path d="M3 21h18"/></svg> Modifier</button>
+                        <button class="group-action-btn detail" onclick="openGroupDetailModal(${group.id})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Gérer</button>
+                        <button class="group-action-btn start" onclick="startGroupSession(${group.id})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg> Démarrer</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function openGroupDetailModal(groupId) {
+            currentGroupId = groupId;
+            const group = groups.find(g => g.id === groupId);
+            if (!group) return;
+            
+            document.getElementById('detailGroupTitle').innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#091346" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg> ${group.title}`;
+            document.getElementById('maxPlacesSpan').innerText = group.maxPlaces;
+            updateWaitingAndParticipants(group);
+            
+            document.getElementById('groupDetailModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function updateWaitingAndParticipants(group) {
+            document.getElementById('waitingCount').innerText = group.waitingList.length;
+            document.getElementById('participantsCount').innerText = group.currentPlaces;
+            
+            const waitingContainer = document.getElementById('waitingListContainer');
+            if (group.waitingList.length === 0) {
+                waitingContainer.innerHTML = '<div class="empty-message">Aucune demande en attente</div>';
+            } else {
+                waitingContainer.innerHTML = group.waitingList.map(req => `
+                    <div class="request-card">
+                        <div class="request-info">
+                            <div class="request-name">${req.name}</div>
+                            <div class="request-date">Demande le ${req.requestDate}</div>
+                        </div>
+                        <div class="request-actions">
+                            <button class="profile-btn" onclick="viewPatientProfile(${req.id})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg></button>
+                            ${group.currentPlaces >= group.maxPlaces ? 
+                                '<button class="refuse-btn" disabled style="opacity:0.5;">Groupe complet</button>' :
+                                `<button class="accept-btn" onclick="acceptRequest(${currentGroupId}, ${req.id})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Accepter</button>`
+                            }
+                            <button class="refuse-btn" onclick="refuseRequest(${currentGroupId}, ${req.id})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Refuser</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            
+            const participantsContainer = document.getElementById('participantsListContainer');
+            if (group.participants.length === 0) {
+                participantsContainer.innerHTML = '<div class="empty-message">Aucun participant pour le moment</div>';
+            } else {
+                participantsContainer.innerHTML = group.participants.map(p => `
+                    <div class="participant-card">
+                        <div class="participant-info">
+                            <div class="participant-name">${p.name}</div>
+                            <div class="participant-date">Inscrit le ${p.joinedDate}</div>
+                        </div>
+                        <button class="profile-btn" onclick="viewPatientProfile(${p.id})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg></button>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function acceptRequest(groupId, requestId) {
+            const group = groups.find(g => g.id === groupId);
+            if (!group) return;
+            if (group.currentPlaces >= group.maxPlaces) {
+                alert('Ce groupe a atteint le nombre maximum de participants (8)');
+                return;
+            }
+            const request = group.waitingList.find(r => r.id === requestId);
+            if (!request) return;
+            
+            if (!request.hasIndividualSession) {
+                alert('Ce patient n\'a jamais fait de consultation individuelle avec vous. Refusez cette demande.');
+                return;
+            }
+            
+            group.waitingList = group.waitingList.filter(r => r.id !== requestId);
+            group.participants.push({
+                id: request.id,
+                name: request.name,
+                joinedDate: new Date().toLocaleDateString('fr-FR')
+            });
+            group.currentPlaces++;
+            
+            updateWaitingAndParticipants(group);
+            renderGroups();
+            alert(`${request.name} a été accepté dans le groupe.`);
+        }
+
+        function refuseRequest(groupId, requestId) {
+            const group = groups.find(g => g.id === groupId);
+            if (!group) return;
+            const request = group.waitingList.find(r => r.id === requestId);
+            if (!request) return;
+            
+            group.waitingList = group.waitingList.filter(r => r.id !== requestId);
+            updateWaitingAndParticipants(group);
+            renderGroups();
+            alert(`Demande de ${request.name} refusée. Raison: Le psychologue ne vous connaît pas, veuillez d'abord faire une consultation individuelle.`);
+        }
+
+        function viewPatientProfile(patientId) {
+            alert(`Redirection vers le profil du patient`);
+        }
+
+        function switchGroupTab(tab) {
+            document.querySelectorAll('.group-detail-tab').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.group-tab-panel').forEach(panel => panel.classList.remove('active'));
+            if (tab === 'waiting') {
+                document.querySelector('.group-detail-tab:first-child').classList.add('active');
+                document.getElementById('waitingListPanel').classList.add('active');
+            } else {
+                document.querySelector('.group-detail-tab:last-child').classList.add('active');
+                document.getElementById('participantsPanel').classList.add('active');
+            }
+        }
+
+        function closeGroupDetailModal() {
+            document.getElementById('groupDetailModal').classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+
+        function openCreateGroupModal() {
+            document.getElementById('createGroupModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeCreateGroupModal() {
+            document.getElementById('createGroupModal').classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+
+        function createGroup() {
+            const title = document.getElementById('groupTitle').value;
+            const desc = document.getElementById('groupDesc').value;
+            const theme = document.getElementById('groupTheme').value;
+            const day = document.getElementById('groupDay').value;
+            const time = document.getElementById('groupTime').value;
+            const duration = document.getElementById('groupDuration').value;
+            const maxPlaces = parseInt(document.getElementById('groupMaxPlaces').value);
+            const price = parseInt(document.getElementById('groupPrice').value);
+            if (!title || !desc) { alert('Veuillez remplir tous les champs'); return; }
+            const newId = groups.length + 1;
+            groups.push({
+                id: newId, title, description: desc, theme, day, time, duration,
+                maxPlaces, currentPlaces: 0, price, waitingList: [], participants: []
+            });
+            alert('Groupe créé avec succès !');
+            closeCreateGroupModal();
+            renderGroups();
+            document.getElementById('groupTitle').value = '';
+            document.getElementById('groupDesc').value = '';
+        }
+
+        let editGroupId = null;
+        function openEditGroupModal(id) {
+            const group = groups.find(g => g.id === id);
+            if (!group) return;
+            editGroupId = id;
+            document.getElementById('editGroupId').value = id;
+            document.getElementById('editGroupTitle').value = group.title;
+            document.getElementById('editGroupDesc').value = group.description;
+            document.getElementById('editGroupDay').value = group.day;
+            document.getElementById('editGroupTime').value = group.time;
+            document.getElementById('editGroupMaxPlaces').value = group.maxPlaces;
+            document.getElementById('editGroupPrice').value = group.price;
+            document.getElementById('editGroupModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+        function closeEditGroupModal() {
+            document.getElementById('editGroupModal').classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+        function updateGroup() {
+            const id = parseInt(document.getElementById('editGroupId').value);
+            const index = groups.findIndex(g => g.id === id);
+            if (index === -1) return;
+            groups[index] = { ...groups[index], title: document.getElementById('editGroupTitle').value, description: document.getElementById('editGroupDesc').value, day: document.getElementById('editGroupDay').value, time: document.getElementById('editGroupTime').value, maxPlaces: parseInt(document.getElementById('editGroupMaxPlaces').value), price: parseInt(document.getElementById('editGroupPrice').value) };
+            alert('Groupe modifié avec succès !');
+            closeEditGroupModal();
+            renderGroups();
+        }
+        function deleteGroup() {
+            if (!confirm('Êtes-vous sûr de vouloir supprimer ce groupe ?')) return;
+            const id = parseInt(document.getElementById('editGroupId').value);
+            groups = groups.filter(g => g.id !== id);
+            alert('Groupe supprimé !');
+            closeEditGroupModal();
+            renderGroups();
+        }
+        function startGroupSession(id) {
+            const group = groups.find(g => g.id === id);
+            alert(`Démarrage de la session : ${group.title}`);
+        }
+
+        document.addEventListener('DOMContentLoaded', renderGroups);
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeCreateGroupModal();
+                closeEditGroupModal();
+                closeGroupDetailModal();
+            }
+        });
+
+
+    
+        // Sauvegarder la position du scroll avant de quitter
+        document.querySelectorAll('.nav-menu .nav-item').forEach(link => {
+            link.addEventListener('click', function() {
+                sessionStorage.setItem('menuScrollPos', document.querySelector('.nav-menu').scrollTop);
+            });
+        });
+        
+        // Restaurer la position du scroll au chargement
+        window.addEventListener('load', function() {
+            const scrollPos = sessionStorage.getItem('menuScrollPos');
+            if (scrollPos) {
+                document.querySelector('.nav-menu').scrollTop = scrollPos;
+            }
+        });
+    
+    </script>
+</body>
+</html>

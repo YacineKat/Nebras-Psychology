@@ -15,9 +15,13 @@
         <div class="nav-links">
             <a href="home.html">Accueil</a>
             <a href="rule.html">Règles</a>
+            <a href="#etapes">Étapes</a>
+            <a href="#psychologues">Psychologues</a>
+            <a href="#Nos offres">Nos offres</a>
+
         </div>
         <div class="button-group">
-            <button onclick="auth()" class="btn-signin">Commencer</button>
+            <a href="auth.html" class="btn-signin">Commencer</a>
         </div>
     </div>
 
@@ -71,13 +75,12 @@
 
     <!-- Footer -->
     <footer>
-        <p>&copy; 2025 Nebras - Psychologie en ligne</p>
+        <p>&copy; <span id="currentYear"></span> Nebras - Psychologie en ligne</p>
     </footer>
 
     <script>
-        function auth() {
-            window.location.href = "auth.html";
-        }
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
     </script>
+    <script src="js/rule.js" defer></script>
 </body>
 </html>

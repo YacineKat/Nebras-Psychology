@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Psychologues - Nebras | Psychologie en ligne</title>
+    <link rel="stylesheet" href="./css/hom.css">
+    <link rel="icon" type="image" href="./assets/image/logo.png">
+    <style>
+        .psycho-cards-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            max-width: 1000px;
+            margin: 50px auto;
+            padding: 0 20px;
+        }
+
+        .psycho-card {
+            flex: 1;
+            min-width: 280px;
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s;
+        }
+
+        .psycho-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .psycho-card.vip {
+            border: 2px solid #44AA99;
+            position: relative;
+        }
+
+        .vip-tag {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background: #44AA99;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            z-index: 10;
+        }
+
+        .card-header {
+            background: #091346;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .card-header.vip-header {
+            background: #44AA99;
+        }
+
+        .card-header h2 {
+            margin: 0;
+            font-size: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        .card-body h3 {
+            color: #091346;
+            font-size: 16px;
+            margin: 15px 0 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-body h3:first-of-type {
+            margin-top: 0;
+        }
+
+        .rules-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .rules-list li {
+            padding: 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            color: #555;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .rules-list li:last-child {
+            border-bottom: none;
+        }
+
+        .vip-avantages {
+            background: #f8f9fb;
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .vip-avantages p {
+            font-size: 13px;
+            color: #666;
+            margin: 5px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-inscription {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            padding: 12px;
+            background: #44AA99;
+            color: white;
+            text-decoration: none;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .btn-inscription:hover {
+            background: #36897f;
+        }
+
+        .info-note {
+            background: #e8f4ee;
+            padding: 12px;
+            border-radius: 10px;
+            margin-top: 15px;
+            font-size: 12px;
+            color: #44AA99;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        @media (max-width: 768px) {
+            .psycho-cards-container {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">
+            <img src="./assets/image/logo.png" alt="Nebras Logo"/>
+        </div>
+        <div class="nav-links">
+            <a href="home.html">Accueil</a>
+            <a href="rule.html">Règles</a>
+            <a href="#etapes">Étapes</a>
+            <a href="#psychologues">Psychologues</a>
+        </div>
+        <div class="button-group">
+            <a href="auth.html" class="btn-signin">Commencer</a>
+        </div>
+    </div>
+
+    <section class="rules-section">
+        <div class="rules-container">
+            <h1><span class="rule-heading-icon"><svg viewBox="0 0 24 24" aria-hidden="true" width="24" height="24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" fill="currentColor"/></svg></span>Nos psychologues</h1>
+            <p class="rules-subtitle">Découvrez nos deux types de psychologues et choisissez celui qui vous correspond</p>
+
+            <div class="psycho-cards-container">
+                <!-- CARTE 1 : PSYCHOLOGUE NORMAL -->
+                <div class="psycho-card">
+                    <div class="card-header">
+                        <h2><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4z"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg> Psychologue Normal</h2>
+                    </div>
+                    <div class="card-body">
+                        <h3><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Déroulement de la séance</h3>
+                        <ul class="rules-list">
+                            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Séance de 45 minutes</li>
+                            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Consultation par visio, téléphone ou chat</li>
+                            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Tarif : 1000 DA par séance</li>
+                            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Paiement avant la séance</li>
+                        </ul>
+
+                        <h3><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Règles à respecter</h3>
+                        <ul class="rules-list">
+                            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Être à l'heure à la séance</li>
+                            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Respecter la durée de la séance</li>
+                            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Annuler au moins 24h à l'avance</li>
+                            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Confidentialité des échanges</li>
+                        </ul>
+
+                        <div class="info-note">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+                            Après la séance, le psychologue fait un suivi personnalisé
+                        </div>
+
+                        <a href="auth.html" class="btn-inscription">Je choisis ce service</a>
+                    </div>
+                </div>
+
+                <!-- CARTE 2 : PSYCHOLOGUE VIP -->
+                <div class="psycho-card vip">
+                    <div class="vip-tag">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polygon points="12 2 15 9 22 9 16 14 19 22 12 17 5 22 8 14 2 9 9 9 12 2"/></svg>
+                        VIP
+                    </div>
+                    <div class="card-header vip-header">
+                        <h2><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polygon points="12 2 15 9 22 9 16 14 19 22 12 17 5 22 8 14 2 9 9 9 12 2"/></svg> Psychologue VIP</h2>
+                    </div>
+                    <div class="card-body">
+                        <h3><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Déroulement de la séance</h3>
+                        <ul class="rules-list">
+                            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Séance de 45 minutes</li>
+                            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Consultation par visio, téléphone ou chat</li>
+                            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Tarif : 1000 DA par séance</li>
+                            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Paiement avant la séance</li>
+                        </ul>
+
+                        <h3><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Règles à respecter</h3>
+                        <ul class="rules-list">
+                            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Être à l'heure à la séance</li>
+                            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Respecter la durée de la séance</li>
+                            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Annuler au moins 24h à l'avance</li>
+                            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Confidentialité des échanges</li>
+                        </ul>
+
+                        <!-- AVANTAGES VIP UNIQUEMENT -->
+                        <h3><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><polygon points="12 2 15 9 22 9 16 14 19 22 12 17 5 22 8 14 2 9 9 9 12 2"/></svg> Avantages VIP</h3>
+                        <div class="vip-avantages">
+                            <p><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Formulaire pré-rempli avant la séance</p>
+                            <p><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Le psychologue connaît déjà le patient</p>
+                            <p><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Gain de temps et séance plus efficace</p>
+                            <p><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Accès prioritaire aux psychologues</p>
+                        </div>
+
+                        <div class="info-note">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+                            Le psychologue a une idée précise du patient avant la séance
+                        </div>
+
+                        <a href="auth.html" class="btn-inscription">Je choisis ce service</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <p>&copy; <span id="currentYear"></span> Nebras - Psychologie en ligne. Tous droits réservés.</p>
+    </footer>
+    
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+    </script>
+
+    <script src="js/consultants_inf.js" defer></script>
+</body>
+</html>

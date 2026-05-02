@@ -15,7 +15,10 @@
         <div class="nav-links">
             <a href="home.html">Accueil</a>
             <a href="rule.html">Règles</a>
-            <a href="#">steps</a>
+            <a href="#etapes">Étapes</a>
+            <a href="#psychologues">Psychologues</a>
+            <a href="#Nos offres">Nos offres</a>
+
         </div>
         <div class="button-group">
             <button onclick="goToHome()" class="btn-signin">Accueil</button>
@@ -61,38 +64,167 @@
 
     <!-- Footer -->
     <footer>
-        <p>&copy; 2025 Nebras - Psychologie en ligne</p>
+        <p>&copy; <span id="currentYear"></span> Nebras - Psychologie en ligne</p>
     </footer>
-
+    
+<!-- API Service -->
+    <script src="js/api.js"></script>
+    
     <script>
-        function showLogin() {
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+    </script>
+
+    <!-- Auth logic -->
+    <script>
+        // Toast notification system
+        function showToast(message, type = 'success') {
+            const container = document.querySelector('.toast-container') || createToastContainer();
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        function createToastContainer() {
+            const container = document.createElement('div');
+            container.className = 'toast-container';
+            document.body.appendChild(container);
+            return container;
+        }
+
+        // If already logged in, redirect to dashboard
+        if (isLoggedIn()) {
+            const user = getCurrentUser();
+            if (user) redirectByUserType(user.userType);
+        }
+
+        window.showLogin = function() {
             document.getElementById('login').classList.add('active');
             document.getElementById('register').classList.remove('active');
-        }
-
-        function showRegister() {
+        };
+        
+        window.showRegister = function() {
             document.getElementById('login').classList.remove('active');
             document.getElementById('register').classList.add('active');
-        }
-
-        function handleLogin() {
-            alert("Tentative de connexion");
-            window.location.href = "dashboard.html";
-        }
-
-        function handleRegister() {
-            const rules = document.getElementById('rules');
-            if (!rules.checked) {
-                alert("❌ Vous devez accepter les règles du site pour vous inscrire !");
+        };
+        
+        window.handleLogin = async function() {
+            const email = document.querySelector('#login input[type="email"]').value;
+            const password = document.querySelector('#login input[type="password"]').value;
+            
+            if (!email || !password) {
+                showToast('Veuillez entrer votre email et mot de passe', 'error');
                 return;
             }
-            alert("Inscription réussie !");
-            window.location.href = "dashboard.html";
-        }
-
-        function goToHome() {
-            window.location.href = "home.html";
-        }
+            
+            try {
+                const result = await authAPI.login({ email, password });
+                localStorage.setItem('nebras_token', result.token);
+                localStorage.setItem('nebras_user', JSON.stringify(result.user));
+                showToast('Connexion réussie !', 'success');
+                setTimeout(() => redirectByUserType(result.user.userType), 500);
+            } catch(e) {
+                showToast('Erreur: ' + e.message, 'error');
+            }
+        };
+        
+        window.handleRegister = async function() {
+            const userType = document.querySelector('#register select').value;
+            const fullname = document.querySelector('#register input[type="text"]').value;
+            const email = document.querySelector('#register input[type="email"]').value;
+            const password = document.querySelector('#register input[type="password"]').value;
+            const confirmPassword = document.querySelectorAll('#register input[type="password"]')[1].value;
+            const rules = document.getElementById('rules');
+            
+            if (!fullname || !email || !password) {
+                showToast('Veuillez remplir tous les champs', 'error');
+                return;
+            }
+            if (password !== confirmPassword) {
+                showToast('Les mots de passe ne correspondent pas', 'error');
+                return;
+            }
+            if (!rules.checked) {
+                showToast('Vous devez accepter les règles du site', 'error');
+                return;
+            }
+            
+            try {
+                const result = await authAPI.register({ email, password, fullname, userType });
+                localStorage.setItem('nebras_token', result.user.token);
+                localStorage.setItem('nebras_user', JSON.stringify(result.user));
+                showToast('Inscription réussie ! Bienvenue sur Nebras.', 'success');
+                setTimeout(() => redirectByUserType(userType), 500);
+            } catch(e) {
+                showToast('Erreur: ' + e.message, 'error');
+            }
+        };
+        
+        window.goToHome = function() {
+            window.location.href = 'home.html';
+        };
     </script>
+
+    <!-- Fallback functions for onclick handlers -->
+    <script>
+        // Real implementations will be set by the module
+        window.showLogin = function() {
+            document.getElementById('login').classList.add('active');
+            document.getElementById('register').classList.remove('active');
+        };
+        
+        window.showRegister = function() {
+            document.getElementById('login').classList.remove('active');
+            document.getElementById('register').classList.add('active');
+        };
+        
+        window.handleLogin = async function() {
+            if (window.authAPI) {
+                const email = document.querySelector('#login input[type="email"]').value;
+                const password = document.querySelector('#login input[type="password"]').value;
+                try {
+                    const result = await window.authAPI.login({ email, password });
+                    localStorage.setItem('nebras_token', result.token);
+                    localStorage.setItem('nebras_user', JSON.stringify(result.user));
+                    showToast('Connexion réussie !', 'success');
+                    setTimeout(() => redirectByUserType(result.user.userType), 500);
+                } catch(e) { showToast('Erreur: ' + e.message, 'error'); }
+            } else {
+                showToast('Backend non démarré. Veuillez démarrer le serveur.', 'error');
+            }
+        };
+        
+        window.handleRegister = async function() {
+            if (window.authAPI) {
+                const userType = document.querySelector('#register select').value;
+                const fullname = document.querySelector('#register input[type="text"]').value;
+                const email = document.querySelector('#register input[type="email"]').value;
+                const password = document.querySelector('#register input[type="password"]').value;
+                const confirmPassword = document.querySelectorAll('#register input[type="password"]')[1].value;
+                const rules = document.getElementById('rules');
+                
+                if (!fullname || !email || !password) { showToast('Veuillez remplir tous les champs', 'error'); return; }
+                if (password !== confirmPassword) { showToast('Les mots de passe ne correspondent pas', 'error'); return; }
+                if (!rules.checked) { showToast('Vous devez accepter les règles du site', 'error'); return; }
+                
+                try {
+                    const result = await window.authAPI.register({ email, password, fullname, userType });
+                    localStorage.setItem('nebras_token', result.user.token);
+                    localStorage.setItem('nebras_user', JSON.stringify(result.user));
+                    showToast('Inscription réussie !', 'success');
+                    setTimeout(() => redirectByUserType(userType), 500);
+                } catch(e) { showToast('Erreur: ' + e.message, 'error'); }
+            } else {
+                showToast('Backend non démarré. Veuillez démarrer le serveur.', 'error');
+            }
+        };
+        
+        window.goToHome = function() {
+            window.location.href = 'home.html';
+        };
+    </script>
+    
+    <script src="js/auth.js" defer type="module"></script>
 </body>
 </html>

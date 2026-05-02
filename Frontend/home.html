@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Nebras - Psychologie en ligne</title>
     <link rel="stylesheet" href="./css/hom.css"/>
+
     <link rel="icon" type="image" href="./assets/image/logo.png">
 </head>
 <body>
@@ -16,21 +17,22 @@
             <a href="home.html">Accueil</a>
             <a href="rule.html">Règles</a>
             <a href="#etapes">Étapes</a>
-            <a href="#psychologues">Psychologues</a>
+            <a href="#Consultants">Consultants</a>
+            <a href="#Nos offres">Nos offres</a>
         </div>
         <div class="button-group">
-            <button onclick="auth()" class="btn-signin">Commencer</button>
+            <a href="auth.html" class="btn-signin">Commencer</a>
         </div>
     </div>
 
     <!-- Hero Section -->
     <section class="hero">
-        <img src="image/blob1.png" alt="" class="blob-img blob-img1">
-        <img src="image/blob2.png" alt="" class="blob-img blob-img2">
+        <img src="./assets/image/blob1.png" alt="" class="blob-img blob-img1">
+        <img src="./assets/image/blob2.png" alt="" class="blob-img blob-img2">
         <div class="hero-content">
             <h1>Your Mental Health Matters</h1>
             <p>Book secure online therapy sessions with licensed psychologists in Algeria.</p>
-            <button class="cta-button" onclick="auth()">Commencer maintenant →</button>
+            <a href="auth.html" class="cta-button">Commencer maintenant →</a>
         </div>
     </section>
 
@@ -114,8 +116,8 @@
     </section>
 
     <!-- Section Psychologues en vedette -->
-    <section id="psychologues" class="featured-psychologists">
-        <h2>Nos psychologues en vedette</h2>
+    <section id="Consultants" class="featured-psychologists">
+        <h2>Nos Consultants en vedette</h2>
         <div class="psycho-container">
             <div class="psycho-card">
                 <div class="psycho-img">
@@ -125,7 +127,7 @@
                 <p class="specialty">Psychologue clinicienne</p>
                 <p class="desc">Spécialisée en anxiété, dépression et confiance en soi.</p>
                 <div class="rating">★★★★★ 5.0</div>
-                <button class="psycho-btn" onclick="auth()">Prendre RDV</button>
+                <a href="auth.html" class="psycho-btn">Prendre RDV</a>
             </div>
             <div class="psycho-card">
                 <div class="psycho-img">
@@ -135,7 +137,7 @@
                 <p class="specialty">Psychologue TCC</p>
                 <p class="desc">Spécialisé en thérapie comportementale et cognitive.</p>
                 <div class="rating">★★★★☆ 4.8</div>
-                <button class="psycho-btn" onclick="auth()">Prendre RDV</button>
+                <a href="auth.html" class="psycho-btn">Prendre RDV</a>
             </div>
             <div class="psycho-card">
                 <div class="psycho-img">
@@ -145,7 +147,7 @@
                 <p class="specialty">Psychologue couple & famille</p>
                 <p class="desc">Spécialisée en thérapie de couple et relation familiale.</p>
                 <div class="rating">★★★★★ 4.9</div>
-                <button class="psycho-btn" onclick="auth()">Prendre RDV</button>
+                <a href="auth.html" class="psycho-btn">Prendre RDV</a>
             </div>
         </div>
     </section>
@@ -174,35 +176,73 @@
 
     <!-- Section Tarifs -->
     
-    <section class="pricing">
-        <h2>Nos offres</h2>
-        <div class="pricing-container">
-            <div class="pricing-card">
-                <h3>Standard</h3>
-                <div class="price">1000 DA</div>
-                <p class="price-desc">par séance</p>
-                <ul>
-                    <li>✓ Séance de 45 min</li>
-                    <li>✓ Messagerie illimitée</li>
-                    <li>✓ Psychologue certifié</li>
-                </ul>
-                <button class="pricing-btn" onclick="auth()">Choisir</button>
+    <div class="offers-section">
+    <h2>Nos offres</h2>
+    
+    <div id="Nos offres" class="offers-tabs-buttons">
+        <button class="offers-tab-btn active" onclick="switchTab('psychologists-tab', this)">Consultants</button>
+        <button class="offers-tab-btn" onclick="switchTab('patients-tab', this)">patient</button>
+    </div>
+
+    <div id="psychologists-tab" class="offers-tab-content active">
+        <div class="offers-content-wrapper">
+            <div class="offers-image-box">
+                <img src="./assets/image/psy.jpg" alt="Consultants">
             </div>
-            <div class="pricing-card featured">
-                <div class="popular-tag">Populaire</div>
-                <h3>VIP</h3>
-                <div class="price">5000 DA</div>
-                <p class="price-desc">par mois</p>
-                <ul>
-                    <li>✓ Séances illimitées</li>
-                    <li>✓ Appel d'urgence 24/7</li>
-                    <li>✓ Psychologue dédié</li>
+            <div class="offers-text-box">
+                <h3>Get Discovered & Secure Investments</h3>
+                <p>
+                     Sur Nebras, vous avez le choix entre deux types de psychologues. 
+                     Le psychologue normal propose des séances classiques avec des règles claires à respecter. 
+                     Le psychologue VIP offre les mêmes prestations, avec en plus un formulaire pré-rempli 
+                     permettant au psychologue de mieux connaître le patient avant la séance.
+                </p>
+                
+                <ul class="offers-feature-list">
+                    <li>.....</li>
+                    <li>...</li>
+                    <li>.....</li>
                 </ul>
-                <button class="pricing-btn" onclick="auth()">Choisir</button>
+                
+                <a href="consultants_inf.html" class="offers-cta-btn">
+                    Devenir Consultants
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </a>
             </div>
-            
         </div>
-    </section>
+    </div>
+
+    <div id="patients-tab" class="offers-tab-content">
+        <div class="offers-content-wrapper">
+            <div class="offers-image-box">
+                <img src="./assets/image/patient.jpg" alt="patient">
+            </div>
+            <div class="offers-text-box">
+                <h3>Find High-Potential Startups</h3>
+                <p>Chez Nebras, les patients bénéficient d'un accompagnement psychologique adapté à leurs besoins. 
+                   Que vous optiez pour un psychologue normal ou VIP, vous aurez accès à des séances en ligne 
+                   (visio, téléphone ou chat) avec des professionnels certifiés. Le service VIP vous permet en plus 
+                   de gagner du temps grâce à un formulaire pré-rempli, pour une séance plus personnalisée et efficace.
+                </p>
+                
+                <ul class="offers-feature-list">
+                    <li>.....</li>
+                    <li>......</li>
+                    <li>......</li>
+                </ul>
+                
+                <a href="patient_inf.html" class="offers-cta-btn">
+                    Devenir patient
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
 
     <!-- Section FAQ -->
     <section id="faq" class="faq-section">
@@ -232,7 +272,7 @@
         <div class="cta-content">
             <h2>Prêt à prendre soin de votre santé mentale ?</h2>
             <p>Rejoignez plus de 5000 patients qui ont déjà fait confiance à Nebras.</p>
-            <button class="cta-banner-btn" onclick="auth()">Créer un compte gratuit →</button>
+            <a href="auth.html" class="cta-banner-btn">Créer un compte gratuit →</a>
         </div>
     </section>
 
@@ -243,7 +283,7 @@
                 <h3>Contactez-nous</h3>
                 <p><span class="contact-icon contact-email" aria-hidden="true"></span>contact@nebras.dz</p>
                 <p><span class="contact-icon contact-phone" aria-hidden="true"></span>+213 5XX XX XX XX</p>
-                <p><span class="contact-icon contact-clock" aria-hidden="true"></span>24h/24 7j/7</p>
+                <p><span class="contact-icon contact-clock" aria-hidden="true"></span>24/24 7/7</p>
             </div>
             <div class="contact-form">
                 <input type="text" placeholder="Votre nom" class="contact-input">
@@ -256,17 +296,40 @@
 
     <!-- Footer -->
     <footer>
-        <p>&copy; 2025 Nebras - Psychologie en ligne. Tous droits réservés.</p>
+        <p>&copy; <span id="currentYear"></span> Nebras - Psychologie en ligne. Tous droits réservés.</p>
     </footer>
 
     <script>
-        function auth() {
-            window.location.href = "auth.html";
-        }
-
-        function toggleFaq(element) {
-            element.classList.toggle('active');
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+    </script>
+    <script>
+        // Make switchTab available immediately for tab buttons
+        function switchTab(tabId, button) {
+            var tabButtons = document.querySelectorAll('.offers-tab-btn');
+            var tabContents = document.querySelectorAll('.offers-tab-content');
+            
+            tabButtons.forEach(function(btn) { btn.classList.remove('active'); });
+            tabContents.forEach(function(content) { content.classList.remove('active'); });
+            
+            button.classList.add('active');
+            
+            var activeTab = document.getElementById(tabId);
+            if (activeTab) {
+                activeTab.classList.add('active');
+            }
         }
     </script>
+    <script src="js/api.js"></script>
+    <script>
+function showToast(message, type = 'success') {
+    const container = document.querySelector('.toast-container') || (() => { const c = document.createElement('div'); c.className = 'toast-container'; document.body.appendChild(c); return c; })();
+    const toast = document.createElement('div');
+    toast.className = 'toast ' + type;
+    toast.textContent = message;
+    container.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+    </script>
+    <script src="js/home.js" defer></script>
 </body>
 </html>

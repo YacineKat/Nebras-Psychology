@@ -6,6 +6,15 @@ body {
     background-color: #FAF7F2;
 }
 
+/* Remove underlines from all anchor buttons */
+a.btn-signin, a.cta-button, a.cta-banner-btn, a[class*="btn"] {
+    text-decoration: none !important;
+}
+
+a.btn-signin:hover, a.cta-button:hover, a.cta-banner-btn:hover, a[class*="btn"]:hover {
+    text-decoration: none !important;
+}
+
 .header {
     background-color: #FAF7F2;
     display: flex;
@@ -71,12 +80,15 @@ body {
     transition: all 0.3s ease;
     font-size: 16px;
     font-weight: 600;
+    text-decoration: none;
+    display: inline-block;
 }
 
 .btn-signin:hover {
     background: #13316b;
     box-shadow: 0 8px 20px rgba(9, 19, 70, 0.24);
     transform: scale(1.03);
+    text-decoration: none;
 }
 
 /* Hero Section */
@@ -162,7 +174,7 @@ body {
     text-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
 }
 
-.cta-button {
+.cta-button, a.cta-button {
     padding: 18px 50px;
     background: #44AA99;
     color: white;
@@ -175,6 +187,7 @@ body {
     display: inline-flex;
     align-items: center;
     gap: 10px;
+    text-decoration: none;
 }
 
 .cta-button:hover {
@@ -649,104 +662,341 @@ body {
     color: #FFB800;
 }
 
-/* ===== PRICING ===== */
-.pricing {
-    padding: 80px 50px;
-    background: #f7fafb;
-    text-align: center;
+/* =====Section Tarifs===== */
+.offers-section {
+  max-width: 1200px;
+  margin: 70px auto;
+  padding: 0 20px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  color: #333;
 }
 
-.pricing h2 {
-    font-size: 36px;
-    color: #091346;
-    margin-bottom: 50px;
+.offers-section h2 {
+  font-size: 32px;
+  font-weight: 600;
+  color: #143559;
+  text-align: center;
+  margin-bottom: 40px;
+  position: relative;
+  display: block;
+  padding-bottom: 15px;
 }
 
-.pricing-container {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 30px;
-    max-width: 1000px;
-    margin: 0 auto;
+.offers-section h2::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100px;
+  height: 3px;
+  background: linear-gradient(90deg, #61C78F, #61AEFF);
+  border-radius: 3px;
 }
 
-.pricing-card {
-    background: white;
-    padding: 30px;
-    border-radius: 20px;
-    text-align: center;
-    transition: all 0.3s;
-    position: relative;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+/* Tabs container */
+.offers-tabs-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-bottom: 40px;
 }
 
-.pricing-card.featured {
-    border: 2px solid #44AA99;
-    transform: scale(1.05);
+.offers-tab-btn {
+  background: transparent;
+  color: #666;
+  border: none;
+  border-bottom: 2px solid #e0e0e0;
+  padding: 8px 24px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
 }
 
-.popular-tag {
-    position: absolute;
-    top: -12px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: #44AA99;
-    color: white;
-    padding: 5px 15px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: bold;
+.offers-tab-btn:hover {
+  color: #143559;
 }
 
-.popular-tag::before {
-    content: '\2605';
-    margin-right: 6px;
+.offers-tab-btn.active {
+  color: #143559;
+  border-bottom: 2px solid #143559;
 }
 
-.pricing-card h3 {
-    font-size: 24px;
-    color: #091346;
-    margin-bottom: 20px;
+/* Tab content */
+.offers-tab-content {
+  display: none;
+  padding: 40px 0;
 }
 
-.price {
-    font-size: 36px;
-    font-weight: bold;
-    color: #44AA99;
-    margin-bottom: 10px;
+.offers-tab-content.active {
+  display: block;
 }
 
-.price-desc {
-    color: #666;
-    margin-bottom: 20px;
+/* Remove underline from links in offers section */
+.offers-section a {
+  text-decoration: none !important;
 }
 
-.pricing-card ul {
-    list-style: none;
-    margin-bottom: 25px;
+.offers-section a:hover {
+  text-decoration: none !important;
 }
 
-.pricing-card li {
-    padding: 8px 0;
-    color: #555;
+.offers-tab-content.active {
+  display: block;
+  opacity: 1;
 }
 
-.pricing-btn {
-    padding: 12px 30px;
-    background: #44AA99;
-    color: white;
-    border: none;
-    border-radius: 30px;
-    cursor: pointer;
-    font-weight: 600;
-    transition: all 0.3s;
+.offers-content-wrapper {
+  display: flex;
+  align-items: center;
+  background-color: #fafafa;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
 }
 
-.pricing-btn:hover {
-    transform: scale(1.03);
-    box-shadow: 0 10px 25px rgba(68, 170, 153, 0.15);
+.offers-image-box {
+  flex: 0 0 40%;
+  overflow: hidden;
 }
 
+.offers-image-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.offers-text-box {
+  flex: 1;
+  padding: 40px;
+}
+
+.offers-text-box h3 {
+  font-size: 24px;
+  font-weight: 600;
+  color: #143559;
+  margin: 0 0 16px 0;
+}
+
+.offers-text-box p {
+  color: #555;
+  font-size: 15px;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+.offers-feature-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 25px 0;
+}
+
+.offers-feature-list li {
+  position: relative;
+  padding-left: 24px;
+  margin-bottom: 10px;
+  color: #555;
+  font-size: 15px;
+}
+
+.offers-feature-list li:before {
+  content: "•";
+  color: #143559;
+  font-weight: bold;
+  position: absolute;
+  left: 8px;
+}
+
+.offers-cta-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 26px;
+  background-color: #000f30;
+  color: white;
+  text-decoration: none;
+  border-radius: 30px;
+  font-weight: 500;
+  font-size: 15px;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 10px rgba(20, 53, 89, 0.2);
+}
+
+.offers-cta-btn svg {
+  margin-left: 8px;
+  transition: transform 0.2s ease;
+}
+
+.offers-cta-btn:hover {
+  background-color: #000f30;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(20, 53, 89, 0.25);
+}
+
+.offers-cta-btn:hover svg {
+  transform: translateX(3px);
+}
+/* =====patient psy inf===== */
+
+.psycho-cards-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            max-width: 1000px;
+            margin: 50px auto;
+            padding: 0 20px;
+        }
+
+        .psycho-card {
+            flex: 1;
+            min-width: 280px;
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s;
+        }
+
+        .psycho-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .psycho-card.vip {
+            border: 2px solid #44AA99;
+            position: relative;
+        }
+
+        .vip-tag {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background: #44AA99;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            z-index: 10;
+        }
+
+        .card-header {
+            background: #091346;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .card-header.vip-header {
+            background: #44AA99;
+        }
+
+        .card-header h2 {
+            margin: 0;
+            font-size: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        .card-body h3 {
+            color: #091346;
+            font-size: 16px;
+            margin: 15px 0 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-body h3:first-of-type {
+            margin-top: 0;
+        }
+
+        .rules-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .rules-list li {
+            padding: 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            color: #555;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .rules-list li:last-child {
+            border-bottom: none;
+        }
+
+        .vip-avantages {
+            background: #f8f9fb;
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .vip-avantages p {
+            font-size: 13px;
+            color: #666;
+            margin: 5px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-inscription {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            padding: 12px;
+            background: #44AA99;
+            color: white;
+            text-decoration: none;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .btn-inscription:hover {
+            background: #36897f;
+        }
+
+        .info-note {
+            background: #e8f4ee;
+            padding: 12px;
+            border-radius: 10px;
+            margin-top: 15px;
+            font-size: 12px;
+            color: #44AA99;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        @media (max-width: 768px) {
+            .psycho-cards-container {
+                flex-direction: column;
+            }
+        }
+
+
+        
 /* ===== FAQ SECTION ===== */
 .faq-section {
     padding: 80px 50px;
@@ -826,7 +1076,7 @@ body {
     margin-bottom: 30px;
 }
 
-.cta-banner-btn {
+.cta-banner-btn, a.cta-banner-btn {
     padding: 15px 40px;
     background: white;
     color: #091346;
@@ -836,6 +1086,8 @@ body {
     font-weight: bold;
     cursor: pointer;
     transition: all 0.3s;
+    text-decoration: none;
+    display: inline-block;
 }
 
 .cta-banner-btn:hover {
@@ -1005,4 +1257,96 @@ footer {
     .rules-section {
         padding: 30px 20px;
     }
+}
+
+/* Toast Notifications */
+.toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.toast {
+    padding: 15px 20px;
+    border-radius: 8px;
+    color: white;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    animation: slideIn 0.3s ease, fadeOut 0.3s ease 2.7s;
+    min-width: 250px;
+    max-width: 400px;
+}
+
+.toast.success {
+    background: #10B981;
+}
+
+.toast.error {
+    background: #EF4444;
+}
+
+.toast.info {
+    background: #3B82F6;
+}
+
+@keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+/* Profile form loading state */
+.profile-tab-content {
+    transition: opacity 0.3s ease;
+}
+
+/* Tags toggle selection */
+.tags-list .tag {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
+    display: inline-block;
+    padding: 8px 16px;
+    margin: 4px;
+    border-radius: 20px;
+    background: #f0f0f0;
+    color: #333;
+}
+
+.tags-list .tag.selected {
+    background: #44AA99;
+    color: white;
+    border-color: #44AA99;
+}
+
+.tags-list .tag:hover {
+    background: #e0e0e0;
+}
+
+.tags-list .tag.selected:hover {
+    background: #39917f;
+}
+
+/* Info card select styling */
+.info-card select.input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    background: white;
+    cursor: pointer;
+}
+
+.info-card select.input:focus {
+    outline: none;
+    border-color: #44AA99;
 }

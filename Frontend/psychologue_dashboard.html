@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tableau de bord - Psychologue | Nebras</title>
+    <link rel="stylesheet" href="./css/psychologue_style.css">
+    <link rel="icon" type="image/png" href="./assets/image/logo.png">
+</head>
+<body>
+     <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo">
+                <img src="./assets/image/logo.png" alt="Nebras Logo">
+            </div>
+            <nav class="nav-menu">
+                <a href="psychologue_dashboard.html" class="nav-item active">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" fill="currentColor"/></svg>
+                    <span>Tableau de bord</span>
+                </a>
+                <a href="psychologue_mes_patients.html" class="nav-item">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" fill="currentColor"/></svg>
+                    <span>Mes patients</span>
+                    <span class="badge">12</span>
+                </a>
+                <a href="psychologue_emploi_du_temps.html" class="nav-item">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zM9 14H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2zm-8 4H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2z" fill="currentColor"/></svg>
+                    <span>Emploi du temps</span>
+                </a>
+                <a href="psychologue_messagerie.html" class="nav-item">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z" fill="currentColor"/></svg>
+                    <span>Messagerie</span>
+                    <span class="badge">3</span>
+                </a>
+                <a href="psychologue_honoraires.html" class="nav-item">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.5 15h-3v-2h3v2zm0-4h-3V7h3v6z" fill="currentColor"/></svg>
+                    <span>Honoraires</span>
+                </a>
+                <a href="psychologue_groupes.html" class="nav-item">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" fill="currentColor"/></svg>                    
+                       <span>Thérapie de groupe</span>
+                </a>
+                <a href="psychologue_VIP.html" class="nav-item vip-link" onclick="checkVIPStatus(event)">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15 9 22 9 16 14 19 22 12 17 5 22 8 14 2 9 9 9 12 2"/></svg>
+                    <span>Espace VIP</span>
+                    <span class="vip-status-badge" id="vipStatusBadge">Non activé</span>
+                </a>
+            </nav>
+            <a href="psychologue_profil.html" class="nav-item profile-link">
+    <div class="user-avatar">
+        <img src="./image/24d0759cbb02c3157112d0ef0f8463b1.jpg" alt="Photo profil" style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover;">
+    </div>
+    <div class="user-info"><span class="user-name">Dr. Karim Benali</span></div>
+</a>
+
+<a href="#" class="nav-item" onclick="logout()" style="color: #e74c3c;">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                    <polyline points="16,17 21,12 16,7"/>
+                    <line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+                <span>Déconnexion</span>
+            </a>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <header class="page-header">
+                <div>
+                    <h1 id="greetingTitle">Bonjour</h1>
+                    <p class="subtitle">Voici votre tableau de bord professionnel</p>
+                </div>
+                <div class="header-icons">
+                    <button class="icon-btn" onclick="alert('Notifications')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Stats Cards -->
+            <div class="stats-dashboard">
+                <div class="stat-card">
+                    <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+                    <div class="stat-info"><h3>12</h3><p>Patients actifs</p></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+                    <div class="stat-info"><h3>5</h3><p>Séances aujourd'hui</p></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
+                    <div class="stat-info"><h3>3</h3><p>Demandes en attente</p></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M16 8l-4 8-4-8"/></svg></div>
+                    <div class="stat-info"><h3>25 000 DA</h3><p>Revenus du mois</p></div>
+                </div>
+            </div>
+
+            <!-- Séances du jour -->
+            <div class="dashboard-section">
+                <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20" height="20"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Séances du jour</h2>
+                <div class="seances-list">
+                    <div class="seance-card"><div class="seance-time">10:00 - 11:00</div><div class="seance-info"><h4>Maria Benbernou</h4><p>Consultation vidéo · Anxiété</p></div><div class="seance-status en-cours">En cours</div><button class="seance-btn" onclick="alert('Démarrer la séance')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polygon points="5 3 19 12 5 21 5 3"/></svg> Démarrer</button></div>
+                    <div class="seance-card"><div class="seance-time">14:00 - 15:00</div><div class="seance-info"><h4>Amira Mansouri</h4><p>Consultation téléphone · Stress</p></div><div class="seance-status a-venir">À venir</div><button class="seance-btn" onclick="alert('Préparer la séance')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 6v6l4 2"/></svg> Préparer</button></div>
+                    <div class="seance-card"><div class="seance-time">16:30 - 17:30</div><div class="seance-info"><h4>Youcef Hamdi</h4><p>Consultation chat · Confiance en soi</p></div><div class="seance-status a-venir">À venir</div><button class="seance-btn" onclick="alert('Préparer la séance')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 6v6l4 2"/></svg> Préparer</button></div>
+                </div>
+            </div>
+
+            <!-- Demandes en attente -->
+            <div class="dashboard-section">
+                <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20" height="20"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Demandes de consultation</h2>
+                <div class="demandes-list">
+                    <div class="demande-card"><div class="demande-info"><h4>Lina Zerouali</h4><p>Motif: Dépression · Préférence: Webcam</p><small>Demande reçue le 15/04/2025</small></div><div class="demande-actions"><button class="accept-btn" onclick="alert('Demande acceptée')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg> Accepter</button><button class="refuse-btn" onclick="alert('Demande refusée')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Refuser</button></div></div>
+                    <div class="demande-card"><div class="demande-info"><h4>Mehdi Bouazza</h4><p>Motif: Anxiété · Préférence: Téléphone</p><small>Demande reçue le 14/04/2025</small></div><div class="demande-actions"><button class="accept-btn" onclick="alert('Demande acceptée')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg> Accepter</button><button class="refuse-btn" onclick="alert('Demande refusée')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Refuser</button></div></div>
+                    <div class="demande-card"><div class="demande-info"><h4>Sofia Kaci</h4><p>Motif: Stress · Préférence: Chat</p><small>Demande reçue le 14/04/2025</small></div><div class="demande-actions"><button class="accept-btn" onclick="alert('Demande acceptée')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg> Accepter</button><button class="refuse-btn" onclick="alert('Demande refusée')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Refuser</button></div></div>
+                </div>
+            </div>
+
+            <!-- Prochains rendez-vous -->
+            <div class="dashboard-section">
+                <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20" height="20"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Prochains rendez-vous</h2>
+                <div class="rdv-list">
+                    <div class="rdv-item"><div class="rdv-date">Mercredi 16/04</div><div class="rdv-info"><span>10:00 - Maria Benbernou</span><span class="rdv-type">Vidéo</span></div></div>
+                    <div class="rdv-item"><div class="rdv-date">Mercredi 16/04</div><div class="rdv-info"><span>14:00 - Amira Mansouri</span><span class="rdv-type">Téléphone</span></div></div>
+                    <div class="rdv-item"><div class="rdv-date">Jeudi 17/04</div><div class="rdv-info"><span>16:30 - Youcef Hamdi</span><span class="rdv-type">Chat</span></div></div>
+                </div>
+            </div>
+
+            <!-- Disponibilités -->
+            <!-- Sélection de créneau (calendrier) -->
+<div class="dashboard-section">
+    <div class="creneau-header">
+        <h2>📅 Sélectionnez un créneau</h2>
+        <p class="fuseau-info">Les horaires affichés sont basés sur le fuseau horaire de Paris (Europe/Paris).</p>
+    </div>
+
+    <!-- Prochaine disponibilité -->
+    <div class="next-availability">
+        <span class="next-label">La prochaine disponibilité est le</span>
+        <span class="next-date">02/03 à 13:45</span>
+    </div>
+
+    <!-- Calendrier des jours -->
+    <div class="calendar-days">
+        <div class="day-card">Dim<br><span class="day-date">1</span></div>
+        <div class="day-card">Lun<br><span class="day-date">2</span></div>
+        <div class="day-card">Mar<br><span class="day-date">3</span></div>
+        <div class="day-card">Mer<br><span class="day-date">4</span></div>
+        <div class="day-card">Jeu<br><span class="day-date">5</span></div>
+        <div class="day-card">Ven<br><span class="day-date">6</span></div>
+        <div class="day-card">Sam<br><span class="day-date">7</span></div>
+    </div>
+
+    <!-- Tableau des créneaux -->
+    <div class="slots-table">
+        <div class="slots-header">
+            <div class="slot-time">Horaire</div>
+            <div class="slot-day">Lun 2</div>
+            <div class="slot-day">Mar 3</div>
+            <div class="slot-day">Mer 4</div>
+            <div class="slot-day">Jeu 5</div>
+            <div class="slot-day">Ven 6</div>
+            <div class="slot-day">Sam 7</div>
+        </div>
+        <div class="slots-row">
+            <div class="slot-time">09:15</div>
+            <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
+            <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
+            <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
+            <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
+            <div class="slot-cell taken">Réservé</div>
+            <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
+        </div>
+        <div class="slots-row">
+            <div class="slot-time">10:00</div>
+            <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
+            <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
+            <div class="slot-cell taken">Réservé</div>
+            <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
+            <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
+            <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
+        </div>
+        <div class="slots-row">
+            <div class="slot-time">10:45</div>
+            <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
+            <div class="slot-cell taken">Réservé</div>
+            <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
+            <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
+            <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
+            <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
+        </div>
+        <div class="slots-row">
+            <div class="slot-time">11:30</div>
+            <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
+            <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
+            <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
+            <div class="slot-cell taken">Réservé</div>
+            <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
+            <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
+        </div>
+        <div class="slots-row">
+            <div class="slot-time">12:15</div>
+            <div class="slot-cell taken">Réservé</div>
+            <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
+            <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
+            <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
+            <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
+            <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
+        </div>
+        <div class="slots-row">
+            <div class="slot-time">13:45</div>
+            <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
+            <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
+            <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
+            <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
+            <div class="slot-cell taken">Réservé</div>
+            <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
+        </div>
+    </div>
+
+    <!-- Navigation semaine -->
+    <div class="week-navigation">
+        <button class="nav-week-btn" onclick="previousWeek()">← Semaine précédente</button>
+        <button class="nav-week-btn" onclick="nextWeek()">Semaine suivante →</button>
+    </div>
+
+    <!-- Message d'information -->
+    <div class="booking-info">
+        <p> Les créneaux marqués en <span class="info-available">vert</span> sont disponibles. Cliquez sur un créneau pour réserver.</p>
+    </div>
+</div>
+ 
+  <script src="js/api.js"></script>
+  <script>
+(function() {
+    var userStr = localStorage.getItem('nebras_user');
+    if (userStr) {
+        try {
+            var user = JSON.parse(userStr);
+            var name = user.fullname || user.email || '';
+            document.querySelectorAll('.user-name').forEach(function(el) { el.textContent = name; });
+            var greetingTitle = document.getElementById('greetingTitle');
+            if (greetingTitle) greetingTitle.textContent = 'Bonjour, ' + name;
+        } catch(e) {}
+    }
+})();
+function showToast(message, type = 'success') {
+    const container = document.querySelector('.toast-container') || (() => { const c = document.createElement('div'); c.className = 'toast-container'; document.body.appendChild(c); return c; })();
+    const toast = document.createElement('div');
+    toast.className = 'toast ' + type;
+    toast.textContent = message;
+    container.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+function logout() {
+    localStorage.removeItem('nebras_token');
+    localStorage.removeItem('nebras_user');
+    showToast('Déconnexion réussie', 'success');
+    setTimeout(() => window.location.href = 'home.html', 500);
+}
+  </script>
+  <script src="js/psychologue_dashboard.js" defer></script>
+</html>

@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tableau de bord - Nebras</title>
+    <link rel="stylesheet" href="./css/patient_style.css">
+    <link rel="icon" type="image/png" href="./assets/image/logo.png">
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo">
+                <img src="./assets/image/logo.png" alt="Nebras Logo">
+            </div>
+            
+            <nav class="nav-menu">
+                <a href="patient_dashboard.html" class="nav-item">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" fill="currentColor"/>
+                    </svg>
+                    <span>Tableau de bord</span>
+                </a>
+                <a href="patient_psychologue.html" class="nav-item">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" fill="currentColor"/>
+                    </svg>
+                    <span>Psychologues</span>
+                </a>
+                <a href="patient_rendez_vous.html" class="nav-item">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zM9 14H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2zm-8 4H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2z" fill="currentColor"/>
+                    </svg>
+                    <span>Rendez-vous</span>
+                    <span class="badge">0</span>
+                </a>
+                <a href="patient_messagerie.html" class="nav-item">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z" fill="currentColor"/>
+                    </svg>
+                    <span>Messagerie</span>
+                    <span class="badge">0</span>
+                </a>
+                <a href="patient_therapie.html" class="nav-item">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" fill="currentColor"/>
+                    </svg>
+                    <span>Group Therapy</span>
+                </a>
+            </nav>
+
+            <a href="patient_profil.html" class="nav-item profile-link">
+                <div class="user-avatar">:) </div>
+                <div class="user-info"><span class="user-name">Maria</span></div>
+                <span class="settings-icon"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" fill="currentColor"/></svg></span>
+            </a>
+            
+            <a href="#" class="nav-item" onclick="logout()" style="color: #e74c3c;">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                    <polyline points="16,17 21,12 16,7"/>
+                    <line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+                <span>Déconnexion</span>
+            </a>
+        </div>
+
+        <!--main content-->
+        <div class="main-content">
+            <header class="page-header">
+                <div>
+                    <h1 id="greetingTitle">Bonjour</h1>
+                    <p class="subtitle">Voici votre tableau de bord</p>
+                </div>
+            </header>
+
+            <!--section de besion-->
+            <div id="besoinsSection" style="display: none;">
+                <!-- Indicateur de progression -->
+                <div class="progress-indicator" id="progressIndicator">
+                    <div class="progress-dot active" data-step="1">1</div>
+                    <div class="progress-line"></div>
+                    <div class="progress-dot" data-step="2">2</div>
+                    <div class="progress-line"></div>
+                    <div class="progress-dot" data-step="3">3</div>
+                    <div class="progress-line"></div>
+                    <div class="progress-dot" data-step="4">4</div>
+                    <div class="progress-line"></div>
+                    <div class="progress-dot" data-step="5">5</div>
+                    <div class="progress-line"></div>
+                    <div class="progress-dot" data-step="6">6</div>
+                    <div class="progress-line"></div>
+                    <div class="progress-dot" data-step="7">7</div>
+                    <div class="progress-line"></div>
+                    <div class="progress-dot" data-step="8">8</div>
+                </div>
+
+                <!--les etapes-->
+                <div class="steps-container">
+                    <!--etape 1-->
+                    <div class="step active" id="step1">
+                        <div class="step-header">
+                            <span class="step-number">Étape 1 sur 8</span>
+                            <h2>Vos préférences personnelles</h2>
+                        </div>
+                        <div class="step-content">
+                            <p style="color:#333; margin-bottom:20px;">Cette première étape vous permet de remplir les informations vous concernant. Cliquez sur suivant pour commencer.</p>
+                            <div class="form-group">
+                                <label>Nom complet</label>
+                                <input type="text" class="input" id="fullname" placeholder="Votre nom et prénom">
+                            </div>
+                            <div class="form-group">
+                                <label>Âge</label>
+                                <input type="number" class="input" id="age" placeholder="Votre âge">
+                            </div>
+                            <div class="form-group">
+                                <label>Genre</label>
+                                <select class="input" id="gender">
+                                    <option value="">Sélectionnez</option>
+                                    <option value="femme">Femme</option>
+                                    <option value="homme">Homme</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="step-buttons">
+                            <button class="btn-next" onclick="nextStep(1)">Suivant ></button>
+                        </div>
+                    </div>
+
+                    <!--etape 2-->
+                    <div class="step" id="step2">
+                        <div class="step-header">
+                            <span class="step-number">Étape 2 sur 8</span>
+                            <h2>Pour quel(s) motif(s) souhaitez-vous consulter ?</h2>
+                            <p>5 choix maximum</p>
+                        </div>
+                        <div class="step-content">
+                            <div class="motifs-grid" id="motifsGrid"></div>
+                        </div>
+                        <div class="step-buttons">
+                            <button class="btn-prev" onclick="prevStep(2)">Retour</button>
+                            <button class="btn-next" onclick="nextStep(2)">Suivant ></button>
+                        </div>
+                    </div>
+
+                    <!--etape 3-->
+                    <div class="step" id="step3">
+                        <div class="step-header">
+                            <span class="step-number">Étape 3 sur 8</span>
+                            <h2>Quels médias utilisez-vous ?</h2>
+                        </div>
+                        <div class="step-content">
+                            <label class="radio-card">
+                                <input type="radio" name="media" value="webcam">
+                                <strong>Webcam</strong>
+                                <p>Échangez en visio avec votre psychologue, directement sur notre site.</p>
+                            </label>
+                            <label class="radio-card">
+                                <input type="radio" name="media" value="telephone">
+                                <strong>Téléphone</strong>
+                                <p>Votre psychologue vous appellera par téléphone pour votre séance.</p>
+                            </label>
+                            <label class="radio-card">
+                                <input type="radio" name="media" value="chat">
+                                <strong>Chat</strong>
+                                <p>Échangez avec votre psychologue via messagerie instantanée.</p>
+                            </label>
+                        </div>
+                        <div class="step-buttons">
+                            <button class="btn-prev" onclick="prevStep(3)">Retour</button>
+                            <button class="btn-next" onclick="nextStep(3)">Suivant ></button>
+                        </div>
+                    </div>
+
+                    <!--etape 4-->
+                    <div class="step" id="step4">
+                        <div class="step-header">
+                            <span class="step-number">Étape 4 sur 8</span>
+                            <h2>Une préférence de disponibilité ?</h2>
+                        </div>
+                        <div class="step-content">
+                            <div class="form-group">
+                                <label>Quels jours ?</label>
+                                <select class="input" id="days">
+                                    <option value="semaine">En semaine</option>
+                                    <option value="weekend">Le week-end</option>
+                                    <option value="aucun">Peu importe</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>A quelle heure ?</label>
+                                <select class="input" id="hours">
+                                    <option value="journee">En journée</option>
+                                    <option value="soiree">En soirée (> 18h)</option>
+                                    <option value="aucun">Peu importe</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="step-buttons">
+                            <button class="btn-prev" onclick="prevStep(4)">Retour</button>
+                            <button class="btn-next" onclick="nextStep(4)">Suivant ></button>
+                        </div>
+                    </div>
+
+                    <!--etape 5-->
+                    <div class="step" id="step5">
+                        <div class="step-header">
+                            <span class="step-number">Étape 5 sur 8</span>
+                            <h2>Dans quelle langue souhaitez-vous échanger ?</h2>
+                        </div>
+                        <div class="step-content">
+                            <div class="langues-grid" id="languesGrid"></div>
+                        </div>
+                        <div class="step-buttons">
+                            <button class="btn-prev" onclick="prevStep(5)">Retour</button>
+                            <button class="btn-next" onclick="nextStep(5)">Suivant ></button>
+                        </div>
+                    </div>
+
+                    <!--etape 6-->
+                    <div class="step" id="step6">
+                        <div class="step-header">
+                            <span class="step-number">Étape 6 sur 8</span>
+                            <h2>Votre psychologue</h2>
+                            <p>Cette étape vous permet d'affiner votre recherche de psychologue.</p>
+                        </div>
+                        <div class="step-content">
+                            <div class="form-group">
+                                <label>Vous préférez un psychologue...</label>
+                                <select class="input" id="psychoGender">
+                                    <option value="femme">Femme</option>
+                                    <option value="homme">Homme</option>
+                                    <option value="aucun">Peu importe</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Pour faire des consultations...</label>
+                                <select class="input" id="consultType">
+                                    <option value="individuelle">Individuelle</option>
+                                    <option value="plusieurs">À plusieurs</option>
+                                    <option value="aucun">Peu importe</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="step-buttons">
+                            <button class="btn-prev" onclick="prevStep(6)">Retour</button>
+                            <button class="btn-next" onclick="nextStep(6)">Suivant ></button>
+                        </div>
+                    </div>
+
+                    <!--etape 7-->
+                    <div class="step" id="step7">
+                        <div class="step-header">
+                            <span class="step-number">Étape 7 sur 8</span>
+                            <h2>Thérapie basée sur :</h2>
+                        </div>
+                        <div class="step-content">
+                            <select class="input" id="therapyType">
+                                <option value="aucun">Je ne sais pas</option>
+                                <option value="clinique">Psychologie clinique</option>
+                                <option value="travail">Psychologie du travail</option>
+                                <option value="psychanalyse">Psychanalyse</option>
+                                <option value="tcc">Thérapie comportementale et cognitive</option>
+                                <option value="couple">Thérapie de couple</option>
+                            </select>
+                            <p class="info-text">Si vous n'êtes pas sûr(e) de l'approche qui vous correspond, vous serez alors mis(e) en relation avec des psychologues selon les critères que vous avez renseignés.</p>
+                        </div>
+                        <div class="step-buttons">
+                            <button class="btn-prev" onclick="prevStep(7)">Retour</button>
+                            <button class="btn-next" onclick="nextStep(7)">Suivant ></button>
+                        </div>
+                    </div>
+
+                    <!--etape 8-->
+                    <div class="step" id="step8">
+                        <div class="step-header">
+                            <span class="step-number">Étape 8 sur 8</span>
+                            <h2>Récapitulatif</h2>
+                        </div>
+                        <div class="step-content">
+                            <p style="color:#333; margin-bottom:20px;">Votre demande a bien été enregistrée ! Nous allons vous trouver le psychologue idéal selon vos critères.</p>
+                            <div class="recap" id="recap"></div>
+                        </div>
+                        <div class="step-buttons">
+                            <button class="btn-prev" onclick="prevStep(8)">Retour</button>
+                            <button class="btn-submit" onclick="submitNeeds()">Trouver un psychologue</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CARTE D'ACCUEIL ORIGINALE -->
+            <div class="dashboard-content" id="welcomeContent">
+                <div class="welcome-card">
+                    <div class="welcome-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-8-5.33-8-10c0-2.77 2.23-5 5-5 1.66 0 3.11.84 4 2.09C13.89 6.84 15.34 6 17 6c2.77 0 5 2.23 5 5 0 4.67-8 10-8 10z" fill="currentColor"/></svg></div>
+                    <h2>Bienvenue sur Nebras</h2>
+                    <p>Vous n'avez pas encore de psychologue ni de rendez-vous.</p>
+                    <p>Commencez par définir vos besoins pour que nous puissions vous orienter vers le praticien idéal.</p>
+                    
+                    <div class="steps">
+                        <div class="step">
+                            <div class="step-number">1</div>
+                            <p>Définissez vos préférences</p>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">2</div>
+                            <p>Choisissez votre psychologue</p>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">3</div>
+                            <p>Réservez votre premier rendez-vous</p>
+                        </div>
+                    </div>
+
+                    <button class="cta-button" onclick="showBesoinsSection()">Définir mes besoins</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script src="js/api.js"></script>
+<script>
+    (function() {
+        var userStr = localStorage.getItem('nebras_user');
+        if (userStr) {
+            try {
+                var user = JSON.parse(userStr);
+                var name = user.fullname || user.email || '';
+                document.querySelectorAll('.user-name').forEach(function(el) { el.textContent = name; });
+                var greetingTitle = document.getElementById('greetingTitle');
+                if (greetingTitle) greetingTitle.textContent = 'Bonjour, ' + name;
+            } catch(e) {}
+        }
+    })();
+function showToast(message, type = 'success') {
+            const container = document.querySelector('.toast-container') || (() => {
+                const c = document.createElement('div');
+                c.className = 'toast-container';
+                document.body.appendChild(c);
+                return c;
+            })();
+            const toast = document.createElement('div');
+            toast.className = 'toast ' + type;
+            toast.textContent = message;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        function logout() {
+            localStorage.removeItem('nebras_token');
+            localStorage.removeItem('nebras_user');
+            showToast('Déconnexion réussie', 'success');
+            setTimeout(() => window.location.href = 'home.html', 500);
+        }
+    </script>
+    <script src="js/patient_dashboard.js" defer></script>
+</body>
+</html>

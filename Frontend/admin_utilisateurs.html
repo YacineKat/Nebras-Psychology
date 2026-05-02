@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Utilisateurs - Admin | Nebras</title>
+    <link rel="stylesheet" href="./css/admin_style.css">
+    <link rel="icon" type="image/png" href="./assets/image/logo.png">
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <div class="logo"><img src="./assets/image/logo.png" alt="Nebras Logo"></div>
+            <nav class="nav-menu">
+                <a href="admin_dashboard.html" class="nav-item"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2h-5v-7H9v7H5a2 2 0 0 1-2-2z"/></svg><span>Tableau de bord</span></a>
+                <a href="admin_utilisateurs.html" class="nav-item active"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Utilisateurs</span><span class="badge">1,314</span></a>
+                <a href="admin_validation.html" class="nav-item"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>Validations</span><span class="badge">5</span></a>
+                <a href="admin_paiements.html" class="nav-item"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M16 8l-4 8-4-8"/></svg><span>Paiements</span><span class="badge">5</span></a>
+                <a href="admin_statistiques.html" class="nav-item">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12v3a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4v-3"/><path d="M12 2v12m0 0l-3-3m3 3l3-3"/></svg>
+                    <span>Statistiques</span>
+                </a>
+            </nav>
+            <a href="admin.html" class="nav-item profile-link"><div class="user-avatar">A</div><div class="user-info"><span class="user-name">Admin</span></div><span class="settings-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H5.78a1.65 1.65 0 0 0-1.51 1 1.65 1.65 0 0 0 .33 1.82l.08.1A10 10 0 0 0 12 18a10 10 0 0 0 6.33-2.2z"/></svg></span></a>
+        </div>
+
+        <div class="main-content">
+            <header class="page-header"><div><h1>Gestion des utilisateurs</h1><p class="subtitle">Gérez tous les utilisateurs de la plateforme</p></div>
+            </header>
+            <div class="filters-bar">
+                <input type="text" placeholder="Rechercher par nom ou email..." class="filter-input">
+                <select class="filter-select"><option>Tous les types</option><option>Patients</option><option>Psychologues</option><option>Counselor</option></select>
+                <select class="filter-select"><option>Tous les statuts</option><option>Actif</option><option>Inactif</option><option>En attente</option></select>
+                <button class="action-btn primary" onclick="alert('Filtrer')"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Filtrer</button>
+            </div>
+
+            <div class="admin-section">
+                <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Liste des utilisateurs</h2>
+                <div class="table-wrapper">
+                    <table class="admin-table">
+                        <div>
+                            <tr><th>Photo</th><th>Nom complet</th><th>Email</th><th>Type</th><th>Statut</th><th>Inscription</th><th>Actions</th></tr>
+                        </div>
+                        <div>
+                            <!-- Patient VIP -->
+                            <tr>
+                                <td><img src="./image/24d0759cbb02c3157112d0ef0f8463b1.jpg" class="user-avatar-img" alt="Photo"></td>
+                                <td>Maria Benali</td>
+                                <td>maria@email.com</td>
+                                <td>Patient VIP</td>
+                                <td><span class="status-badge status-active">Actif</span></td>
+                                <td>10/03/2026</td>
+                                <td><div class="action-btns"><button class="icon-btn-small" onclick="viewUser('Maria Benali')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="2"/><circle cx="12" cy="5" r="2"/><circle cx="12" cy="19" r="2"/></svg></button><button class="icon-btn-small" onclick="editUser('Maria Benali')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3l4 4-7 7H10v-4l7-7z"/></svg></button><button class="icon-btn-small" onclick="deleteUser('Maria Benali')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></button></div></td>
+                            </tr>
+                            <!-- Patient Normal -->
+                            <tr>
+                                <td><img src="./image/24d0759cbb02c3157112d0ef0f8463b1.jpg" class="user-avatar-img" alt="Photo"></td>
+                                <td>Karim Zerouali</td>
+                                <td>karim@email.com</td>
+                                <td>Patient Normal</td>
+                                <td><span class="status-badge status-active">Actif</span></td>
+                                <td>12/04/2026</td>
+                                <td><div class="action-btns"><button class="icon-btn-small" onclick="viewUser('Karim Zerouali')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="2"/><circle cx="12" cy="5" r="2"/><circle cx="12" cy="19" r="2"/></svg></button><button class="icon-btn-small" onclick="editUser('Karim Zerouali')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3l4 4-7 7H10v-4l7-7z"/></svg></button></div></td>
+                            </tr>
+                            <!-- Psychologue en attente -->
+                            <tr>
+                                <td><img src="./image/24d0759cbb02c3157112d0ef0f8463b1.jpg" class="user-avatar-img" alt="Photo"></td>
+                                <td>Dr. Ahmed Mansouri</td>
+                                <td>ahmed@email.com</td>
+                                <td>Psychologue</td>
+                                <td><span class="status-badge status-pending">En attente</span></td>
+                                <td>15/04/2026</td>
+                                <td><div class="action-btns"><button class="icon-btn-small" onclick="approveUser('Ahmed Mansouri')"><svg viewBox="0 0 24 24" fill="none" stroke="#27ae60" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></button><button class="icon-btn-small" onclick="rejectUser('Ahmed Mansouri')"><svg viewBox="0 0 24 24" fill="none" stroke="#e74c3c" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div></td>
+                            </tr>
+                            <!-- Psychologue actif -->
+                            <tr>
+                                <td><img src="./image/24d0759cbb02c3157112d0ef0f8463b1.jpg" class="user-avatar-img" alt="Photo"></td>
+                                <td>Dr. Karim Benali</td>
+                                <td>karim.benali@email.com</td>
+                                <td>Psychologue</td>
+                                <td><span class="status-badge status-active">Actif</span></td>
+                                <td>05/01/2026</td>
+                                <td><div class="action-btns"><button class="icon-btn-small" onclick="viewUser('Karim Benali')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="2"/><circle cx="12" cy="5" r="2"/><circle cx="12" cy="19" r="2"/></svg></button><button class="icon-btn-small" onclick="editUser('Karim Benali')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3l4 4-7 7H10v-4l7-7z"/></svg></button><button class="icon-btn-small" onclick="deleteUser('Karim Benali')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></button></div></td>
+                            </tr>
+                            <!-- Counselor actif -->
+                            <tr>
+                                <td><img src="./image/24d0759cbb02c3157112d0ef0f8463b1.jpg" class="user-avatar-img" alt="Photo"></td>
+                                <td>Sarah Mansouri</td>
+                                <td>sarah.mansouri@email.com</td>
+                                <td>Counselor</td>
+                                <td><span class="status-badge status-active">Actif</span></td>
+                                <td>16/04/2026</td>
+                                <td><div class="action-btns"><button class="icon-btn-small" onclick="viewUser('Sarah Mansouri')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="2"/><circle cx="12" cy="5" r="2"/><circle cx="12" cy="19" r="2"/></svg></button><button class="icon-btn-small" onclick="editUser('Sarah Mansouri')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3l4 4-7 7H10v-4l7-7z"/></svg></button></div></td>
+                            </tr>
+                            <!-- Counselor en attente -->
+                            <tr>
+                                <td><img src="./image/24d0759cbb02c3157112d0ef0f8463b1.jpg" class="user-avatar-img" alt="Photo"></td>
+                                <td>Karim Boudiaf </td>
+                                <td>karim.boudiaf@email.com</td>
+                                <td>Counselor</td>
+                                <td><span class="status-badge status-pending">En attente</span></td>
+                                <td>13/04/2026</td>
+                                <td><div class="action-btns"><button class="icon-btn-small" onclick="approveUser('Karim Boudiaf')"><svg viewBox="0 0 24 24" fill="none" stroke="#27ae60" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></button><button class="icon-btn-small" onclick="rejectUser('Karim Boudiaf')"><svg viewBox="0 0 24 24" fill="none" stroke="#e74c3c" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div></td>
+                            </tr>
+                        </div>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script src="js/api.js"></script>
+<script>
+(function() {
+    var userStr = localStorage.getItem('nebras_user');
+    if (userStr) {
+        try {
+            var user = JSON.parse(userStr);
+            var name = user.fullname || user.email || '';
+            document.querySelectorAll('.user-name').forEach(function(el) { el.textContent = name; });
+        } catch(e) {}
+    }
+})();
+function showToast(message, type = 'success') {
+    var container = document.querySelector('.toast-container') || (function() { var c = document.createElement('div'); c.className = 'toast-container'; document.body.appendChild(c); return c; })();
+    var toast = document.createElement('div');
+    toast.className = 'toast ' + type;
+    toast.textContent = message;
+    container.appendChild(toast);
+    setTimeout(function() { toast.remove(); }, 3000);
+}
+</script>
+<script src="js/admin_utilisateurs.js" defer></script>
+</body>
+</html>
