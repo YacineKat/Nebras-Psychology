@@ -164,7 +164,7 @@ exports.updateProfile = async (req, res) => {
     console.log('Updating profile for user:', userId);
     console.log('Request body:', req.body);
     
-    const { fullname, birthDate, gender, specialite, universite, bio, phone, adresse, diplomes, agrement, tarif, language, motifs, prefGender, prefType } = req.body;
+    const { fullname, birthDate, gender, specialite, universite, bio, phone, adresse, diplomes, agrement, tarif, language, motifs, prefGender, prefType, avatar } = req.body;
 
     // Update user name
     const user = await prisma.user.update({
@@ -175,6 +175,9 @@ exports.updateProfile = async (req, res) => {
 
     // Build profile data
     const profileData = {};
+    
+    // Avatar (base64 or URL)
+    if (avatar && avatar !== '') profileData.avatar = avatar;
     
     if (birthDate && birthDate !== '') {
       const parsedDate = new Date(birthDate);

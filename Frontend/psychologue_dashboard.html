@@ -49,9 +49,7 @@
                 </a>
             </nav>
             <a href="psychologue_profil.html" class="nav-item profile-link">
-    <div class="user-avatar">
-        <img src="./image/24d0759cbb02c3157112d0ef0f8463b1.jpg" alt="Photo profil" style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover;">
-    </div>
+    <div class="user-avatar" id="sidebarAvatar"></div>
     <div class="user-info"><span class="user-name">Dr. Karim Benali</span></div>
 </a>
 
@@ -73,9 +71,21 @@
                     <p class="subtitle">Voici votre tableau de bord professionnel</p>
                 </div>
                 <div class="header-icons">
-                    <button class="icon-btn" onclick="alert('Notifications')">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-                    </button>
+                    <div class="notification-container">
+                        <button class="icon-btn" id="notificationBtn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                            <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
+                        </button>
+                        <div class="notification-dropdown" id="notificationDropdown">
+                            <div class="notification-header">
+                                <h4>Notifications</h4>
+                                <button onclick="markAllRead(event)" class="mark-read-btn">Tout marquer lu</button>
+                            </div>
+                            <div class="notification-list" id="notificationList">
+                                <div class="notification-empty">Aucune notification</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </header>
 
@@ -261,6 +271,31 @@ function logout() {
     showToast('Déconnexion réussie', 'success');
     setTimeout(() => window.location.href = 'home.html', 500);
 }
+function toggleNotifications(event) {
+    event.stopPropagation();
+    const dropdown = document.getElementById('notificationDropdown');
+    if (!dropdown) return;
+    
+    if (dropdown.classList.contains('show')) {
+        dropdown.classList.remove('show');
+    } else {
+        dropdown.classList.add('show');
+        if (typeof loadNotificationsFromDashboard === 'function') {
+            loadNotificationsFromDashboard();
+        }
+    }
+}
+window.toggleNotifications = toggleNotifications;
+document.getElementById('notificationBtn').addEventListener('click', function(e) {
+    toggleNotifications(e);
+});
+document.addEventListener('click', function(event) {
+    const dropdown = document.getElementById('notificationDropdown');
+    const container = document.querySelector('.notification-container');
+    if (container && !container.contains(event.target)) {
+        dropdown.classList.remove('show');
+    }
+});
   </script>
   <script src="js/psychologue_dashboard.js" defer></script>
 </html>

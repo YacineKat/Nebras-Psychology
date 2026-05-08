@@ -104,6 +104,15 @@ async function loadProfileData() {
         const emailElApi = document.getElementById('profileEmail');
         if (emailElApi && profile?.email) emailElApi.textContent = profile.email;
 
+        // Load avatar
+        const avatarImg = document.getElementById('profileAvatarImg');
+        if (avatarImg && p.avatar) {
+            avatarImg.src = p.avatar;
+        }
+
+        // Update sidebar avatar
+        updateSidebarAvatar(p.avatar);
+
         // Load therapeutic preferences
         const languageEl = document.getElementById('prefLanguage');
         if (languageEl && p.language) languageEl.value = p.language;
@@ -210,6 +219,75 @@ async function updateProfile() {
             saveBtn.disabled = false;
         }
     }
+}
+
+function updateSidebarAvatar(avatarUrl) {
+    const avatars = document.querySelectorAll('.user-avatar');
+    avatars.forEach(avatar => {
+        if (avatarUrl) {
+            avatar.style.backgroundImage = `url(${avatarUrl})`;
+            avatar.style.backgroundSize = 'cover';
+            avatar.style.backgroundPosition = 'center';
+            avatar.textContent = '';
+        } else {
+            const user = getCurrentUser();
+            const initial = (user?.fullname || user?.email || 'U').charAt(0).toUpperCase();
+            avatar.textContent = initial;
+            avatar.style.backgroundImage = '';
+        }
+    });
+}
+
+async function handleAvatarChange(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+        showToast('❌ Veuillez sélectionner une image', 'error');
+        return;
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+        showToast('❌ L\'image ne doit pas dépasser 2MB', 'error');
+        return;
+    }
+
+    // Convert to base64
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+        const base64Image = e.target.result;
+
+        // Show preview immediately
+        const avatarImg = document.getElementById('profileAvatarImg');
+        if (avatarImg) {
+            avatarImg.src = base64Image;
+        }
+
+        // Save to database
+        try {
+            await authAPI.updateProfile({ avatar: base64Image });
+
+            // Update local user data
+            const user = getCurrentUser();
+            if (user.profile) {
+                user.profile.avatar = base64Image;
+            } else {
+                user.profile = { avatar: base64Image };
+            }
+            localStorage.setItem('nebras_user', JSON.stringify(user));
+
+            // Update sidebar
+            updateSidebarAvatar(base64Image);
+
+            showToast('✅ Photo de profil mise à jour !', 'success');
+        } catch (error) {
+            console.error('Avatar upload error:', error);
+            showToast('❌ Erreur lors de la mise à jour: ' + error.message, 'error');
+        }
+    };
+    reader.readAsDataURL(file);
 }
 
 async function savePreferences() {

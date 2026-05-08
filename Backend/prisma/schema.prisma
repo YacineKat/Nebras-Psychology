@@ -36,6 +36,9 @@ model Profile {
   userId      String   @unique
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   
+  // Avatar/Profile picture
+  avatar      String?  // URL or base64 string for profile picture
+  
   // Patient fields
   birthDate   DateTime?
   gender      String?
@@ -125,6 +128,7 @@ model GroupMember {
   group       TherapyGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status      String   @default("pending") // pending, accepted, rejected
   joinedAt    DateTime @default(now())
 
   @@unique([groupId, userId])

@@ -9,31 +9,41 @@ async function getGroups(req, res) {
       orderBy: { dayOfWeek: 'asc' }
     });
 
-    // Get user's joined groups
+    // Get user's membership status
     const userId = req.user?.id;
-    let userGroupIds = [];
+    console.log('getGroups - userId from token:', userId);
+    
+    let userMemberships = [];
     if (userId) {
-      const memberships = await prisma.groupMember.findMany({
+      userMemberships = await prisma.groupMember.findMany({
         where: { userId },
-        select: { groupId: true }
+        select: { groupId: true, status: true }
       });
-      userGroupIds = memberships.map(m => m.groupId);
+      console.log('getGroups - user memberships:', userMemberships);
     }
 
+    const membershipMap = {};
+    userMemberships.forEach(m => {
+      membershipMap[m.groupId] = m.status;
+    });
+
     const dayNames = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
-    const formattedGroups = groups.map(g => ({
-      id: g.id,
-      name: g.name,
-      description: g.description,
-      day: dayNames[g.dayOfWeek],
-      time: g.time,
-      duration: g.duration,
-      maxParticipants: g.maxParticipants,
-      currentParticipants: g.currentParticipants,
-      availablePlaces: g.maxParticipants - g.currentParticipants,
-      icon: g.icon,
-      isJoined: userGroupIds.includes(g.id)
-    }));
+    const formattedGroups = groups.map(g => {
+      const status = membershipMap[g.id];
+      return {
+        id: g.id,
+        name: g.name,
+        description: g.description,
+        day: dayNames[g.dayOfWeek],
+        time: g.time,
+        duration: g.duration,
+        maxParticipants: g.maxParticipants,
+        currentParticipants: g.currentParticipants,
+        availablePlaces: g.maxParticipants - g.currentParticipants,
+        icon: g.icon,
+        membershipStatus: status || null // null, 'pending', 'accepted', 'rejected'
+      };
+    });
 
     res.json({ groups: formattedGroups });
   } catch (error) {
@@ -42,7 +52,7 @@ async function getGroups(req, res) {
   }
 }
 
-// Join a therapy group
+// Join a therapy group - creates pending request
 async function joinGroup(req, res) {
   try {
     const userId = req.user?.id;
@@ -55,7 +65,7 @@ async function joinGroup(req, res) {
       return res.status(400).json({ error: 'ID du groupe requis' });
     }
 
-    // Check if group exists and has space
+    // Check if group exists
     const group = await prisma.therapyGroup.findUnique({
       where: { id: groupId }
     });
@@ -64,11 +74,7 @@ async function joinGroup(req, res) {
       return res.status(404).json({ error: 'Groupe introuvable' });
     }
 
-    if (group.currentParticipants >= group.maxParticipants) {
-      return res.status(400).json({ error: 'Groupe complet' });
-    }
-
-    // Check if already a member
+    // Check if already a member or has pending request
     const existingMember = await prisma.groupMember.findUnique({
       where: {
         groupId_userId: {
@@ -79,21 +85,28 @@ async function joinGroup(req, res) {
     });
 
     if (existingMember) {
-      return res.status(400).json({ error: 'Déjà membre de ce groupe' });
+      if (existingMember.status === 'pending') {
+        return res.status(400).json({ error: 'Demande en attente de validation' });
+      }
+      if (existingMember.status === 'accepted') {
+        return res.status(400).json({ error: 'Déjà membre de ce groupe' });
+      }
+      if (existingMember.status === 'rejected') {
+        // Allow re-request
+        await prisma.groupMember.update({
+          where: { id: existingMember.id },
+          data: { status: 'pending' }
+        });
+        return res.json({ success: true, message: 'Demande de réinscription envoyée' });
+      }
     }
 
-    // Add member and increment count
-    await prisma.$transaction([
-      prisma.groupMember.create({
-        data: { groupId, userId }
-      }),
-      prisma.therapyGroup.update({
-        where: { id: groupId },
-        data: { currentParticipants: { increment: 1 } }
-      })
-    ]);
+    // Create pending request (don't increment count yet)
+    await prisma.groupMember.create({
+      data: { groupId, userId, status: 'pending' }
+    });
 
-    res.json({ success: true, message: 'Inscription réussie' });
+    res.json({ success: true, message: 'Demande envoyée, en attente de validation' });
   } catch (error) {
     console.error('Error joining group:', error);
     res.status(500).json({ error: 'Erreur serveur' });
@@ -181,6 +194,101 @@ async function getMyGroups(req, res) {
   }
 }
 
+// Get pending requests (for psychologues)
+async function getPendingRequests(req, res) {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Non autorisé' });
+    }
+
+    const requests = await prisma.groupMember.findMany({
+      where: { status: 'pending' },
+      include: {
+        user: { select: { id: true, fullname: true, email: true } },
+        group: { select: { id: true, name: true } }
+      },
+      orderBy: { joinedAt: 'desc' }
+    });
+
+    res.json({ requests });
+  } catch (error) {
+    console.error('Error fetching pending requests:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+}
+
+// Accept a join request
+async function acceptRequest(req, res) {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Non autorisé' });
+    }
+
+    const { memberId } = req.body;
+    if (!memberId) {
+      return res.status(400).json({ error: 'ID du membre requis' });
+    }
+
+    // Get the member and group
+    const member = await prisma.groupMember.findUnique({
+      where: { id: memberId },
+      include: { group: true }
+    });
+
+    if (!member) {
+      return res.status(404).json({ error: 'Demande introuvable' });
+    }
+
+    if (member.group.currentParticipants >= member.group.maxParticipants) {
+      return res.status(400).json({ error: 'Groupe complet' });
+    }
+
+    // Accept the request and increment count
+    await prisma.$transaction([
+      prisma.groupMember.update({
+        where: { id: memberId },
+        data: { status: 'accepted' }
+      }),
+      prisma.therapyGroup.update({
+        where: { id: member.groupId },
+        data: { currentParticipants: { increment: 1 } }
+      })
+    ]);
+
+    res.json({ success: true, message: 'Demande acceptée' });
+  } catch (error) {
+    console.error('Error accepting request:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+}
+
+// Reject a join request
+async function rejectRequest(req, res) {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Non autorisé' });
+    }
+
+    const { memberId } = req.body;
+    if (!memberId) {
+      return res.status(400).json({ error: 'ID du membre requis' });
+    }
+
+    await prisma.groupMember.update({
+      where: { id: memberId },
+      data: { status: 'rejected' }
+    });
+
+    res.json({ success: true, message: 'Demande refusée' });
+  } catch (error) {
+    console.error('Error rejecting request:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+}
+
 // Seed default groups (for development)
 async function seedGroups(req, res) {
   try {
@@ -212,5 +320,8 @@ module.exports = {
   joinGroup,
   leaveGroup,
   getMyGroups,
+  getPendingRequests,
+  acceptRequest,
+  rejectRequest,
   seedGroups
 };

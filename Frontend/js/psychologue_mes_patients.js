@@ -24,32 +24,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function loadPatients() {
     try {
-        const appointments = await appointmentAPI.getAll();
-        const doctorId = getCurrentUser()?.id;
+        const result = await doctorAPI.getPatients();
         
-        const patientMap = new Map();
-        
-        appointments.forEach(apt => {
-            if (apt.doctor?.id === doctorId) {
-                if (!patientMap.has(apt.patient.id)) {
-                    patientMap.set(apt.patient.id, {
-                        id: apt.patient.id,
-                        fullname: apt.patient.fullname,
-                        gender: apt.patient.profile?.gender,
-                        lastSession: apt.appointmentDate,
-                        totalSessions: 0,
-                        motif: apt.notes || 'Non spécifié'
-                    });
-                }
-                const patient = patientMap.get(apt.patient.id);
-                patient.totalSessions++;
-                if (new Date(apt.appointmentDate) > new Date(patient.lastSession)) {
-                    patient.lastSession = apt.appointmentDate;
-                }
-            }
-        });
-
-        patients = Array.from(patientMap.values());
+        patients = result.patients || [];
         filteredPatients = [...patients];
         
         renderPatients();

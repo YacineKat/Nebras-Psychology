@@ -272,6 +272,237 @@ exports.deleteTimeSlot = async (req, res) => {
   }
 };
 
+// ============================================
+// GET DOCTOR DASHBOARD DATA
+// ============================================
+exports.getDashboard = async (req, res) => {
+  try {
+    const doctorId = req.user.id;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+
+    // 1. Get all appointments for this doctor
+    const allAppointments = await prisma.appointment.findMany({
+      where: { doctorId },
+      include: {
+        patient: { include: { profile: true } }
+      }
+    });
+
+    // 2. Calculate stats
+    // Active patients (all confirmed appointments)
+    const activePatients = allAppointments.filter(a => a.status === 'confirmed').length;
+    
+    // Today's sessions
+    const todaySessions = allAppointments.filter(a => {
+      const aptDate = new Date(a.appointmentDate);
+      return aptDate >= today && aptDate < tomorrow && a.status !== 'cancelled';
+    });
+    
+    // Pending requests
+    const pendingRequests = allAppointments.filter(a => a.status === 'pending');
+    
+    // Monthly income (completed appointments this month)
+    const monthlyCompleted = allAppointments.filter(a => {
+      const aptDate = new Date(a.appointmentDate);
+      return aptDate >= startOfMonth && aptDate <= endOfMonth && a.status === 'completed';
+    });
+    
+    // Get doctor tariff
+    const doctor = await prisma.user.findUnique({
+      where: { id: doctorId },
+      include: { profile: true }
+    });
+    const tarif = doctor?.profile?.tarif || 3000;
+    const monthlyIncome = monthlyCompleted.length * tarif;
+
+    // 3. Today's sessions with details
+    const todaySessionsData = await prisma.appointment.findMany({
+      where: {
+        doctorId,
+        appointmentDate: {
+          gte: today,
+          lt: tomorrow
+        },
+        status: { not: 'cancelled' }
+      },
+      include: {
+        patient: { include: { profile: true } }
+      },
+      orderBy: { appointmentTime: 'asc' }
+    });
+
+    // 4. Pending requests details
+    const pendingRequestsData = await prisma.appointment.findMany({
+      where: {
+        doctorId,
+        status: 'pending'
+      },
+      include: {
+        patient: { include: { profile: true } }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    // 5. Upcoming appointments (next 7 days)
+    const nextWeek = new Date(today);
+    nextWeek.setDate(nextWeek.getDate() + 7);
+    
+    const upcomingAppointments = await prisma.appointment.findMany({
+      where: {
+        doctorId,
+        appointmentDate: {
+          gte: tomorrow,
+          lte: nextWeek
+        },
+        status: 'confirmed'
+      },
+      include: {
+        patient: { include: { profile: true } }
+      },
+      orderBy: [{ appointmentDate: 'asc' }, { appointmentTime: 'asc' }]
+    });
+
+    // 6. Get time slots for availability display
+    const timeSlots = await prisma.timeSlot.findMany({
+      where: { doctorId },
+      orderBy: [{ dayOfWeek: 'asc' }, { startTime: 'asc' }]
+    });
+
+    res.json({
+      stats: {
+        activePatients,
+        todaySessionsCount: todaySessions.length,
+        pendingRequestsCount: pendingRequests.length,
+        monthlyIncome
+      },
+      todaySessions: todaySessionsData.map(apt => ({
+        id: apt.id,
+        patientName: apt.patient.fullname,
+        patientId: apt.patient.id,
+        appointmentDate: apt.appointmentDate,
+        appointmentTime: apt.appointmentTime,
+        mediaType: apt.mediaType,
+        status: apt.status,
+        notes: apt.patient.profile?.motifs || ''
+      })),
+      pendingRequests: pendingRequestsData.map(apt => ({
+        id: apt.id,
+        patientName: apt.patient.fullname,
+        patientId: apt.patient.id,
+        patientPhone: apt.patient.profile?.phone || '',
+        appointmentDate: apt.appointmentDate,
+        appointmentTime: apt.appointmentTime,
+        mediaType: apt.mediaType,
+        motifs: apt.patient.profile?.motifs || '',
+        createdAt: apt.createdAt
+      })),
+      upcomingAppointments: upcomingAppointments.map(apt => ({
+        id: apt.id,
+        patientName: apt.patient.fullname,
+        appointmentDate: apt.appointmentDate,
+        appointmentTime: apt.appointmentTime,
+        mediaType: apt.mediaType
+      })),
+      timeSlots
+    });
+
+  } catch (error) {
+    console.error('GetDashboard error:', error);
+    res.status(500).json({ error: 'Failed to get dashboard data' });
+  }
+};
+
+// ============================================
+// GET DOCTOR'S PATIENTS
+// ============================================
+exports.getPatients = async (req, res) => {
+  try {
+    const doctorId = req.user.id;
+    
+    // Get all confirmed appointments for this doctor
+    const appointments = await prisma.appointment.findMany({
+      where: {
+        doctorId,
+        status: { in: ['confirmed', 'completed'] }
+      },
+      include: {
+        patient: {
+          include: { profile: true }
+        }
+      },
+      orderBy: { appointmentDate: 'desc' }
+    });
+    
+    // Group by patient and aggregate data
+    const patientMap = new Map();
+    
+    appointments.forEach(apt => {
+      const patientId = apt.patient.id;
+      
+      if (!patientMap.has(patientId)) {
+        patientMap.set(patientId, {
+          id: apt.patient.id,
+          fullname: apt.patient.fullname,
+          email: apt.patient.email,
+          gender: apt.patient.profile?.gender,
+          phone: apt.patient.profile?.phone,
+          birthDate: apt.patient.profile?.birthDate,
+          language: apt.patient.profile?.language,
+          motifs: apt.patient.profile?.motifs,
+          prefGender: apt.patient.profile?.prefGender,
+          prefType: apt.patient.profile?.prefType,
+          totalSessions: 0,
+          lastSession: null,
+          firstSession: null,
+          totalSpent: 0
+        });
+      }
+      
+      const patient = patientMap.get(patientId);
+      patient.totalSessions++;
+      
+      // Update last session
+      if (!patient.lastSession || new Date(apt.appointmentDate) > new Date(patient.lastSession)) {
+        patient.lastSession = apt.appointmentDate;
+      }
+      
+      // Update first session
+      if (!patient.firstSession || new Date(apt.appointmentDate) < new Date(patient.firstSession)) {
+        patient.firstSession = apt.appointmentDate;
+      }
+    });
+    
+    // Get doctor's tariff for revenue calculation
+    const doctor = await prisma.user.findUnique({
+      where: { id: doctorId },
+      include: { profile: true }
+    });
+    const tarif = doctor?.profile?.tarif || 3000;
+    
+    // Calculate total spent for each patient
+    patientMap.forEach(patient => {
+      patient.totalSpent = patient.totalSessions * tarif;
+    });
+    
+    const patients = Array.from(patientMap.values());
+    
+    res.json({
+      count: patients.length,
+      patients
+    });
+
+  } catch (error) {
+    console.error('GetPatients error:', error);
+    res.status(500).json({ error: 'Failed to get patients' });
+  }
+};
+
 process.on('beforeExit', async () => {
   await prisma.$disconnect();
 });

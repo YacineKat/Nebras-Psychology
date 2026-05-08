@@ -1,3 +1,6 @@
+// Start immediately
+console.log('patient_therapie.js loaded');
+
 function highlightCurrentSidebarLink() {
     const currentPage = window.location.pathname.split('/').pop().toLowerCase();
     const navItems = document.querySelectorAll('.nav-item');
@@ -13,7 +16,7 @@ function highlightCurrentSidebarLink() {
 
 document.addEventListener('DOMContentLoaded', highlightCurrentSidebarLink);
 
-const API_URL = 'http://localhost:3000/api';
+// Use API_URL from api.js
 
 const iconMap = {
     stress: '<svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/></svg>',
@@ -39,16 +42,28 @@ function getDefaultIcon() {
 
 async function loadGroups() {
     const grid = document.querySelector('.groups-grid');
-    if (!grid) return;
+    if (!grid) {
+        console.log('Grid not found');
+        return;
+    }
 
     grid.innerHTML = '<div class="loading">Chargement des groupes...</div>';
 
     try {
         const token = localStorage.getItem('nebras_token');
         const headers = token ? { 'Authorization': 'Bearer ' + token } : {};
-
+        
+        console.log('Fetching groups from API...');
+        console.log('Token being used:', token);
         const response = await fetch(API_URL + '/groups', { headers });
+        console.log('Response status:', response.status);
+        
+        if (!response.ok) {
+            throw new Error('HTTP error: ' + response.status);
+        }
+        
         const data = await response.json();
+        console.log('Groups data:', data);
 
         if (!data.groups || data.groups.length === 0) {
             grid.innerHTML = '<div class="empty-state"><p>Aucun groupe disponible</p></div>';
@@ -57,9 +72,27 @@ async function loadGroups() {
 
         grid.innerHTML = data.groups.map(group => {
             const icon = iconMap[group.icon] || getDefaultIcon();
-            const btnText = group.isJoined ? 'Déjà inscrit' : 'Rejoindre le groupe';
-            const btnClass = group.isJoined ? 'join-btn joined' : 'join-btn';
-            const disabled = group.isJoined ? 'disabled' : '';
+            
+            let btnText = 'Rejoindre le groupe';
+            let btnClass = 'join-btn';
+            let disabled = '';
+            let btnAction = `onclick="joinGroup('${group.id}')"`;
+            
+            if (group.membershipStatus === 'accepted') {
+                btnText = 'Déjà inscrit';
+                btnClass = 'join-btn joined';
+                disabled = 'disabled';
+                btnAction = '';
+            } else if (group.membershipStatus === 'pending') {
+                btnText = 'En attente de validation';
+                btnClass = 'join-btn pending';
+                disabled = 'disabled';
+                btnAction = '';
+            } else if (group.membershipStatus === 'rejected') {
+                btnText = 'Rejoindre le groupe';
+                btnClass = 'join-btn';
+                btnAction = `onclick="joinGroup('${group.id}')"`;
+            }
 
             return `
                 <div class="group-card">
@@ -83,7 +116,7 @@ async function loadGroups() {
                                 ${formatDuration(group.duration)}
                             </span>
                         </div>
-                        <button class="${btnClass}" onclick="joinGroup('${group.id}')" ${disabled}>${btnText}</button>
+                        <button class="${btnClass}" ${btnAction} ${disabled}>${btnText}</button>
                     </div>
                 </div>
             `;
@@ -91,12 +124,14 @@ async function loadGroups() {
 
     } catch (error) {
         console.error('Error loading groups:', error);
-        grid.innerHTML = '<div class="error">Erreur lors du chargement des groupes</div>';
+        grid.innerHTML = '<div class="error">Erreur lors du chargement des groupes: ' + error.message + '</div>';
     }
 }
 
 async function joinGroup(groupId) {
+    console.log('joinGroup called with:', groupId);
     const token = localStorage.getItem('nebras_token');
+    console.log('token exists:', !!token);
     if (!token) {
         showToast('Veuillez vous connecter pour rejoindre un groupe', 'error');
         return;
@@ -111,19 +146,24 @@ async function joinGroup(groupId) {
             },
             body: JSON.stringify({ groupId })
         });
-
+        
+        console.log('Response status:', response.status);
         const data = await response.json();
+        console.log('Response data:', data);
 
         if (response.ok) {
-            showToast('Inscription réussie !', 'success');
+            showToast(data.message || 'Demande envoyée!', 'success');
             loadGroups();
         } else {
-            showToast(data.error || 'Erreur lors de l\'inscription', 'error');
+            showToast(data.error || 'Erreur lors de la demande', 'error');
         }
     } catch (error) {
         console.error('Error joining group:', error);
-        showToast('Erreur lors de l\'inscription', 'error');
+        showToast('Erreur lors de la demande', 'error');
     }
 }
 
-document.addEventListener('DOMContentLoaded', loadGroups);
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM ready, calling loadGroups...');
+    loadGroups();
+});

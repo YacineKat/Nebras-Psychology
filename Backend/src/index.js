@@ -18,7 +18,11 @@ const app = express();
 // ============================================
 // MIDDLEWARE
 // ============================================
-app.use(cors()); // Allow cross-origin requests
+app.use(cors({
+    origin: '*', // Allow all origins
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+})); // Allow cross-origin requests
 app.use(express.json()); // Parse JSON bodies
 
 // ============================================

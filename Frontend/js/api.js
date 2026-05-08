@@ -3,7 +3,7 @@
 // Connects frontend to backend APIs
 // ============================================
 
-const API_URL = 'http://localhost:3000/api';
+window.API_URL = 'http://localhost:3000/api';
 
 // ============================================
 // HELPER FUNCTION
@@ -104,6 +104,14 @@ const doctorAPI = {
 
   getSchedule: async () => {
     return fetchAPI('/doctors/schedule');
+  },
+
+  getDashboard: async () => {
+    return fetchAPI('/doctors/dashboard');
+  },
+
+  getPatients: async () => {
+    return fetchAPI('/doctors/patients');
   }
 };
 
@@ -223,3 +231,54 @@ window.redirectByUserType = redirectByUserType;
 window.formatDate = formatDate;
 window.formatTime = formatTime;
 window.daysOfWeek = daysOfWeek;
+
+// ============================================
+// COMMON: Load sidebar user data
+// ============================================
+async function loadSidebarUserData() {
+  const user = getCurrentUser();
+  if (!user) return;
+
+  // Try to get fresh user data from API to ensure we have latest profile/avatar
+  try {
+    const result = await authAPI.getMe();
+    if (result.user) {
+      localStorage.setItem('nebras_user', JSON.stringify(result.user));
+    }
+  } catch (e) {
+    console.log('Using cached user data');
+  }
+
+  // Get updated user data
+  const updatedUser = getCurrentUser();
+  if (!updatedUser) return;
+
+  // Update user names
+  document.querySelectorAll('.user-name').forEach(el => {
+    el.textContent = updatedUser.fullname || updatedUser.email || '';
+  });
+
+  // Update avatars
+  const avatars = document.querySelectorAll('.user-avatar');
+  avatars.forEach(avatar => {
+    const avatarUrl = updatedUser?.profile?.avatar;
+    if (avatarUrl) {
+      avatar.style.backgroundImage = `url(${avatarUrl})`;
+      avatar.style.backgroundSize = 'cover';
+      avatar.style.backgroundPosition = 'center';
+      avatar.textContent = '';
+    } else {
+      const initial = (updatedUser.fullname || updatedUser.email || 'U').charAt(0).toUpperCase();
+      if (avatar.tagName === 'DIV') {
+        avatar.textContent = initial;
+        avatar.style.backgroundImage = '';
+      }
+    }
+  });
+}
+
+// Auto-load sidebar data when api.js is loaded
+if (typeof document !== 'undefined') {
+  document.addEventListener('DOMContentLoaded', loadSidebarUserData);
+}
+window.loadSidebarUserData = loadSidebarUserData;

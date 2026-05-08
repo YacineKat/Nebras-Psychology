@@ -9,15 +9,17 @@ const { authMiddleware, requireRole } = require('../middleware/authMiddleware');
 
 // Public routes (anyone can view doctors)
 router.get('/', doctorController.getAllDoctors);
-router.get('/:id', doctorController.getDoctorById);
+router.get('/patients', authMiddleware, requireRole('psychologue', 'counselor'), doctorController.getPatients);
 
-// Protected routes
+// Protected routes (must come before /:id)
 router.get('/profile/me', authMiddleware, doctorController.getMyProfile);
-
-// Doctor/Counselor only routes
 router.put('/profile', authMiddleware, requireRole('psychologue', 'counselor'), doctorController.updateProfile);
 router.post('/schedule', authMiddleware, requireRole('psychologue', 'counselor'), doctorController.addTimeSlot);
 router.get('/schedule', authMiddleware, requireRole('psychologue', 'counselor'), doctorController.getSchedule);
 router.delete('/schedule/:id', authMiddleware, requireRole('psychologue', 'counselor'), doctorController.deleteTimeSlot);
+router.get('/dashboard', authMiddleware, requireRole('psychologue', 'counselor'), doctorController.getDashboard);
+
+// Must come last - catches /:id
+router.get('/:id', doctorController.getDoctorById);
 
 module.exports = router;

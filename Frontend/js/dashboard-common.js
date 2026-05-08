@@ -33,14 +33,24 @@ export async function updateUserDisplay() {
     });
 
     // Update avatar if user type specific
-    const avatar = document.querySelector('.user-avatar');
-    if (avatar) {
-        // Use first letter of name or email
-        const initial = (user.fullname || user.email).charAt(0).toUpperCase();
-        if (avatar.tagName === 'DIV') {
-            avatar.textContent = initial;
+    const avatar = document.querySelectorAll('.user-avatar');
+    avatar.forEach(av => {
+        // Check if user has avatar in profile
+        const avatarUrl = user?.profile?.avatar;
+        if (avatarUrl) {
+            av.style.backgroundImage = `url(${avatarUrl})`;
+            av.style.backgroundSize = 'cover';
+            av.style.backgroundPosition = 'center';
+            av.textContent = '';
+        } else {
+            // Use first letter of name or email
+            const initial = (user.fullname || user.email || 'U').charAt(0).toUpperCase();
+            if (av.tagName === 'DIV') {
+                av.textContent = initial;
+                av.style.backgroundImage = '';
+            }
         }
-    }
+    });
 }
 
 // Highlight current page in sidebar
