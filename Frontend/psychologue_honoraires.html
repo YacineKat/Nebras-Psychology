@@ -22,7 +22,7 @@
                 <a href="psychologue_mes_patients.html" class="nav-item">
                     <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" fill="currentColor"/></svg>
                     <span>Mes patients</span>
-                    <span class="badge">12</span>
+                    <span class="badge">0</span>
                 </a>
                 <a href="psychologue_emploi_du_temps.html" class="nav-item">
                     <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zM9 14H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2zm-8 4H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2z" fill="currentColor"/></svg>
@@ -54,6 +54,15 @@
     </div>
     <div class="user-info"><span class="user-name">Dr. Karim Benali</span></div>
 </a>
+
+            <a href="#" class="nav-item" onclick="logout()" style="color: #e74c3c;">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                    <polyline points="16,17 21,12 16,7"/>
+                    <line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+                <span>Déconnexion</span>
+            </a>
         </div>
 
         <div class="main-content">
@@ -103,9 +112,17 @@
                 <button class="update-btn" onclick="alert('Demande de retrait effectuée')" style="width: auto; padding: 15px 40px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="12" cy="12" r="10"/><path d="M16 8l-4 8-4-8"/></svg> Demander un retrait</button>
                 <p style="margin-top: 15px; color: #666; font-size: 13px;">Les retraits sont traités sous 48h ouvrées</p>
             </div>
-        </div>
+</div>
     </div>
 
-     <script src="js/psychologue_honoraires.js" defer></script>
+<script>
+function logout() {
+    localStorage.removeItem('nebras_token');
+    localStorage.removeItem('nebras_user');
+    showToast('Déconnexion réussie', 'success');
+    setTimeout(() => window.location.href = 'home.html', 500);
+}
+</script>
+      <script src="js/psychologue_honoraires.js" defer></script>
 </body>
 </html>

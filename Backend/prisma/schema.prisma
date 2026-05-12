@@ -81,15 +81,20 @@ model Appointment {
 
 // ============== TIME SLOTS TABLE ==============
 model TimeSlot {
-  id          String   @id @default(uuid())
-  doctorId    String
-  doctor      User     @relation(fields: [doctorId], references: [id], onDelete: Cascade)
-  dayOfWeek   Int      // 0=Sunday, 1=Monday, ..., 6=Saturday
-  startTime   String   // "09:00"
-  endTime     String   // "10:00"
-  isBooked    Boolean  @default(false)
+  id           String    @id @default(uuid())
+  doctorId     String
+  doctor       User      @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  dayOfWeek    Int       // 0=Sunday, 1=Monday, ..., 6=Saturday (for weekly recurring)
+  startTime    String    // "09:00"
+  endTime      String    // "10:00"
+  isBooked     Boolean   @default(false)
+  
+  // New fields for enhanced scheduling
+  specificDate DateTime? // Specific date for one-time slot (YYYY-MM-DD)
+  recurrence   String    @default("none") // 'none', 'daily', 'weekly', 'monthly'
+  isBlocked    Boolean   @default(false) // If true, this time is blocked/unavailable
 
-  @@unique([doctorId, dayOfWeek, startTime])
+  @@unique([doctorId, dayOfWeek, startTime, specificDate])
 }
 
 // ============== MESSAGES TABLE ==============

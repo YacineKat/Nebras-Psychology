@@ -199,15 +199,126 @@ exports.updateProfile = async (req, res) => {
 exports.addTimeSlot = async (req, res) => {
   try {
     const doctorId = req.user.id;
-    const { dayOfWeek, startTime, endTime } = req.body;
+    const { dayOfWeek, startTime, endTime, specificDate, recurrence } = req.body;
 
-    // Create time slot
+    // If recurrence is daily/weekly/monthly, create multiple slots
+    if (recurrence && recurrence !== 'none') {
+      const slots = [];
+      let createdCount = 0;
+      
+      if (recurrence === 'daily') {
+        // Create for next 30 days
+        const startDate = specificDate ? new Date(specificDate) : new Date();
+        for (let i = 0; i < 30; i++) {
+          const date = new Date(startDate);
+          date.setDate(date.getDate() + i);
+          const dayOfWeekNum = date.getDay();
+          
+          const slot = await prisma.timeSlot.upsert({
+            where: {
+              doctorId_dayOfWeek_startTime_specificDate: {
+                doctorId,
+                dayOfWeek: dayOfWeekNum,
+                startTime,
+                specificDate: date
+              }
+            },
+            update: { isBlocked: false, recurrence: 'none' },
+            create: {
+              doctorId,
+              dayOfWeek: dayOfWeekNum,
+              startTime,
+              endTime,
+              specificDate: date,
+              recurrence: 'none',
+              isBlocked: false,
+              isBooked: false
+            }
+          });
+          slots.push(slot);
+          createdCount++;
+        }
+      } else if (recurrence === 'weekly') {
+        // Create for next 4 weeks on the same day
+        const startDate = specificDate ? new Date(specificDate) : new Date();
+        for (let i = 0; i < 4; i++) {
+          const date = new Date(startDate);
+          date.setDate(date.getDate() + (i * 7));
+          
+          const slot = await prisma.timeSlot.upsert({
+            where: {
+              doctorId_dayOfWeek_startTime_specificDate: {
+                doctorId,
+                dayOfWeek: parseInt(dayOfWeek),
+                startTime,
+                specificDate: date
+              }
+            },
+            update: { isBlocked: false, recurrence: 'none' },
+            create: {
+              doctorId,
+              dayOfWeek: parseInt(dayOfWeek),
+              startTime,
+              endTime,
+              specificDate: date,
+              recurrence: 'none',
+              isBlocked: false,
+              isBooked: false
+            }
+          });
+          slots.push(slot);
+          createdCount++;
+        }
+      } else if (recurrence === 'monthly') {
+        // Create for next 3 months on the same day of month
+        const startDate = specificDate ? new Date(specificDate) : new Date();
+        for (let i = 0; i < 3; i++) {
+          const date = new Date(startDate);
+          date.setMonth(date.getMonth() + i);
+          
+          const slot = await prisma.timeSlot.upsert({
+            where: {
+              doctorId_dayOfWeek_startTime_specificDate: {
+                doctorId,
+                dayOfWeek: parseInt(dayOfWeek),
+                startTime,
+                specificDate: date
+              }
+            },
+            update: { isBlocked: false, recurrence: 'none' },
+            create: {
+              doctorId,
+              dayOfWeek: parseInt(dayOfWeek),
+              startTime,
+              endTime,
+              specificDate: date,
+              recurrence: 'none',
+              isBlocked: false,
+              isBooked: false
+            }
+          });
+          slots.push(slot);
+          createdCount++;
+        }
+      }
+      
+      return res.status(201).json({
+        message: `${createdCount} créneau(x) ajouté(s) avec récurrence ${recurrence}`,
+        slots,
+        count: createdCount
+      });
+    }
+    
+    // Single slot (no recurrence)
     const slot = await prisma.timeSlot.create({
       data: {
         doctorId,
         dayOfWeek: parseInt(dayOfWeek),
         startTime,
         endTime,
+        specificDate: specificDate ? new Date(specificDate) : null,
+        recurrence: recurrence || 'none',
+        isBlocked: false,
         isBooked: false
       }
     });
@@ -219,7 +330,190 @@ exports.addTimeSlot = async (req, res) => {
 
   } catch (error) {
     console.error('AddTimeSlot error:', error);
-    res.status(500).json({ error: 'Failed to add time slot' });
+    res.status(500).json({ error: 'Failed to add time slot: ' + error.message });
+  }
+};
+
+// ============================================
+// BLOCK TIME SLOT (Mark as unavailable)
+// ============================================
+exports.blockTimeSlot = async (req, res) => {
+  try {
+    const doctorId = req.user.id;
+    const { dayOfWeek, startTime, endTime, specificDate, recurrence } = req.body;
+    
+    // Handle recurrence for blocking
+    if (recurrence && recurrence !== 'none') {
+      const blockedSlots = [];
+      let blockedCount = 0;
+      
+      if (recurrence === 'daily') {
+        const startDate = specificDate ? new Date(specificDate) : new Date();
+        for (let i = 0; i < 30; i++) {
+          const date = new Date(startDate);
+          date.setDate(date.getDate() + i);
+          const dayOfWeekNum = date.getDay();
+          
+          const slot = await prisma.timeSlot.upsert({
+            where: {
+              doctorId_dayOfWeek_startTime_specificDate: {
+                doctorId,
+                dayOfWeek: dayOfWeekNum,
+                startTime,
+                specificDate: date
+              }
+            },
+            update: { isBlocked: true },
+            create: {
+              doctorId,
+              dayOfWeek: dayOfWeekNum,
+              startTime,
+              endTime,
+              specificDate: date,
+              recurrence: 'none',
+              isBlocked: true,
+              isBooked: false
+            }
+          });
+          blockedSlots.push(slot);
+          blockedCount++;
+        }
+      } else if (recurrence === 'weekly') {
+        const startDate = specificDate ? new Date(specificDate) : new Date();
+        for (let i = 0; i < 4; i++) {
+          const date = new Date(startDate);
+          date.setDate(date.getDate() + (i * 7));
+          
+          const slot = await prisma.timeSlot.upsert({
+            where: {
+              doctorId_dayOfWeek_startTime_specificDate: {
+                doctorId,
+                dayOfWeek: parseInt(dayOfWeek),
+                startTime,
+                specificDate: date
+              }
+            },
+            update: { isBlocked: true },
+            create: {
+              doctorId,
+              dayOfWeek: parseInt(dayOfWeek),
+              startTime,
+              endTime,
+              specificDate: date,
+              recurrence: 'none',
+              isBlocked: true,
+              isBooked: false
+            }
+          });
+          blockedSlots.push(slot);
+          blockedCount++;
+        }
+      } else if (recurrence === 'monthly') {
+        const startDate = specificDate ? new Date(specificDate) : new Date();
+        for (let i = 0; i < 3; i++) {
+          const date = new Date(startDate);
+          date.setMonth(date.getMonth() + i);
+          
+          const slot = await prisma.timeSlot.upsert({
+            where: {
+              doctorId_dayOfWeek_startTime_specificDate: {
+                doctorId,
+                dayOfWeek: parseInt(dayOfWeek),
+                startTime,
+                specificDate: date
+              }
+            },
+            update: { isBlocked: true },
+            create: {
+              doctorId,
+              dayOfWeek: parseInt(dayOfWeek),
+              startTime,
+              endTime,
+              specificDate: date,
+              recurrence: 'none',
+              isBlocked: true,
+              isBooked: false
+            }
+          });
+          blockedSlots.push(slot);
+          blockedCount++;
+        }
+      }
+      
+      return res.status(201).json({
+        message: `${blockedCount} créneau(x) bloqué(s)`,
+        slots: blockedSlots,
+        count: blockedCount
+      });
+    }
+    
+    // Single block
+    const existingSlot = await prisma.timeSlot.findFirst({
+      where: {
+        doctorId,
+        dayOfWeek: parseInt(dayOfWeek),
+        startTime,
+        specificDate: specificDate ? new Date(specificDate) : null
+      }
+    });
+    
+    if (existingSlot) {
+      const updated = await prisma.timeSlot.update({
+        where: { id: existingSlot.id },
+        data: { isBlocked: true }
+      });
+      return res.json({ message: 'Créneau bloqué', slot: updated });
+    }
+    
+    const slot = await prisma.timeSlot.create({
+      data: {
+        doctorId,
+        dayOfWeek: parseInt(dayOfWeek),
+        startTime,
+        endTime,
+        specificDate: specificDate ? new Date(specificDate) : null,
+        recurrence: recurrence || 'none',
+        isBlocked: true,
+        isBooked: false
+      }
+    });
+    
+    res.status(201).json({
+      message: 'Time slot blocked successfully',
+      slot
+    });
+
+  } catch (error) {
+    console.error('BlockTimeSlot error:', error);
+    res.status(500).json({ error: 'Failed to block time slot' });
+  }
+};
+
+// ============================================
+// UNBLOCK TIME SLOT
+// ============================================
+exports.unblockTimeSlot = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const doctorId = req.user.id;
+    
+    const slot = await prisma.timeSlot.findUnique({ where: { id } });
+    if (!slot || slot.doctorId !== doctorId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+    
+    // If it's a recurring block, we might need to handle differently
+    // For now, just unblock this specific one
+    const updated = await prisma.timeSlot.update({
+      where: { id },
+      data: { isBlocked: false }
+    });
+    
+    res.json({ message: 'Créneau débloqué', slot: updated });
+
+  } catch (error) {
+    console.error('UnblockTimeSlot error:', error);
+    res.status(500).json({ error: 'Failed to unblock time slot' });
   }
 };
 
@@ -229,17 +523,36 @@ exports.addTimeSlot = async (req, res) => {
 exports.getSchedule = async (req, res) => {
   try {
     const doctorId = req.user.id;
+    const { startDate, endDate } = req.query;
+
+    let where = { doctorId };
+    
+    // Include both: specific date slots AND weekly recurring slots (specificDate: null)
+    // If date range provided, filter specific date slots
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      
+      where.OR = [
+        { specificDate: { gte: start, lte: end } },
+        { specificDate: null } // Always include weekly recurring slots
+      ];
+    }
 
     const slots = await prisma.timeSlot.findMany({
-      where: { doctorId },
-      orderBy: [{ dayOfWeek: 'asc' }, { startTime: 'asc' }]
+      where,
+      orderBy: [
+        { specificDate: 'asc' },
+        { dayOfWeek: 'asc' },
+        { startTime: 'asc' }
+      ]
     });
 
     res.json(slots);
 
   } catch (error) {
     console.error('GetSchedule error:', error);
-    res.status(500).json({ error: 'Failed to get schedule' });
+    res.status(500).json({ error: 'Failed to get schedule: ' + error.message });
   }
 };
 
@@ -285,136 +598,116 @@ exports.getDashboard = async (req, res) => {
     
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
     const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    const nextWeek = new Date(today);
+    nextWeek.setDate(nextWeek.getDate() + 7);
 
-    // 1. Get all appointments for this doctor
-    const allAppointments = await prisma.appointment.findMany({
-      where: { doctorId },
-      include: {
-        patient: { include: { profile: true } }
-      }
-    });
-
-    // 2. Calculate stats
-    // Active patients (all confirmed appointments)
+    // Single optimized query: get all needed data in parallel
+    const [allAppointments, doctor, timeSlots] = await Promise.all([
+      prisma.appointment.findMany({
+        where: { doctorId },
+        include: {
+          patient: { include: { profile: true } }
+        }
+      }),
+      prisma.user.findUnique({
+        where: { id: doctorId },
+        include: { profile: true }
+      }),
+      prisma.timeSlot.findMany({
+        where: { doctorId },
+        orderBy: [{ dayOfWeek: 'asc' }, { startTime: 'asc' }]
+      })
+    ]);
+    
+    const tarif = doctor?.profile?.tarif || 3000;
+    
+    // Calculate stats from single data source
     const activePatients = allAppointments.filter(a => a.status === 'confirmed').length;
     
-    // Today's sessions
-    const todaySessions = allAppointments.filter(a => {
-      const aptDate = new Date(a.appointmentDate);
-      return aptDate >= today && aptDate < tomorrow && a.status !== 'cancelled';
-    });
+    const todaySessionsData = allAppointments
+      .filter(a => {
+        const aptDate = new Date(a.appointmentDate);
+        return aptDate >= today && aptDate < tomorrow && a.status !== 'cancelled';
+      })
+      .sort((a, b) => (a.appointmentTime || '').localeCompare(b.appointmentTime || ''));
     
-    // Pending requests
-    const pendingRequests = allAppointments.filter(a => a.status === 'pending');
+    const pendingRequestsData = allAppointments
+      .filter(a => a.status === 'pending')
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     
-    // Monthly income (completed appointments this month)
+    const upcomingAppointments = allAppointments
+      .filter(a => {
+        const aptDate = new Date(a.appointmentDate);
+        return aptDate >= tomorrow && aptDate <= nextWeek && a.status === 'confirmed';
+      })
+      .sort((a, b) => {
+        const dateCompare = new Date(a.appointmentDate) - new Date(b.appointmentDate);
+        if (dateCompare !== 0) return dateCompare;
+        return (a.appointmentTime || '').localeCompare(b.appointmentTime || '');
+      });
+    
     const monthlyCompleted = allAppointments.filter(a => {
       const aptDate = new Date(a.appointmentDate);
       return aptDate >= startOfMonth && aptDate <= endOfMonth && a.status === 'completed';
     });
     
-    // Get doctor tariff
-    const doctor = await prisma.user.findUnique({
-      where: { id: doctorId },
-      include: { profile: true }
-    });
-    const tarif = doctor?.profile?.tarif || 3000;
     const monthlyIncome = monthlyCompleted.length * tarif;
-
-    // 3. Today's sessions with details
-    const todaySessionsData = await prisma.appointment.findMany({
-      where: {
-        doctorId,
-        appointmentDate: {
-          gte: today,
-          lt: tomorrow
-        },
-        status: { not: 'cancelled' }
-      },
-      include: {
-        patient: { include: { profile: true } }
-      },
-      orderBy: { appointmentTime: 'asc' }
-    });
-
-    // 4. Pending requests details
-    const pendingRequestsData = await prisma.appointment.findMany({
-      where: {
-        doctorId,
-        status: 'pending'
-      },
-      include: {
-        patient: { include: { profile: true } }
-      },
-      orderBy: { createdAt: 'desc' }
-    });
-
-    // 5. Upcoming appointments (next 7 days)
-    const nextWeek = new Date(today);
-    nextWeek.setDate(nextWeek.getDate() + 7);
-    
-    const upcomingAppointments = await prisma.appointment.findMany({
-      where: {
-        doctorId,
-        appointmentDate: {
-          gte: tomorrow,
-          lte: nextWeek
-        },
-        status: 'confirmed'
-      },
-      include: {
-        patient: { include: { profile: true } }
-      },
-      orderBy: [{ appointmentDate: 'asc' }, { appointmentTime: 'asc' }]
-    });
-
-    // 6. Get time slots for availability display
-    const timeSlots = await prisma.timeSlot.findMany({
-      where: { doctorId },
-      orderBy: [{ dayOfWeek: 'asc' }, { startTime: 'asc' }]
-    });
 
     res.json({
       stats: {
         activePatients,
-        todaySessionsCount: todaySessions.length,
-        pendingRequestsCount: pendingRequests.length,
+        todaySessionsCount: todaySessionsData.length,
+        pendingRequestsCount: pendingRequestsData.length,
         monthlyIncome
       },
-      todaySessions: todaySessionsData.map(apt => ({
+      todaySessions: todaySessionsData.filter(apt => apt.patient).map(apt => ({
         id: apt.id,
         patientName: apt.patient.fullname,
         patientId: apt.patient.id,
+        patientPhone: apt.patient.profile?.phone || '',
+        patientGender: apt.patient.profile?.gender,
+        motifs: apt.patient.profile?.motifs || '',
         appointmentDate: apt.appointmentDate,
         appointmentTime: apt.appointmentTime,
         mediaType: apt.mediaType,
         status: apt.status,
         notes: apt.patient.profile?.motifs || ''
       })),
-      pendingRequests: pendingRequestsData.map(apt => ({
+      pendingRequests: pendingRequestsData.filter(apt => apt.patient).map(apt => ({
         id: apt.id,
         patientName: apt.patient.fullname,
         patientId: apt.patient.id,
         patientPhone: apt.patient.profile?.phone || '',
+        patientGender: apt.patient.profile?.gender,
+        motifs: apt.patient.profile?.motifs || '',
         appointmentDate: apt.appointmentDate,
         appointmentTime: apt.appointmentTime,
         mediaType: apt.mediaType,
         motifs: apt.patient.profile?.motifs || '',
         createdAt: apt.createdAt
       })),
-      upcomingAppointments: upcomingAppointments.map(apt => ({
+      upcomingAppointments: upcomingAppointments.filter(apt => apt.patient).map(apt => ({
         id: apt.id,
+        patientId: apt.patient.id,
         patientName: apt.patient.fullname,
+        patientPhone: apt.patient.profile?.phone || '',
+        motifs: apt.patient.profile?.motifs || '',
+        patientGender: apt.patient.profile?.gender,
         appointmentDate: apt.appointmentDate,
         appointmentTime: apt.appointmentTime,
-        mediaType: apt.mediaType
+        mediaType: apt.mediaType,
+        status: apt.status
       })),
       timeSlots
     });
 
   } catch (error) {
-    console.error('GetDashboard error:', error);
-    res.status(500).json({ error: 'Failed to get dashboard data' });
+    console.error('GetDashboard error:', error.message);
+    if (error.code === 'P1001') {
+      res.status(503).json({ error: 'Database unavailable. Please check connection.' });
+    } else {
+      res.status(500).json({ error: 'Failed to get dashboard data: ' + error.message });
+    }
   }
 };
 

@@ -115,15 +115,39 @@ function viewPatientNotes(patientId) {
     document.getElementById('notesModal').classList.add('active');
     document.body.style.overflow = 'hidden';
     
-    document.getElementById('notesList').innerHTML = `
-        <div class="note-item">
-            <p><strong>Patient:</strong> ${patient.fullname}</p>
-            <p><strong>Total séances:</strong> ${patient.totalSessions}</p>
-            <p><strong>Dernière séance:</strong> ${formatDate(patient.lastSession)}</p>
-            <p><strong>Motif initial:</strong> ${patient.motif}</p>
+    const genderLabel = { 'male': 'Homme', 'female': 'Femme', 'other': 'Autre' };
+    const prefGenderLabel = { 'male': 'Homme', 'female': 'Femme', 'no-preference': 'Aucune préférence' };
+    
+    const profileContent = `
+        <div class="patient-profile-grid" style="display: grid; gap: 15px;">
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px;">
+                <h4 style="margin: 0 0 10px 0; color: #091346;">Informations personnelles</h4>
+                <p><strong>Nom:</strong> ${escapeHtml(patient.fullname)}</p>
+                <p><strong>Email:</strong> ${escapeHtml(patient.email || 'Non spécifié')}</p>
+                <p><strong>Téléphone:</strong> ${escapeHtml(patient.phone || 'Non spécifié')}</p>
+                <p><strong>Genre:</strong> ${genderLabel[patient.gender] || 'Non spécifié'}</p>
+                <p><strong>Date de naissance:</strong> ${patient.birthDate ? formatDate(patient.birthDate) : 'Non spécifiée'}</p>
+                <p><strong>Langue:</strong> ${escapeHtml(patient.language || 'Non spécifiée')}</p>
+            </div>
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px;">
+                <h4 style="margin: 0 0 10px 0; color: #091346;">Motif de consultation</h4>
+                <p>${escapeHtml(patient.motifs || 'Non spécifié')}</p>
+            </div>
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px;">
+                <h4 style="margin: 0 0 10px 0; color: #091346;">Préférences</h4>
+                <p><strong>Genre du praticien:</strong> ${prefGenderLabel[patient.prefGender] || 'Aucune préférence'}</p>
+                <p><strong>Type de session:</strong> ${patient.prefType === 'video' ? 'Vidéo' : patient.prefType === 'phone' ? 'Téléphone' : patient.prefType === 'chat' ? 'Chat' : 'Non spécifié'}</p>
+            </div>
+            <div style="background: #44AA99; color: white; padding: 15px; border-radius: 8px;">
+                <h4 style="margin: 0 0 10px 0;">Historique des séances</h4>
+                <p><strong>Total des séances:</strong> ${patient.totalSessions}</p>
+                <p><strong>Dernière séance:</strong> ${formatDate(patient.lastSession)}</p>
+                <p><strong>Première séance:</strong> ${formatDate(patient.firstSession)}</p>
+            </div>
         </div>
     `;
     
+    document.getElementById('patientProfileContent').innerHTML = profileContent;
     window.currentPatientId = patientId;
 }
 
@@ -144,6 +168,12 @@ function addNote() {
 }
 
 function formatDate(dateStr) {
+    if (!dateStr) return '-';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function formatDateTime(dateStr) {
     if (!dateStr) return '-';
     const date = new Date(dateStr);
     return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
@@ -169,6 +199,13 @@ function highlightCurrentSidebarLink() {
     });
 }
 
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 window.filterPatients = filterPatients;
 window.resetFilters = resetFilters;
 window.viewPatientNotes = viewPatientNotes;
@@ -176,6 +213,7 @@ window.closeNotesModal = closeNotesModal;
 window.addNote = addNote;
 window.highlightCurrentSidebarLink = highlightCurrentSidebarLink;
 window.showToast = showToast;
+window.escapeHtml = escapeHtml;
 
 document.querySelectorAll('.nav-menu .nav-item').forEach(link => {
     link.addEventListener('click', function() {

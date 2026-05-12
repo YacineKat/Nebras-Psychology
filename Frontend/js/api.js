@@ -106,12 +106,26 @@ const doctorAPI = {
     return fetchAPI('/doctors/schedule');
   },
 
+  deleteTimeSlot: async (slotId) => {
+    return fetchAPI(`/doctors/schedule/${slotId}`, {
+      method: 'DELETE'
+    });
+  },
+
+  getWeekAppointments: async (startDate, endDate) => {
+    return fetchAPI(`/appointments?startDate=${startDate}&endDate=${endDate}`);
+  },
+
   getDashboard: async () => {
     return fetchAPI('/doctors/dashboard');
   },
 
   getPatients: async () => {
     return fetchAPI('/doctors/patients');
+  },
+
+  getPatientById: async (patientId) => {
+    return fetchAPI(`/doctors/patients/${patientId}`);
   }
 };
 

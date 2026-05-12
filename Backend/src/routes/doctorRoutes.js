@@ -15,6 +15,8 @@ router.get('/patients', authMiddleware, requireRole('psychologue', 'counselor'),
 router.get('/profile/me', authMiddleware, doctorController.getMyProfile);
 router.put('/profile', authMiddleware, requireRole('psychologue', 'counselor'), doctorController.updateProfile);
 router.post('/schedule', authMiddleware, requireRole('psychologue', 'counselor'), doctorController.addTimeSlot);
+router.post('/schedule/block', authMiddleware, requireRole('psychologue', 'counselor'), doctorController.blockTimeSlot);
+router.put('/schedule/:id/unblock', authMiddleware, requireRole('psychologue', 'counselor'), doctorController.unblockTimeSlot);
 router.get('/schedule', authMiddleware, requireRole('psychologue', 'counselor'), doctorController.getSchedule);
 router.delete('/schedule/:id', authMiddleware, requireRole('psychologue', 'counselor'), doctorController.deleteTimeSlot);
 router.get('/dashboard', authMiddleware, requireRole('psychologue', 'counselor'), doctorController.getDashboard);

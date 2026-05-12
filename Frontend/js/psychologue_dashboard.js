@@ -1,4 +1,7 @@
 let currentDoctor = null;
+let isLoading = false;
+let dashboardData = null;
+let patientsData = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
     if (!isLoggedIn()) {
@@ -11,79 +14,154 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
-    currentDoctor = getCurrentUser();
-    if (currentDoctor) {
-        const name = currentDoctor.fullname || currentDoctor.email || '';
-        document.querySelectorAll('.user-name').forEach(el => el.textContent = name);
-        
-        const greeting = document.querySelector('.page-header h1');
-        if (greeting && greeting.textContent.includes('Bonjour')) {
-            greeting.textContent = 'Bonjour, ' + name;
-        }
-    }
-
+    initUserDisplay();
     await loadDashboardData();
     highlightCurrentSidebarLink();
 });
 
+function initUserDisplay() {
+    currentDoctor = getCurrentUser();
+    if (currentDoctor) {
+        const name = currentDoctor.fullname || currentDoctor.email || '';
+        
+        document.querySelectorAll('.user-name').forEach(el => {
+            if (el) el.textContent = name;
+        });
+        
+        const greetingEl = document.getElementById('greetingTitle');
+        if (greetingEl) {
+            greetingEl.textContent = 'Bonjour, ' + name;
+        }
+    }
+}
+
 async function loadDashboardData() {
+    if (isLoading) return;
+    
+    isLoading = true;
+    showLoadingState(true);
+    
     try {
-        const dashboard = await doctorAPI.getDashboard();
+        const [dashboard, patientsResult] = await Promise.all([
+            doctorAPI.getDashboard(),
+            doctorAPI.getPatients()
+        ]);
+        
+        console.log('Dashboard data:', dashboard);
+        console.log('Patients data:', patientsResult);
         currentDoctor = { ...currentDoctor, profile: dashboard };
+        dashboardData = dashboard;
+        patientsData = patientsResult.patients || [];
         
         updateStats(dashboard.stats);
+        console.log('Today sessions:', dashboard.todaySessions);
+        console.log('Pending requests:', dashboard.pendingRequests);
         renderTodaySessions(dashboard.todaySessions);
         renderPendingRequests(dashboard.pendingRequests);
         renderUpcomingAppointments(dashboard.upcomingAppointments);
         
+        const patientCount = patientsData?.patients?.length || dashboard.stats?.activePatients || 0;
+        updateSidebarBadges(patientCount, dashboard.stats.pendingRequestsCount);
+        
     } catch (error) {
         console.error('Error loading dashboard:', error);
+        showToast('Erreur lors du chargement des données', 'error');
+    } finally {
+        isLoading = false;
+        showLoadingState(false);
     }
+}
+
+function showLoadingState(show) {
+    const sections = [
+        '.stats-dashboard',
+        '.seances-list',
+        '.demandes-list',
+        '.rdv-list'
+    ];
+    
+    sections.forEach(selector => {
+        const el = document.querySelector(selector);
+        if (el) {
+            el.style.opacity = show ? '0.5' : '1';
+            el.style.pointerEvents = show ? 'none' : 'auto';
+        }
+    });
 }
 
 function updateStats(stats) {
-    const statCards = document.querySelectorAll('.stat-card');
-    if (statCards.length >= 4) {
-        statCards[0].querySelector('h3').textContent = stats.activePatients || 0;
-        statCards[0].querySelector('p').textContent = 'Patients actifs';
-        
-        statCards[1].querySelector('h3').textContent = stats.todaySessionsCount || 0;
-        statCards[1].querySelector('p').textContent = "Séances aujourd'hui";
-        
-        statCards[2].querySelector('h3').textContent = stats.pendingRequestsCount || 0;
-        statCards[2].querySelector('p').textContent = 'Demandes en attente';
-        
-        const income = stats.monthlyIncome || 0;
-        statCards[3].querySelector('h3').textContent = income.toLocaleString('fr-FR') + ' DA';
-        statCards[3].querySelector('p').textContent = 'Revenus du mois';
+    const statsMap = {
+        'statActivePatients': stats?.activePatients || 0,
+        'statTodaySessions': stats?.todaySessionsCount || 0,
+        'statPendingRequests': stats?.pendingRequestsCount || 0,
+        'statMonthlyIncome': (stats?.monthlyIncome || 0).toLocaleString('fr-FR') + ' DA'
+    };
+
+    Object.keys(statsMap).forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = statsMap[id];
+    });
+}
+
+function updateSidebarBadges(patientCount, pendingCount) {
+    const patientsBadge = document.querySelector('.nav-item[href="psychologue_mes_patients.html"] .badge');
+    if (patientsBadge && patientCount !== undefined) {
+        patientsBadge.textContent = patientCount;
+    }
+    
+    const messagesBadge = document.querySelector('.nav-item[href="psychologue_messagerie.html"] .badge');
+    if (messagesBadge && pendingCount !== undefined) {
+        messagesBadge.textContent = pendingCount;
     }
 }
 
+function isSessionValid(apt) {
+    if (!apt.appointmentTime) return true;
+    const now = new Date();
+    const [hours, minutes] = apt.appointmentTime.split(':').map(Number);
+    const sessionTime = new Date();
+    sessionTime.setHours(hours, minutes, 0, 0);
+    const oneHourAfterSession = new Date(sessionTime.getTime() + 60 * 60 * 1000);
+    return now <= oneHourAfterSession;
+}
+
 function renderTodaySessions(sessions) {
-    const sessionsList = document.querySelector('.seances-list');
-    if (!sessionsList) return;
-    
-    if (!sessions || sessions.length === 0) {
-        sessionsList.innerHTML = '<div class="empty-state"><p>Aucune séance prévue aujourd\'hui</p></div>';
+    const container = document.querySelector('.seances-list');
+    if (!container) {
+        console.warn('Sessions container not found');
         return;
     }
     
-    sessionsList.innerHTML = sessions.map(apt => {
+    console.log('Rendering today sessions:', sessions);
+    
+    const validSessions = (sessions || []).filter(isSessionValid);
+    
+    if (validSessions.length === 0) {
+        container.innerHTML = '<div class="empty-state" style="padding: 30px; text-align: center; color: #888;">Aucune séance prévue aujourd\'hui</div>';
+        return;
+    }
+    
+    container.innerHTML = validSessions.map(apt => {
         const statusClass = apt.status === 'confirmed' ? 'a-venir' : 'en-cours';
         const statusText = apt.status === 'confirmed' ? 'Confirmé' : 'En attente';
-        const mediaIcon = getMediaIcon(apt.mediaType);
+        const btnText = apt.status === 'confirmed' ? 'Démarrer' : 'Préparer';
+        const btnIcon = apt.status === 'confirmed' 
+            ? '<polygon points="5 3 19 12 5 21 5 3"/>'
+            : '<path d="M12 6v6l4 2"/>';
+        
+        const patientName = apt.patientName || apt.patient?.fullname || 'Patient';
+        
         return `
             <div class="seance-card">
-                <div class="seance-time">${apt.appointmentTime}</div>
+                <div class="seance-time">${apt.appointmentTime || '-'}</div>
                 <div class="seance-info">
-                    <h4>${apt.patientName || 'Patient'}</h4>
-                    <p>${mediaIcon} ${getMediaLabel(apt.mediaType)} · ${apt.notes || ''}</p>
+                    <h4 style="cursor: pointer; color: #44AA99; text-decoration: underline;" onclick="viewPatientProfile('${apt.patientId}')">${escapeHtml(patientName)}</h4>
+                    <p>${getMediaLabel(apt.mediaType)} · ${escapeHtml(apt.notes) || ''}</p>
                 </div>
                 <div class="seance-status ${statusClass}">${statusText}</div>
                 <button class="seance-btn" onclick="startSession('${apt.id}')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                        <polygon points="5 3 19 12 5 21 5 3"/>
-                    </svg> ${apt.status === 'confirmed' ? 'Démarrer' : 'Préparer'}
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">${btnIcon}</svg>
+                    ${btnText}
                 </button>
             </div>
         `;
@@ -91,19 +169,42 @@ function renderTodaySessions(sessions) {
 }
 
 function renderPendingRequests(requests) {
-    const demandesList = document.querySelector('.demandes-list');
-    if (!demandesList) return;
-    
-    if (!requests || requests.length === 0) {
-        demandesList.innerHTML = '<div class="empty-state"><p>Aucune demande en attente</p></div>';
+    const container = document.querySelector('.demandes-list');
+    if (!container) {
+        console.warn('Demandes container not found');
         return;
     }
     
-    demandesList.innerHTML = requests.map(apt => `
+    console.log('Rendering pending requests:', requests);
+    
+    const now = new Date();
+    const validRequests = (requests || []).filter(apt => {
+        if (!apt.appointmentDate || !apt.appointmentTime) return true;
+        const [hours, minutes] = apt.appointmentTime.split(':').map(Number);
+        const sessionTime = new Date(apt.appointmentDate);
+        sessionTime.setHours(hours, minutes, 0, 0);
+        const oneHourAfterSession = new Date(sessionTime.getTime() + 60 * 60 * 1000);
+        return now <= oneHourAfterSession;
+    });
+    
+    if (validRequests.length === 0) {
+        container.innerHTML = '<div class="empty-state" style="padding: 30px; text-align: center; color: #888;">Aucune demande en attente</div>';
+        return;
+    }
+    
+    container.innerHTML = validRequests.map(apt => {
+        const patientName = apt.patientName || apt.patient?.fullname || 'Patient';
+        const motifs = apt.motifs || apt.patient?.profile?.motifs || 'Non spécifié';
+        const mediaType = apt.mediaType || 'video';
+        const aptDate = formatDate(apt.appointmentDate);
+        const aptTime = apt.appointmentTime || '-';
+        
+        return `
         <div class="demande-card">
             <div class="demande-info">
-                <h4>${apt.patientName || 'Patient'}</h4>
-                <p>Motif: ${apt.motifs || 'Non spécifié'} · Préférence: ${getMediaLabel(apt.mediaType)}</p>
+                <h4 style="cursor: pointer; color: #44AA99; text-decoration: underline;" onclick="viewPatientProfile('${apt.patientId}')">${escapeHtml(patientName)}</h4>
+                <p style="color: #44AA99; font-weight: bold;">📅 ${aptDate} à ${aptTime}</p>
+                <p>Motif: ${escapeHtml(motifs)} · Préférence: ${getMediaLabel(mediaType)}</p>
                 <small>Demande reçue le ${formatDate(apt.createdAt)}</small>
             </div>
             <div class="demande-actions">
@@ -119,35 +220,42 @@ function renderPendingRequests(requests) {
                 </button>
             </div>
         </div>
-    `).join('');
+    `}).join('');
 }
 
 function renderUpcomingAppointments(appointments) {
-    const rdvList = document.querySelector('.rdv-list');
-    if (!rdvList) return;
-    
-    if (!appointments || appointments.length === 0) {
-        rdvList.innerHTML = '<div class="empty-state"><p>Aucun rendez-vous à venir</p></div>';
+    const container = document.querySelector('.rdv-list');
+    if (!container) {
+        console.warn('Rdv list container not found');
         return;
     }
     
-    rdvList.innerHTML = appointments.map(apt => `
+    if (!appointments || appointments.length === 0) {
+        container.innerHTML = '<div class="empty-state" style="padding: 30px; text-align: center; color: #888;">Aucun rendez-vous à venir</div>';
+        return;
+    }
+    
+    container.innerHTML = appointments.map(apt => {
+        return `
         <div class="rdv-item">
             <div class="rdv-date">${formatDate(apt.appointmentDate)}</div>
             <div class="rdv-info">
-                <span>${apt.appointmentTime} - ${apt.patientName || 'Patient'}</span>
+                <span style="cursor: pointer; color: #44AA99; text-decoration: underline;" onclick="viewPatientProfile('${apt.patientId}')">${apt.appointmentTime || ''} - ${escapeHtml(apt.patientName) || 'Patient'}</span>
                 <span class="rdv-type">${getMediaLabel(apt.mediaType)}</span>
             </div>
         </div>
-    `).join('');
+    `}).join('');
 }
 
 async function acceptRequest(appointmentId) {
     try {
-        await appointmentAPI.updateStatus(appointmentId, { status: 'confirmed' });
+        console.log('Accepting request:', appointmentId);
+        const result = await appointmentAPI.updateStatus(appointmentId, { status: 'confirmed' });
+        console.log('Accept result:', result);
         showToast('Demande acceptée!', 'success');
         await loadDashboardData();
     } catch (error) {
+        console.error('Accept error:', error);
         showToast('Erreur: ' + error.message, 'error');
     }
 }
@@ -156,198 +264,183 @@ async function refuseRequest(appointmentId) {
     if (!confirm('Êtes-vous sûr de vouloir refuser cette demande?')) return;
     
     try {
-        await appointmentAPI.updateStatus(appointmentId, { status: 'cancelled' });
+        console.log('Refusing request:', appointmentId);
+        const result = await appointmentAPI.updateStatus(appointmentId, { status: 'cancelled' });
+        console.log('Refuse result:', result);
         showToast('Demande refusée', 'success');
         await loadDashboardData();
     } catch (error) {
+        console.error('Refuse error:', error);
         showToast('Erreur: ' + error.message, 'error');
     }
 }
 
 function startSession(appointmentId) {
-    showToast('Démarrage de la séance...', 'info');
+    const sessionData = {
+        appointmentId: appointmentId,
+        prepared: true,
+        timestamp: new Date().toISOString()
+    };
+    sessionStorage.setItem('currentSession', JSON.stringify(sessionData));
+    showToast('Séance préparée! Vous pouvez commencer.', 'success');
+    setTimeout(() => {
+        window.location.href = 'psychologue_messagerie.html?session=' + appointmentId;
+    }, 1000);
 }
 
 function getMediaLabel(mediaType) {
     const labels = { 'video': 'Vidéo', 'phone': 'Téléphone', 'chat': 'Chat' };
-    return labels[mediaType] || mediaType;
+    return labels[mediaType] || mediaType || '-';
 }
 
 function getMediaIcon(mediaType) {
-    const icons = {
-        'video': '📹',
-        'phone': '📞',
-        'chat': '💬'
-    };
+    const icons = { 'video': '📹', 'phone': '📞', 'chat': '💬' };
     return icons[mediaType] || '';
 }
 
 function formatDate(dateStr) {
     if (!dateStr) return '-';
     const date = new Date(dateStr);
-    return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'numeric', year: 'numeric' });
+    return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 function highlightCurrentSidebarLink() {
     const currentPage = window.location.pathname.split('/').pop().toLowerCase();
-    const navItems = document.querySelectorAll('.nav-item');
-    navItems.forEach(item => {
-        const href = item.getAttribute('href')?.split('/').pop().toLowerCase();
-        if (href && href === currentPage) {
-            item.classList.add('active');
-        } else {
-            item.classList.remove('active');
+    document.querySelectorAll('.nav-item').forEach(item => {
+        const href = item.getAttribute('href');
+        if (href) {
+            const hrefPage = href.split('/').pop().toLowerCase();
+            if (hrefPage === currentPage) {
+                item.classList.add('active');
+            } else {
+                item.classList.remove('active');
+            }
         }
     });
 }
 
-// Notification Functions
-let notifications = [];
-let unreadCount = 0;
-
-async function loadNotifications() {
-    try {
-        // Get dashboard data which includes pending requests
-        const dashboard = await doctorAPI.getDashboard();
-        
-        // Convert pending requests to notifications
-        notifications = [];
-        
-        // Add pending request notifications
-        if (dashboard.pendingRequests && dashboard.pendingRequests.length > 0) {
-            dashboard.pendingRequests.forEach(req => {
-                notifications.push({
-                    id: req.id,
-                    type: 'request',
-                    title: 'Nouvelle demande de consultation',
-                    message: `${req.patientName} demande une consultation`,
-                    time: req.createdAt,
-                    read: false
-                });
-            });
-        }
-        
-        // Update badge
-        unreadCount = notifications.filter(n => !n.read).length;
-        updateNotificationBadge();
-        
-        // Render notifications
-        renderNotifications();
-        
-    } catch (error) {
-        console.error('Error loading notifications:', error);
-    }
-}
-
-// Export for HTML inline calls
-window.loadNotificationsFromDashboard = loadNotifications;
-
-function updateNotificationBadge() {
-    const badge = document.getElementById('notificationBadge');
-    if (badge) {
-        if (unreadCount > 0) {
-            badge.textContent = unreadCount > 9 ? '9+' : unreadCount;
-            badge.style.display = 'block';
-        } else {
-            badge.style.display = 'none';
-        }
-    }
-}
-
-function renderNotifications() {
-    const list = document.getElementById('notificationList');
-    if (!list) return;
+async function viewPatientProfile(patientId) {
+    console.log('viewPatientProfile called with:', patientId);
     
-    if (notifications.length === 0) {
-        list.innerHTML = '<div class="notification-empty">Aucune notification</div>';
+    const modal = document.getElementById('patientProfileModal');
+    if (!modal) {
+        console.error('Modal not found');
         return;
     }
     
-    list.innerHTML = notifications.map(n => `
-        <div class="notification-item ${n.read ? '' : 'unread'}" onclick="handleNotificationClick('${n.id}', '${n.type}')">
-            <div class="notification-item-title">${n.title}</div>
-            <div class="notification-item-message">${n.message}</div>
-            <div class="notification-item-time">${formatTimeAgo(n.time)}</div>
-        </div>
-    `).join('');
-}
-
-function formatTimeAgo(dateStr) {
-    const date = new Date(dateStr);
-    const now = new Date();
-    const diff = now - date;
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
     
-    const minutes = Math.floor(diff / 60000);
-    const hours = Math.floor(diff / 3600000);
-    const days = Math.floor(diff / 86400000);
+    document.getElementById('patientProfileContent').innerHTML = '<div style="text-align: center; padding: 40px;">Chargement des informations du patient...</div>';
     
-    if (minutes < 1) return 'À l\'instant';
-    if (minutes < 60) return `Il y a ${minutes}min`;
-    if (hours < 24) return `Il y a ${hours}h`;
-    if (days < 7) return `Il y a ${days}j`;
-    return formatDate(dateStr);
-}
-
-function toggleNotifications(event) {
-    event.stopPropagation();
-    const dropdown = document.getElementById('notificationDropdown');
-    dropdown.classList.toggle('show');
+    let patient = null;
     
-    if (dropdown.classList.contains('show')) {
-        loadNotifications();
-    }
-}
-
-function handleNotificationClick(notificationId, type) {
-    // Mark as read
-    const notif = notifications.find(n => n.id === notificationId);
-    if (notif && !notif.read) {
-        notif.read = true;
-        unreadCount--;
-        updateNotificationBadge();
-        renderNotifications();
+    if (patientsData && patientsData.length > 0) {
+        patient = patientsData.find(p => p.id === patientId);
     }
     
-    // Close dropdown
-    const dropdown = document.getElementById('notificationDropdown');
-    dropdown.classList.remove('show');
-    
-    // If it's a request, redirect to pending requests
-    if (type === 'request') {
-        // Scroll to pending requests section
-        const demandesSection = document.querySelector('.demandes-list');
-        if (demandesSection) {
-            demandesSection.scrollIntoView({ behavior: 'smooth' });
+    if (!patient && dashboardData) {
+        const allPatients = [
+            ...(dashboardData.todaySessions || []),
+            ...(dashboardData.pendingRequests || []),
+            ...(dashboardData.upcomingAppointments || [])
+        ];
+        const foundApt = allPatients.find(p => p.patientId === patientId);
+        if (foundApt) {
+            patient = foundApt.patient || foundApt;
         }
     }
+    
+    if (!patient) {
+        try {
+            const result = await doctorAPI.getPatientById(patientId);
+            patient = result.patient || result;
+        } catch (e) {
+            console.error('Error fetching patient:', e);
+        }
+    }
+    
+    if (!patient) {
+        modal.classList.remove('active');
+        document.body.style.overflow = 'auto';
+        showToast('Patient non trouvé', 'error');
+        return;
+    }
+
+    const finalPatient = patient.patient ? { ...patient.patient, ...patient } : patient;
+    
+    const genderLabel = { 'male': 'Homme', 'female': 'Femme', 'other': 'Autre' };
+    const prefGenderLabel = { 'male': 'Homme', 'female': 'Femme', 'no-preference': 'Aucune préférence' };
+    const statusLabel = { 'pending': 'En attente', 'confirmed': 'Confirmé', 'completed': 'Terminé', 'cancelled': 'Annulé' };
+    
+    const aptData = patient.appointmentDate ? patient : (dashboardData?.todaySessions?.find(p => p.patientId === patientId) || dashboardData?.pendingRequests?.find(p => p.patientId === patientId) || dashboardData?.upcomingAppointments?.find(p => p.patientId === patientId));
+    
+    document.getElementById('patientProfileContent').innerHTML = `
+        <div class="patient-profile-grid" style="display: grid; gap: 15px;">
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px;">
+                <h4 style="margin: 0 0 10px 0; color: #091346;">Informations personnelles</h4>
+                <p><strong>Nom:</strong> ${escapeHtml(finalPatient.fullname || finalPatient.patientName || 'Non spécifié')}</p>
+                <p><strong>Email:</strong> ${escapeHtml(finalPatient.email || 'Non spécifié')}</p>
+                <p><strong>Téléphone:</strong> ${escapeHtml(finalPatient.phone || finalPatient.patientPhone || 'Non spécifié')}</p>
+                <p><strong>Genre:</strong> ${genderLabel[finalPatient.gender || finalPatient.patientGender] || 'Non spécifié'}</p>
+                <p><strong>Date de naissance:</strong> ${finalPatient.birthDate ? formatDate(finalPatient.birthDate) : 'Non spécifiée'}</p>
+                <p><strong>Langue:</strong> ${escapeHtml(finalPatient.language || 'Non spécifiée')}</p>
+            </div>
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px;">
+                <h4 style="margin: 0 0 10px 0; color: #091346;">Motif de consultation</h4>
+                <p>${escapeHtml(finalPatient.motifs || finalPatient.notes || finalPatient.patient?.profile?.motifs || 'Non spécifié')}</p>
+            </div>
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px;">
+                <h4 style="margin: 0 0 10px 0; color: #091346;">Préférences</h4>
+                <p><strong>Genre du praticien:</strong> ${prefGenderLabel[finalPatient.prefGender || finalPatient.patient?.prefGender] || 'Aucune préférence'}</p>
+                <p><strong>Type de session:</strong> ${finalPatient.prefType === 'video' ? 'Vidéo' : finalPatient.prefType === 'phone' ? 'Téléphone' : finalPatient.prefType === 'chat' ? 'Chat' : 'Non spécifié'}</p>
+            </div>
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px;">
+                <h4 style="margin: 0 0 10px 0; color: #091346;">Détails du rendez-vous</h4>
+                <p><strong>Date:</strong> ${aptData?.appointmentDate ? formatDate(aptData.appointmentDate) : '-'}</p>
+                <p><strong>Heure:</strong> ${aptData?.appointmentTime || '-'}</p>
+                <p><strong>Type:</strong> ${getMediaLabel(aptData?.mediaType)}</p>
+                <p><strong>Statut:</strong> ${statusLabel[aptData?.status] || aptData?.status || 'Non spécifié'}</p>
+            </div>
+            <div style="background: #44AA99; color: white; padding: 15px; border-radius: 8px;">
+                <h4 style="margin: 0 0 10px 0;">Historique des séances</h4>
+                <p><strong>Total des séances:</strong> ${finalPatient.totalSessions || 0}</p>
+                <p><strong>Dernière séance:</strong> ${finalPatient.lastSession ? formatDate(finalPatient.lastSession) : '-'}</p>
+                <p><strong>Première séance:</strong> ${finalPatient.firstSession ? formatDate(finalPatient.firstSession) : '-'}</p>
+            </div>
+            
+        </div>
+    `;
 }
 
-function markAllRead(event) {
-    event.stopPropagation();
-    notifications.forEach(n => n.read = true);
-    unreadCount = 0;
-    updateNotificationBadge();
-    renderNotifications();
-    showToast('Toutes les notifications marquées comme lues', 'success');
+function closePatientModal() {
+    const modal = document.getElementById('patientProfileModal');
+    if (modal) {
+        modal.classList.remove('active');
+    }
+    document.body.style.overflow = 'auto';
 }
 
-// Close dropdown when clicking outside
-document.addEventListener('click', function(event) {
-    const dropdown = document.getElementById('notificationDropdown');
-    const container = document.querySelector('.notification-container');
-    if (container && !container.contains(event.target)) {
-        dropdown.classList.remove('show');
+document.getElementById('patientProfileModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closePatientModal();
     }
 });
 
 window.acceptRequest = acceptRequest;
 window.refuseRequest = refuseRequest;
 window.startSession = startSession;
-window.highlightCurrentSidebarLink = highlightCurrentSidebarLink;
 window.showToast = showToast;
-window.toggleNotifications = toggleNotifications;
-window.markAllRead = markAllRead;
-window.handleNotificationClick = handleNotificationClick;
+window.highlightCurrentSidebarLink = highlightCurrentSidebarLink;
+window.viewPatientProfile = viewPatientProfile;
+window.closePatientModal = closePatientModal;
 
 document.querySelectorAll('.nav-menu .nav-item').forEach(link => {
     link.addEventListener('click', function() {
