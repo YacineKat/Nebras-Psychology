@@ -7,7 +7,6 @@
     <link rel="icon" type="image" href="./assets/image/logo.png">
 </head>
 <body>
-    <!-- Header -->
     <div class="header">
         <div class="logo">
             <img src="./assets/image/logo.png" alt="Nebras Logo"/>
@@ -18,82 +17,51 @@
             <a href="#etapes">Étapes</a>
             <a href="#psychologues">Psychologues</a>
             <a href="#Nos offres">Nos offres</a>
-
         </div>
         <div class="button-group">
             <button onclick="goToHome()" class="btn-signin">Accueil</button>
         </div>
     </div>
 
-    <!-- Formulaire d'authentification -->
     <div class="auth-box">
-        <!-- Formulaire Connexion -->
         <div id="login" class="form active">
             <h2>Connexion</h2>
-            <input type="email" placeholder="Email" class="input">
-            <input type="password" placeholder="Mot de passe" class="input">
+            <input type="email" id="loginEmail" placeholder="Email" class="input">
+            <input type="password" id="loginPassword" placeholder="Mot de passe" class="input">
             <button class="btn" onclick="handleLogin()">Se connecter</button>
-            <p>Pas de compte ? <a href="#" onclick="showRegister()">S'inscrire</a></p>
+            <p>Pas de compte ? <a href="#" onclick="showRegister(); return false;">S'inscrire</a></p>
         </div>
 
-        <!-- Formulaire Inscription -->
         <div id="register" class="form">
             <h2>Inscription</h2>
-            
-            <select class="input">
+            <select id="regUserType" class="input">
                 <option value="patient">Patient</option>
                 <option value="psychologue">Psychologue</option>
                 <option value="counselor">Counselor</option>
             </select>
-
-            <input type="text" placeholder="Nom complet" class="input">
-            <input type="email" placeholder="Email" class="input">
-            <input type="password" placeholder="Mot de passe" class="input">
-            <input type="password" placeholder="Confirmer le mot de passe" class="input">
-
+            <input type="text" id="regFullname" placeholder="Nom complet" class="input">
+            <input type="email" id="regEmail" placeholder="Email" class="input">
+            <input type="password" id="regPassword" placeholder="Mot de passe" class="input">
+            <input type="password" id="regConfirmPassword" placeholder="Confirmer le mot de passe" class="input">
             <div class="check-box">
                 <input type="checkbox" id="rules">
                 <label for="rules">J'accepte les <a href="rule.html">règles</a> du site</label>
             </div>
-
             <button class="btn" onclick="handleRegister()">S'inscrire</button>
-            
-            <p>Déjà un compte ? <a href="#" onclick="showLogin()">Se connecter</a></p>
+            <p>Déjà un compte ? <a href="#" onclick="showLogin(); return false;">Se connecter</a></p>
         </div>
     </div>
 
-    <!-- Footer -->
     <footer>
         <p>&copy; <span id="currentYear"></span> Nebras - Psychologie en ligne</p>
     </footer>
-    
-<!-- API Service -->
+
     <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
     
     <script>
         document.getElementById('currentYear').textContent = new Date().getFullYear();
-    </script>
-
-    <!-- Auth logic -->
-    <script>
-        // Toast notification system
-        function showToast(message, type = 'success') {
-            const container = document.querySelector('.toast-container') || createToastContainer();
-            const toast = document.createElement('div');
-            toast.className = `toast ${type}`;
-            toast.textContent = message;
-            container.appendChild(toast);
-            setTimeout(() => toast.remove(), 3000);
-        }
-
-        function createToastContainer() {
-            const container = document.createElement('div');
-            container.className = 'toast-container';
-            document.body.appendChild(container);
-            return container;
-        }
-
-        // If already logged in, redirect to dashboard
+        
         if (isLoggedIn()) {
             const user = getCurrentUser();
             if (user) redirectByUserType(user.userType);
@@ -110,11 +78,11 @@
         };
         
         window.handleLogin = async function() {
-            const email = document.querySelector('#login input[type="email"]').value;
-            const password = document.querySelector('#login input[type="password"]').value;
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
             
             if (!email || !password) {
-                showToast('Veuillez entrer votre email et mot de passe', 'error');
+                alert('Veuillez entrer votre email et mot de passe');
                 return;
             }
             
@@ -122,42 +90,40 @@
                 const result = await authAPI.login({ email, password });
                 localStorage.setItem('nebras_token', result.token);
                 localStorage.setItem('nebras_user', JSON.stringify(result.user));
-                showToast('Connexion réussie !', 'success');
-                setTimeout(() => redirectByUserType(result.user.userType), 500);
+                setTimeout(() => redirectByUserType(result.user.userType), 300);
             } catch(e) {
-                showToast('Erreur: ' + e.message, 'error');
+                alert('Erreur: ' + e.message);
             }
         };
         
         window.handleRegister = async function() {
-            const userType = document.querySelector('#register select').value;
-            const fullname = document.querySelector('#register input[type="text"]').value;
-            const email = document.querySelector('#register input[type="email"]').value;
-            const password = document.querySelector('#register input[type="password"]').value;
-            const confirmPassword = document.querySelectorAll('#register input[type="password"]')[1].value;
+            const userType = document.getElementById('regUserType').value;
+            const fullname = document.getElementById('regFullname').value;
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPassword').value;
+            const confirmPassword = document.getElementById('regConfirmPassword').value;
             const rules = document.getElementById('rules');
             
             if (!fullname || !email || !password) {
-                showToast('Veuillez remplir tous les champs', 'error');
+                alert('Veuillez remplir tous les champs');
                 return;
             }
             if (password !== confirmPassword) {
-                showToast('Les mots de passe ne correspondent pas', 'error');
+                alert('Les mots de passe ne correspondent pas');
                 return;
             }
             if (!rules.checked) {
-                showToast('Vous devez accepter les règles du site', 'error');
+                alert('Vous devez accepter les règles du site');
                 return;
             }
             
             try {
                 const result = await authAPI.register({ email, password, fullname, userType });
-                localStorage.setItem('nebras_token', result.user.token);
+                localStorage.setItem('nebras_token', result.token || result.user?.token);
                 localStorage.setItem('nebras_user', JSON.stringify(result.user));
-                showToast('Inscription réussie ! Bienvenue sur Nebras.', 'success');
-                setTimeout(() => redirectByUserType(userType), 500);
+                setTimeout(() => redirectByUserType(userType), 300);
             } catch(e) {
-                showToast('Erreur: ' + e.message, 'error');
+                alert('Erreur: ' + e.message);
             }
         };
         
@@ -165,66 +131,5 @@
             window.location.href = 'home.html';
         };
     </script>
-
-    <!-- Fallback functions for onclick handlers -->
-    <script>
-        // Real implementations will be set by the module
-        window.showLogin = function() {
-            document.getElementById('login').classList.add('active');
-            document.getElementById('register').classList.remove('active');
-        };
-        
-        window.showRegister = function() {
-            document.getElementById('login').classList.remove('active');
-            document.getElementById('register').classList.add('active');
-        };
-        
-        window.handleLogin = async function() {
-            if (window.authAPI) {
-                const email = document.querySelector('#login input[type="email"]').value;
-                const password = document.querySelector('#login input[type="password"]').value;
-                try {
-                    const result = await window.authAPI.login({ email, password });
-                    localStorage.setItem('nebras_token', result.token);
-                    localStorage.setItem('nebras_user', JSON.stringify(result.user));
-                    showToast('Connexion réussie !', 'success');
-                    setTimeout(() => redirectByUserType(result.user.userType), 500);
-                } catch(e) { showToast('Erreur: ' + e.message, 'error'); }
-            } else {
-                showToast('Backend non démarré. Veuillez démarrer le serveur.', 'error');
-            }
-        };
-        
-        window.handleRegister = async function() {
-            if (window.authAPI) {
-                const userType = document.querySelector('#register select').value;
-                const fullname = document.querySelector('#register input[type="text"]').value;
-                const email = document.querySelector('#register input[type="email"]').value;
-                const password = document.querySelector('#register input[type="password"]').value;
-                const confirmPassword = document.querySelectorAll('#register input[type="password"]')[1].value;
-                const rules = document.getElementById('rules');
-                
-                if (!fullname || !email || !password) { showToast('Veuillez remplir tous les champs', 'error'); return; }
-                if (password !== confirmPassword) { showToast('Les mots de passe ne correspondent pas', 'error'); return; }
-                if (!rules.checked) { showToast('Vous devez accepter les règles du site', 'error'); return; }
-                
-                try {
-                    const result = await window.authAPI.register({ email, password, fullname, userType });
-                    localStorage.setItem('nebras_token', result.user.token);
-                    localStorage.setItem('nebras_user', JSON.stringify(result.user));
-                    showToast('Inscription réussie !', 'success');
-                    setTimeout(() => redirectByUserType(userType), 500);
-                } catch(e) { showToast('Erreur: ' + e.message, 'error'); }
-            } else {
-                showToast('Backend non démarré. Veuillez démarrer le serveur.', 'error');
-            }
-        };
-        
-        window.goToHome = function() {
-            window.location.href = 'home.html';
-        };
-    </script>
-    
-    <script src="js/auth.js" defer type="module"></script>
 </body>
 </html>

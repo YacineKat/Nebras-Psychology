@@ -28,6 +28,7 @@ model User {
   sentMessages      Message[] @relation("SentMessages")
   receivedMessages  Message[] @relation("ReceivedMessages")
   groupMemberships GroupMember[]
+  createdGroups     TherapyGroup[] @relation("PsychologueGroups")
 }
 
 // ============== PROFILES TABLE ==============
@@ -114,16 +115,24 @@ model TherapyGroup {
   id          String   @id @default(uuid())
   name        String
   description String
+  theme       String?  // e.g., "Stress", "Anxiété", "Confiance en soi"
   dayOfWeek   Int      // 0=Sunday, 1=Monday, ..., 6=Saturday
   time        String   // "19:00"
   duration    Int      // minutes (e.g., 90)
   maxParticipants Int @default(10)
   currentParticipants Int @default(0)
+  price       Int?     // price per session in DA
   icon        String   @default("group")
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   
+  // Link to psychologue who created this group
+  psychologueId String?
+  psychologue   User?   @relation("PsychologueGroups", fields: [psychologueId], references: [id], onDelete: SetNull)
+  
   members     GroupMember[]
+
+  @@index([psychologueId])
 }
 
 // ============== GROUP MEMBERS TABLE ==============

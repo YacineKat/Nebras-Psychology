@@ -9,7 +9,6 @@
 </head>
 <body>
     <div class="container">
-        <!-- Sidebar -->
         <div class="sidebar">
             <div class="logo">
                 <img src="./assets/image/logo.png" alt="Nebras Logo">
@@ -22,7 +21,6 @@
                 <a href="psychologue_mes_patients.html" class="nav-item">
                     <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" fill="currentColor"/></svg>
                     <span>Mes patients</span>
-                    <span class="badge">0</span>
                 </a>
                 <a href="psychologue_emploi_du_temps.html" class="nav-item">
                     <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zM9 14H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2zm-8 4H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2z" fill="currentColor"/></svg>
@@ -38,24 +36,23 @@
                     <span>Honoraires</span>
                 </a>
                 <a href="psychologue_groupes.html" class="nav-item active">
-                        <svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" fill="currentColor"/></svg>                    
-                       <span>Thérapie de groupe</span>
+                    <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" fill="currentColor"/></svg>                    
+                    <span>Thérapie de groupe</span>
                 </a>
-                <a href="psychologue_VIP.html" class="nav-item" onclick="checkVIPStatus(event)">
+                <a href="psychologue_VIP.html" class="nav-item vip-link" onclick="checkVIPStatus(event)">
                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15 9 22 9 16 14 19 22 12 17 5 22 8 14 2 9 9 9 12 2"/></svg>
                     <span>Espace VIP</span>
                     <span class="vip-status-badge" id="vipStatusBadge">Non activé</span>
                 </a>
             </nav>
             <a href="psychologue_profil.html" class="nav-item profile-link">
-                <div class="user-avatar">
-                    <img src="./image/24d0759cbb02c3157112d0ef0f8463b1.jpg" alt="Photo profil" style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover;">
+                <div class="user-avatar" id="userAvatarContainer">
+                    <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#091346" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 </div>
                 <div class="user-info"><span class="user-name">Dr. Karim Benali</span></div>
             </a>
 
-            <a href="#" class="nav-item" onclick="logout()" style="color: #e74c3c;">
+            <a href="#" class="nav-item" onclick="logout(); return false;" style="color: #e74c3c;">
                 <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
                     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
                     <polyline points="16,17 21,12 16,7"/>
@@ -65,7 +62,6 @@
             </a>
         </div>
 
-        <!-- Main Content -->
         <div class="main-content">
             <header class="page-header">
                 <div>
@@ -79,9 +75,11 @@
                 </div>
             </header>
 
-            <!-- Mes groupes -->
             <div class="dashboard-section">
-                <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20" height="20"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Mes groupes</h2>
+                <h2>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20" height="20"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> 
+                    Mes groupes
+                </h2>
                 <div id="groupsList" class="groups-list-psycho"></div>
             </div>
         </div>
@@ -144,7 +142,7 @@
                 <input type="hidden" id="editGroupId">
                 <div class="form-group"><label>Titre</label><input type="text" id="editGroupTitle" class="vip-input"></div>
                 <div class="form-group"><label>Description</label><textarea id="editGroupDesc" rows="3" class="vip-input"></textarea></div>
-                <div class="form-row"><div class="form-group"><label>Jour</label><select id="editGroupDay" class="vip-input"><option>Lundi</option><option>Mardi</option><option>Mercredi</option><option>Jeudi</option><option>Vendredi</option><option>Samedi</option></select></div>
+                <div class="form-row"><div class="form-group"><label>Jour</label><select id="editGroupDay" class="vip-input"><option>Lundi</option><option>Mardi</option>Mercred<option>Mercredi</option><option>Jeudi</option><option>Vendredi</option><option>Samedi</option></select></div>
                 <div class="form-group"><label>Heure</label><input type="time" id="editGroupTime" class="vip-input"></div></div>
                 <div class="form-row"><div class="form-group"><label>Places max</label><input type="number" id="editGroupMaxPlaces" class="vip-input" min="2" max="20"></div>
                 <div class="form-group"><label>Prix</label><input type="number" id="editGroupPrice" class="vip-input"></div></div>
@@ -153,282 +151,185 @@
             </div>
         </div>
     </div>
-    <script src="js/psychologue_groupes.js" defer></script>
-                id: 2,
-                title: "Confiance en soi",
-                description: "Développez votre estime personnelle dans un cadre sécurisant.",
-                theme: "Confiance en soi",
-                day: "Lundi",
-                time: "18:00",
-                duration: "1h30",
-                maxPlaces: 6,
-                currentPlaces: 3,
-                price: 1000,
-                waitingList: [
-                    { id: 103, name: "Mehdi Bouazza", requestDate: "13/04/2025", hasIndividualSession: true },
-                    { id: 104, name: "Lina Zerouali", requestDate: "12/04/2025", hasIndividualSession: false }
-                ],
-                participants: [
-                    { id: 3, name: "Youcef Hamdi", joinedDate: "09/04/2025" },
-                    { id: 4, name: "Leila Mansouri", joinedDate: "10/04/2025" },
-                    { id: 5, name: "Nadia Kaci", joinedDate: "11/04/2025" }
-                ]
-            }
-        ];
 
-        let currentGroupId = null;
-
-        function renderGroups() {
-            const container = document.getElementById('groupsList');
-            if (!container) return;
-            if (groups.length === 0) {
-                container.innerHTML = '<div style="text-align: center; padding: 40px; color: #666;">Aucun groupe créé. Cliquez sur le bouton + pour créer un groupe.</div>';
-                return;
-            }
-            container.innerHTML = groups.map(group => `
-                <div class="group-card-psycho">
-                    <div class="group-header-psycho">
-                        <span class="group-title-psycho">${group.title}</span>
-                        <span class="group-theme-badge">${group.theme}</span>
-                    </div>
-                    <div class="group-details-psycho">
-                        <span class="group-detail-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> ${group.day} ${group.time}</span>
-                        <span class="group-detail-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> ${group.duration}</span>
-                        <span class="group-detail-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> ${group.currentPlaces}/${group.maxPlaces} places</span>
-                        <span class="group-detail-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M16 8l-4 8-4-8"/></svg> ${group.price} DA</span>
-                        <span class="group-detail-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg> ${group.waitingList.length} demandes</span>
-                    </div>
-                    <div class="group-desc-psycho">${group.description}</div>
-                    <div class="group-actions">
-                        <button class="group-action-btn edit" onclick="openEditGroupModal(${group.id})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3l4 4-7 7H10v-4l7-7z"/><path d="M3 21h18"/></svg> Modifier</button>
-                        <button class="group-action-btn detail" onclick="openGroupDetailModal(${group.id})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Gérer</button>
-                        <button class="group-action-btn start" onclick="startGroupSession(${group.id})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg> Démarrer</button>
+    <!-- VIDEO CALL SECTION -->
+    <div id="videoCallSection" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 1000;">
+        <!-- Header -->
+        <div class="header-section">
+            <div class="header-info">
+                <button onclick="endGroupSession()" class="back-btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                </button>
+                <div class="header-text">
+                    <h3 id="videoGroupName">Groupe Video Call</h3>
+                    <div class="header-stats">
+                        <span class="stat-item">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                            <span id="participantCountText">0 participants</span>
+                        </span>
+                        <span class="stat-separator">|</span>
+                        <span class="stat-item" id="callDuration">00:00</span>
                     </div>
                 </div>
-            `).join('');
-        }
+            </div>
+            <div class="header-actions">
+                <button onclick="openEditCallModal()" class="header-btn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3l4 4-7 7H10v-4l7-7zM3 21h18"/></svg>
+                    Modifier
+                </button>
+                <button onclick="toggleChat()" id="chatToggleBtn" class="header-btn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    Chat
+                    <span id="unreadBadge" class="notification-badge" style="display: none;">0</span>
+                </button>
+            </div>
+        </div>
 
-        function openGroupDetailModal(groupId) {
-            currentGroupId = groupId;
-            const group = groups.find(g => g.id === groupId);
-            if (!group) return;
-            
-            document.getElementById('detailGroupTitle').innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#091346" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg> ${group.title}`;
-            document.getElementById('maxPlacesSpan').innerText = group.maxPlaces;
-            updateWaitingAndParticipants(group);
-            
-            document.getElementById('groupDetailModal').classList.add('active');
-            document.body.style.overflow = 'hidden';
-        }
+        <!-- Main Content -->
+        <div class="video-call-container">
+            <!-- Video Section -->
+            <div class="video-main-section">
+                <!-- Speaker View -->
+                <div id="speakerView" class="speaker-view">
+                    <div class="empty-state">
+                        <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        <p style="margin-top: 15px; font-size: 16px;">En attente de participants...</p>
+                    </div>
+                    <div id="speakerBadge" class="speaker-badge" style="display: none;">
+                        <div class="speaking-indicator"></div>
+                        <span id="currentSpeakerName">Speaker</span>
+                    </div>
+                </div>
 
-        function updateWaitingAndParticipants(group) {
-            document.getElementById('waitingCount').innerText = group.waitingList.length;
-            document.getElementById('participantsCount').innerText = group.currentPlaces;
-            
-            const waitingContainer = document.getElementById('waitingListContainer');
-            if (group.waitingList.length === 0) {
-                waitingContainer.innerHTML = '<div class="empty-message">Aucune demande en attente</div>';
-            } else {
-                waitingContainer.innerHTML = group.waitingList.map(req => `
-                    <div class="request-card">
-                        <div class="request-info">
-                            <div class="request-name">${req.name}</div>
-                            <div class="request-date">Demande le ${req.requestDate}</div>
+                <!-- Thumbnails -->
+                <div id="thumbnailGrid" class="thumbnail-section">
+                    <div id="localVideoContainer" class="thumbnail-video mirrored active">
+                        <video id="localVideo" autoplay muted playsinline></video>
+                        <div class="thumbnail-info">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15c1.66 0 2.99-1.34 2.99-3L15 6c0-1.66-1.34-3-3-3S9 4.34 9 6v6c0 1.66 1.34 3 3 3z"/></svg>
+                            <span id="localName">Vous</span>
                         </div>
-                        <div class="request-actions">
-                            <button class="profile-btn" onclick="viewPatientProfile(${req.id})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg></button>
-                            ${group.currentPlaces >= group.maxPlaces ? 
-                                '<button class="refuse-btn" disabled style="opacity:0.5;">Groupe complet</button>' :
-                                `<button class="accept-btn" onclick="acceptRequest(${currentGroupId}, ${req.id})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Accepter</button>`
-                            }
-                            <button class="refuse-btn" onclick="refuseRequest(${currentGroupId}, ${req.id})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Refuser</button>
+                        <div id="localMuteIndicator" class="thumbnail-badge muted" style="display: none;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/></svg>
+                        </div>
+                        <div id="localVideoOffIndicator" class="thumbnail-badge video-off" style="display: none;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M1 1l22 22M21 21H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3m3-3h6l2 3h4a2 2 0 0 1 2 2v9.34"/></svg>
                         </div>
                     </div>
-                `).join('');
-            }
-            
-            const participantsContainer = document.getElementById('participantsListContainer');
-            if (group.participants.length === 0) {
-                participantsContainer.innerHTML = '<div class="empty-message">Aucun participant pour le moment</div>';
-            } else {
-                participantsContainer.innerHTML = group.participants.map(p => `
-                    <div class="participant-card">
-                        <div class="participant-info">
-                            <div class="participant-name">${p.name}</div>
-                            <div class="participant-date">Inscrit le ${p.joinedDate}</div>
-                        </div>
-                        <button class="profile-btn" onclick="viewPatientProfile(${p.id})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg></button>
+                </div>
+            </div>
+
+            <!-- Chat Section -->
+            <div id="chatSection" class="chat-section" style="display: none;">
+                <div class="chat-header">
+                    <h3>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                        Chat du groupe
+                    </h3>
+                    <div class="chat-header-actions">
+                        <button onclick="clearChat()" class="chat-header-btn" title="Effacer le chat">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                        </button>
                     </div>
-                `).join('');
-            }
-        }
+                </div>
+                <div id="messagesContainer" class="messages-container scrollbar"></div>
+                <div id="typingIndicator" class="typing-indicator" style="display: none;">Quelqu'un écrit...</div>
+                <div class="chat-input-container">
+                    <div class="emoji-btn">
+                        <button onclick="toggleEmojiPicker()" class="chat-header-btn">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+                        </button>
+                        <div id="emojiPicker" class="emoji-picker">
+                            <span class="emoji-item" onclick="insertEmoji('😀')">😀</span>
+                            <span class="emoji-item" onclick="insertEmoji('😂')">😂</span>
+                            <span class="emoji-item" onclick="insertEmoji('🥰')">🥰</span>
+                            <span class="emoji-item" onclick="insertEmoji('😔')">😔</span>
+                            <span class="emoji-item" onclick="insertEmoji('😎')">😎</span>
+                            <span class="emoji-item" onclick="insertEmoji('🤔')">🤔</span>
+                            <span class="emoji-item" onclick="insertEmoji('👍')">👍</span>
+                            <span class="emoji-item" onclick="insertEmoji('👎')">👎</span>
+                            <span class="emoji-item" onclick="insertEmoji('👏')">👏</span>
+                            <span class="emoji-item" onclick="insertEmoji('❤️')">❤️</span>
+                            <span class="emoji-item" onclick="insertEmoji('👋')">👋</span>
+                            <span class="emoji-item" onclick="insertEmoji('🙏')">🙏</span>
+                            <span class="emoji-item" onclick="insertEmoji('✅')">✅</span>
+                            <span class="emoji-item" onclick="insertEmoji('❌')">❌</span>
+                            <span class="emoji-item" onclick="insertEmoji('💡')">💡</span>
+                            <span class="emoji-item" onclick="insertEmoji('🎉')">🎉</span>
+                            <span class="emoji-item" onclick="insertEmoji('🔥')">🔥</span>
+                            <span class="emoji-item" onclick="insertEmoji('⭐')">⭐</span>
+                        </div>
+                    </div>
+                    <input type="text" id="chatInput" class="chat-input" placeholder="Écrire un message..." onkeypress="handleChatKeyPress(event)">
+                    <button onclick="sendMessage()" id="sendBtn" class="send-btn" disabled>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
 
-        function acceptRequest(groupId, requestId) {
-            const group = groups.find(g => g.id === groupId);
-            if (!group) return;
-            if (group.currentPlaces >= group.maxPlaces) {
-                alert('Ce groupe a atteint le nombre maximum de participants (8)');
-                return;
-            }
-            const request = group.waitingList.find(r => r.id === requestId);
-            if (!request) return;
-            
-            if (!request.hasIndividualSession) {
-                alert('Ce patient n\'a jamais fait de consultation individuelle avec vous. Refusez cette demande.');
-                return;
-            }
-            
-            group.waitingList = group.waitingList.filter(r => r.id !== requestId);
-            group.participants.push({
-                id: request.id,
-                name: request.name,
-                joinedDate: new Date().toLocaleDateString('fr-FR')
-            });
-            group.currentPlaces++;
-            
-            updateWaitingAndParticipants(group);
-            renderGroups();
-            alert(`${request.name} a été accepté dans le groupe.`);
-        }
+        <!-- Controls Bar -->
+        <div class="controls-bar">
+            <button onclick="toggleMute()" id="muteBtn" class="control-btn" title="Couper le micro">
+                <svg id="muteIcon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15c1.66 0 2.99-1.34 2.99-3L15 6c0-1.66-1.34-3-3-3S9 4.34 9 6v6c0 1.66 1.34 3 3 3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+            </button>
+            <button onclick="toggleVideo()" id="videoBtn" class="control-btn" title="Couper la caméra">
+                <svg id="videoIcon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+            </button>
+            <div class="control-separator"></div>
+            <button onclick="endGroupSession()" id="endCallBtn" class="control-btn end-call">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                Terminer
+            </button>
+        </div>
+    </div>
 
-        function refuseRequest(groupId, requestId) {
-            const group = groups.find(g => g.id === groupId);
-            if (!group) return;
-            const request = group.waitingList.find(r => r.id === requestId);
-            if (!request) return;
-            
-            group.waitingList = group.waitingList.filter(r => r.id !== requestId);
-            updateWaitingAndParticipants(group);
-            renderGroups();
-            alert(`Demande de ${request.name} refusée. Raison: Le psychologue ne vous connaît pas, veuillez d'abord faire une consultation individuelle.`);
-        }
+    <!-- Edit Call Modal -->
+    <div id="editCallModal" class="vip-modal" style="display: none;">
+        <div class="vip-modal-content" style="max-width: 500px;">
+            <div class="vip-modal-header">
+                <h2><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#091346" stroke-width="2"><path d="M17 3l4 4-7 7H10v-4l7-7z"/><path d="M3 21h18"/></svg> Modifier l'appel</h2>
+                <button class="close-modal" onclick="closeEditCallModal()">&times;</button>
+            </div>
+            <div class="vip-modal-body">
+                <div class="form-group"><label>Titre de l'appel</label><input type="text" id="editCallTitle" class="vip-input" placeholder="Titre de la session"></div>
+                <div class="form-row">
+                    <div class="form-group"><label>Places max</label><input type="number" id="editCallMaxParticipants" class="vip-input" min="2" max="20" value="10"></div>
+                    <div class="form-group"><label>Prix (DA)</label><input type="number" id="editCallPrice" class="vip-input" placeholder="Prix par séance"></div>
+                </div>
+                <button class="save-form-btn" onclick="saveCallDetails()">Enregistrer</button>
+            </div>
+        </div>
+    </div>
 
-        function viewPatientProfile(patientId) {
-            alert(`Redirection vers le profil du patient`);
-        }
+    <!-- Participant Actions Modal -->
+    <div id="participantActionsModal" class="vip-modal" style="display: none;">
+        <div class="vip-modal-content" style="max-width: 400px;">
+            <div class="vip-modal-header">
+                <h2 id="participantModalTitle"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#091346" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Participant</h2>
+                <button class="close-modal" onclick="closeParticipantActionsModal()">&times;</button>
+            </div>
+            <div class="vip-modal-body">
+                <div id="participantActions" style="display: flex; flex-direction: column; gap: 10px;">
+                    <button onclick="toggleParticipantMute()" id="toggleMuteBtn" style="background: #333; color: white; border: none; padding: 15px 20px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 12px; font-size: 15px;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15c1.66 0 2.99-1.34 2.99-3L15 6c0-1.66-1.34-3-3-3S9 4.34 9 6v6c0 1.66 1.34 3 3 3z"/></svg>
+                        <span>Désactiver le micro</span>
+                    </button>
+                    <button onclick="toggleParticipantVideo()" id="toggleVideoBtn" style="background: #333; color: white; border: none; padding: 15px 20px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 12px; font-size: 15px;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                        <span>Désactiver la caméra</span>
+                    </button>
+                    <button onclick="removeParticipant()" style="background: #e74c3c; color: white; border: none; padding: 15px 20px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 12px; font-size: 15px;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="18" y1="8" x2="23" y2="13"/><line x1="23" y1="8" x2="18" y2="13"/></svg>
+                        <span>Retirer du groupe</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-        function switchGroupTab(tab) {
-            document.querySelectorAll('.group-detail-tab').forEach(btn => btn.classList.remove('active'));
-            document.querySelectorAll('.group-tab-panel').forEach(panel => panel.classList.remove('active'));
-            if (tab === 'waiting') {
-                document.querySelector('.group-detail-tab:first-child').classList.add('active');
-                document.getElementById('waitingListPanel').classList.add('active');
-            } else {
-                document.querySelector('.group-detail-tab:last-child').classList.add('active');
-                document.getElementById('participantsPanel').classList.add('active');
-            }
-        }
-
-        function closeGroupDetailModal() {
-            document.getElementById('groupDetailModal').classList.remove('active');
-            document.body.style.overflow = 'auto';
-        }
-
-        function openCreateGroupModal() {
-            document.getElementById('createGroupModal').classList.add('active');
-            document.body.style.overflow = 'hidden';
-        }
-
-        function closeCreateGroupModal() {
-            document.getElementById('createGroupModal').classList.remove('active');
-            document.body.style.overflow = 'auto';
-        }
-
-        function createGroup() {
-            const title = document.getElementById('groupTitle').value;
-            const desc = document.getElementById('groupDesc').value;
-            const theme = document.getElementById('groupTheme').value;
-            const day = document.getElementById('groupDay').value;
-            const time = document.getElementById('groupTime').value;
-            const duration = document.getElementById('groupDuration').value;
-            const maxPlaces = parseInt(document.getElementById('groupMaxPlaces').value);
-            const price = parseInt(document.getElementById('groupPrice').value);
-            if (!title || !desc) { alert('Veuillez remplir tous les champs'); return; }
-            const newId = groups.length + 1;
-            groups.push({
-                id: newId, title, description: desc, theme, day, time, duration,
-                maxPlaces, currentPlaces: 0, price, waitingList: [], participants: []
-            });
-            alert('Groupe créé avec succès !');
-            closeCreateGroupModal();
-            renderGroups();
-            document.getElementById('groupTitle').value = '';
-            document.getElementById('groupDesc').value = '';
-        }
-
-        let editGroupId = null;
-        function openEditGroupModal(id) {
-            const group = groups.find(g => g.id === id);
-            if (!group) return;
-            editGroupId = id;
-            document.getElementById('editGroupId').value = id;
-            document.getElementById('editGroupTitle').value = group.title;
-            document.getElementById('editGroupDesc').value = group.description;
-            document.getElementById('editGroupDay').value = group.day;
-            document.getElementById('editGroupTime').value = group.time;
-            document.getElementById('editGroupMaxPlaces').value = group.maxPlaces;
-            document.getElementById('editGroupPrice').value = group.price;
-            document.getElementById('editGroupModal').classList.add('active');
-            document.body.style.overflow = 'hidden';
-        }
-        function closeEditGroupModal() {
-            document.getElementById('editGroupModal').classList.remove('active');
-            document.body.style.overflow = 'auto';
-        }
-        function updateGroup() {
-            const id = parseInt(document.getElementById('editGroupId').value);
-            const index = groups.findIndex(g => g.id === id);
-            if (index === -1) return;
-            groups[index] = { ...groups[index], title: document.getElementById('editGroupTitle').value, description: document.getElementById('editGroupDesc').value, day: document.getElementById('editGroupDay').value, time: document.getElementById('editGroupTime').value, maxPlaces: parseInt(document.getElementById('editGroupMaxPlaces').value), price: parseInt(document.getElementById('editGroupPrice').value) };
-            alert('Groupe modifié avec succès !');
-            closeEditGroupModal();
-            renderGroups();
-        }
-        function deleteGroup() {
-            if (!confirm('Êtes-vous sûr de vouloir supprimer ce groupe ?')) return;
-            const id = parseInt(document.getElementById('editGroupId').value);
-            groups = groups.filter(g => g.id !== id);
-            alert('Groupe supprimé !');
-            closeEditGroupModal();
-            renderGroups();
-        }
-        function startGroupSession(id) {
-            const group = groups.find(g => g.id === id);
-            alert(`Démarrage de la session : ${group.title}`);
-        }
-
-        document.addEventListener('DOMContentLoaded', renderGroups);
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                closeCreateGroupModal();
-                closeEditGroupModal();
-                closeGroupDetailModal();
-            }
-        });
-
-
-    
-        // Sauvegarder la position du scroll avant de quitter
-        document.querySelectorAll('.nav-menu .nav-item').forEach(link => {
-            link.addEventListener('click', function() {
-                sessionStorage.setItem('menuScrollPos', document.querySelector('.nav-menu').scrollTop);
-            });
-        });
-        
-        // Restaurer la position du scroll au chargement
-        window.addEventListener('load', function() {
-            const scrollPos = sessionStorage.getItem('menuScrollPos');
-            if (scrollPos) {
-                document.querySelector('.nav-menu').scrollTop = scrollPos;
-            }
-        });
-    
-    function logout() {
-        localStorage.removeItem('nebras_token');
-        localStorage.removeItem('nebras_user');
-        showToast('Déconnexion réussie', 'success');
-        setTimeout(() => window.location.href = 'home.html', 500);
-    }
-    </script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/psychologue_groupes.js"></script>
 </body>
 </html>
