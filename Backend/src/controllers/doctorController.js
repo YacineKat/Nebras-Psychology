@@ -808,6 +808,133 @@ exports.getPatients = async (req, res) => {
   }
 };
 
+// ============================================
+// GET DOCTOR HONORAIRES (Payments & Earnings)
+// ============================================
+exports.getHonoraires = async (req, res) => {
+  try {
+    const doctorId = req.user.id;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    const startOfNextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+
+    // Get doctor profile for tariff
+    const doctor = await prisma.user.findUnique({
+      where: { id: doctorId },
+      include: { profile: true }
+    });
+    
+    const tarif = doctor?.profile?.tarif || 2000;
+
+    // Get all appointments for this doctor
+    const appointments = await prisma.appointment.findMany({
+      where: { doctorId },
+      include: {
+        patient: { include: { profile: true } }
+      },
+      orderBy: { appointmentDate: 'desc' }
+    });
+
+    // Calculate monthly stats
+    const monthlyCompleted = appointments.filter(a => {
+      const aptDate = new Date(a.appointmentDate);
+      return aptDate >= startOfMonth && aptDate <= endOfMonth && a.status === 'completed';
+    });
+
+    const monthlyPending = appointments.filter(a => {
+      const aptDate = new Date(a.appointmentDate);
+      return aptDate >= startOfMonth && aptDate <= endOfMonth && a.status === 'pending';
+    });
+
+    const monthlyConfirmed = appointments.filter(a => {
+      const aptDate = new Date(a.appointmentDate);
+      return aptDate >= startOfMonth && aptDate <= endOfMonth && a.status === 'confirmed';
+    });
+
+    // Total income this month (from completed appointments)
+    const totalIncome = monthlyCompleted.length * tarif;
+    
+    // Pending payments (completed but not yet paid - for now, treat completed as paid)
+    const pendingPayments = monthlyPending.length * tarif;
+    
+    // Received payments (completed appointments)
+    const receivedPayments = monthlyCompleted.length * tarif;
+
+    // Recent transactions (last 10 completed appointments)
+    const recentTransactions = appointments
+      .filter(a => a.status === 'completed')
+      .slice(0, 10)
+      .map(apt => ({
+        id: apt.id,
+        date: apt.appointmentDate,
+        patientName: apt.patient.fullname,
+        amount: tarif,
+        status: 'paid'
+      }));
+
+    // Upcoming payments (confirmed appointments in the future)
+    const upcomingPayments = appointments
+      .filter(a => {
+        const aptDate = new Date(a.appointmentDate);
+        return aptDate >= today && a.status === 'confirmed';
+      })
+      .slice(0, 10)
+      .map(apt => ({
+        id: apt.id,
+        date: apt.appointmentDate,
+        patientName: apt.patient.fullname,
+        amount: tarif,
+        status: 'upcoming'
+      }));
+
+    res.json({
+      tarif,
+      stats: {
+        totalIncome,
+        pendingPayments,
+        receivedPayments
+      },
+      recentTransactions,
+      upcomingPayments
+    });
+
+  } catch (error) {
+    console.error('GetHonoraires error:', error.message);
+    res.status(500).json({ error: 'Failed to get honoraires data: ' + error.message });
+  }
+};
+
+// ============================================
+// UPDATE DOCTOR TARIF
+// ============================================
+exports.updateTarif = async (req, res) => {
+  try {
+    const doctorId = req.user.id;
+    const { tarif } = req.body;
+
+    if (!tarif || typeof tarif !== 'number' || tarif <= 0) {
+      return res.status(400).json({ error: 'Invalid tariff amount' });
+    }
+
+    const profile = await prisma.profile.update({
+      where: { userId: doctorId },
+      data: { tarif }
+    });
+
+    res.json({ 
+      message: 'Tarif mis à jour avec succès',
+      tarif: profile.tarif
+    });
+
+  } catch (error) {
+    console.error('UpdateTarif error:', error);
+    res.status(500).json({ error: 'Failed to update tarif' });
+  }
+};
+
 process.on('beforeExit', async () => {
   await prisma.$disconnect();
 });

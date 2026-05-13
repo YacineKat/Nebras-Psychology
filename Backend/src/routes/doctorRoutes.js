@@ -20,6 +20,8 @@ router.put('/schedule/:id/unblock', authMiddleware, requireRole('psychologue', '
 router.get('/schedule', authMiddleware, requireRole('psychologue', 'counselor'), doctorController.getSchedule);
 router.delete('/schedule/:id', authMiddleware, requireRole('psychologue', 'counselor'), doctorController.deleteTimeSlot);
 router.get('/dashboard', authMiddleware, requireRole('psychologue', 'counselor'), doctorController.getDashboard);
+router.get('/honoraires', authMiddleware, requireRole('psychologue', 'counselor'), doctorController.getHonoraires);
+router.put('/tarif', authMiddleware, requireRole('psychologue', 'counselor'), doctorController.updateTarif);
 
 // Must come last - catches /:id
 router.get('/:id', doctorController.getDoctorById);

@@ -140,6 +140,17 @@ const doctorAPI = {
 
   getPatientById: async (patientId) => {
     return fetchAPI(`/doctors/patients/${patientId}`);
+  },
+
+  getHonoraires: async () => {
+    return fetchAPI('/doctors/honoraires');
+  },
+
+  updateTarif: async (tarif) => {
+    return fetchAPI('/doctors/tarif', {
+      method: 'PUT',
+      body: JSON.stringify({ tarif })
+    });
   }
 };
 
