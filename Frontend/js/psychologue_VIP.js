@@ -3,23 +3,60 @@ let selectedOffer = null;
 let selectedOfferElement = null;
 
 document.addEventListener('DOMContentLoaded', function() {
-    updateVIPStatus();
-    if (!isVIP) {
-        setTimeout(function() {
-            openVipPaymentModal();
-        }, 500);
-    }
+    loadVipData();
 });
 
-function updateVIPStatus() {
+async function loadVipData() {
+    try {
+        const data = await doctorAPI.getVipStatus();
+        
+        isVIP = data.isVIP;
+        
+        updateVIPStatus(data.isVIP);
+        
+        if (data.form) {
+            document.getElementById('q1').value = data.form.question1 || '';
+            document.getElementById('q2').value = data.form.question2 || '';
+            document.getElementById('q3').value = data.form.question3 || 'Non';
+            document.getElementById('q4').value = data.form.question4 || '';
+            document.getElementById('q5').value = data.form.question5 || '';
+        }
+        
+        if (!isVIP) {
+            setTimeout(function() {
+                openVipPaymentModal();
+            }, 500);
+        }
+        
+        updateSidebarBadge();
+        
+    } catch (error) {
+        console.error('Error loading VIP data:', error);
+        showToast('Erreur lors du chargement des données VIP', 'error');
+    }
+}
+
+function updateVIPStatus(active) {
     const badge = document.getElementById('vipStatusBadge');
-    if (isVIP) {
+    if (active) {
         badge.innerText = 'Activé';
         badge.classList.add('actif');
     } else {
         badge.innerText = 'Non activé';
         badge.classList.remove('actif');
     }
+}
+
+function updateSidebarBadge() {
+    const sidebarBadges = document.querySelectorAll('.nav-item .badge');
+    sidebarBadges.forEach(badge => {
+        if (badge && badge.nextSibling && badge.nextSibling.textContent.includes('Espace VIP')) {
+            const vipStatusBadge = document.getElementById('vipStatusBadge');
+            if (vipStatusBadge) {
+                badge.innerText = isVIP ? 'VIP' : '';
+            }
+        }
+    });
 }
 
 function openVipPaymentModal() {
@@ -41,7 +78,7 @@ function selectVipOffer(element, offer) {
     selectedOffer = offer;
 }
 
-function activateVIP() {
+async function activateVIP() {
     const ccp = document.getElementById('ccpNumber').value;
     const expDate = document.getElementById('expDate').value;
     const cvv = document.getElementById('cvv').value;
@@ -55,13 +92,31 @@ function activateVIP() {
         return;
     }
     
-    showToast('Paiement réussi ! Vous êtes maintenant psychologue VIP.', 'success');
-    isVIP = true;
-    updateVIPStatus();
-    closeVipPaymentModal();
+    try {
+        await doctorAPI.activateVip(selectedOffer, ccp);
+        
+        showToast('Paiement réussi ! Vous êtes maintenant psychologue VIP.', 'success');
+        isVIP = true;
+        updateVIPStatus(true);
+        updateSidebarBadge();
+        closeVipPaymentModal();
+        
+        document.getElementById('ccpNumber').value = '';
+        document.getElementById('expDate').value = '';
+        document.getElementById('cvv').value = '';
+        selectedOffer = null;
+        if (selectedOfferElement) {
+            selectedOfferElement.classList.remove('selected');
+            selectedOfferElement = null;
+        }
+        
+    } catch (error) {
+        console.error('Error activating VIP:', error);
+        showToast(error.message || 'Erreur lors de l\'activation du VIP', 'error');
+    }
 }
 
-function saveVipForm() {
+async function saveVipForm() {
     if (!isVIP) {
         showToast('Vous devez d\'abord activer votre compte VIP pour créer le formulaire.', 'error');
         openVipPaymentModal();
@@ -79,7 +134,21 @@ function saveVipForm() {
         return;
     }
     
-    showToast('Formulaire VIP enregistré ! Vos patients pourront le remplir avant chaque séance.', 'success');
+    try {
+        await doctorAPI.saveVipForm({
+            question1: q1,
+            question2: q2,
+            question3: q3,
+            question4: q4,
+            question5: q5
+        });
+        
+        showToast('Formulaire VIP enregistré ! Vos patients pourront le remplir avant chaque séance.', 'success');
+        
+    } catch (error) {
+        console.error('Error saving VIP form:', error);
+        showToast(error.message || 'Erreur lors de l\'enregistrement du formulaire', 'error');
+    }
 }
 
 document.addEventListener('keydown', function(e) {

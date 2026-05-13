@@ -23,6 +23,11 @@ router.get('/dashboard', authMiddleware, requireRole('psychologue', 'counselor')
 router.get('/honoraires', authMiddleware, requireRole('psychologue', 'counselor'), doctorController.getHonoraires);
 router.put('/tarif', authMiddleware, requireRole('psychologue', 'counselor'), doctorController.updateTarif);
 
+// VIP Routes
+router.get('/vip', authMiddleware, requireRole('psychologue', 'counselor'), doctorController.getVipStatus);
+router.post('/vip/activate', authMiddleware, requireRole('psychologue', 'counselor'), doctorController.activateVip);
+router.post('/vip/form', authMiddleware, requireRole('psychologue', 'counselor'), doctorController.saveVipForm);
+
 // Must come last - catches /:id
 router.get('/:id', doctorController.getDoctorById);
 

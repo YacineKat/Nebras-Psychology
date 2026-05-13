@@ -31,7 +31,7 @@
                 <a href="psychologue_messagerie.html" class="nav-item">
                     <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z" fill="currentColor"/></svg>
                     <span>Messagerie</span>
-                    <span class="badge">3</span>
+                    <span class="badge">0</span>
                 </a>
                 <a href="psychologue_honoraires.html" class="nav-item">
                     <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.5 15h-3v-2h3v2zm0-4h-3V7h3v6z" fill="currentColor"/></svg>
@@ -49,10 +49,8 @@
                 </a>
             </nav>
             <a href="psychologue_profil.html" class="nav-item profile-link active">
-                <div class="user-avatar">
-                    <img src="./image/24d0759cbb02c3157112d0ef0f8463b1.jpg" alt="Photo profil" style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover;">
-                </div>
-                <div class="user-info"><span class="user-name">Dr. Karim Benali</span></div>
+                <div class="user-avatar"></div>
+                <div class="user-info"><span class="user-name">Mon Profil</span></div>
             </a>
 
             <a href="#" class="nav-item" onclick="logout()" style="color: #e74c3c;">
@@ -77,16 +75,22 @@
             <div class="profile-content">
                 <!-- Profile Header avec statut en ligne -->
                 <div class="profile-header">
-                    <div class="profile-avatar-large">
-                        <img src="./image/24d0759cbb02c3157112d0ef0f8463b1.jpg" alt="Avatar" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">
+                    <div class="profile-avatar-large" onclick="document.getElementById('avatarInput').click()">
+                        <img id="profileAvatarImg" alt="Avatar" style="width:100%; height:100%; border-radius:50%; object-fit:cover; display:none;">
+                        <div class="avatar-initials" id="profileAvatarInitials"></div>
+                        <div class="avatar-overlay">
+                            <svg viewBox="0 0 24 24" fill="white" width="30" height="30"><path d="M12 12c2.21 0 4-1.79 4-4S14.21 4 12 4 8 5.79 8 8s1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                            <span>Changer</span>
+                        </div>
                     </div>
+                    <input type="file" id="avatarInput" accept="image/*" style="display:none;" onchange="handleAvatarChange(event)">
                     <div class="profile-info">
-                        <h2>Dr. Karim Benali </h2>
-                        <p class="specialite">Psychologue clinicien - TCC</p>
+                        <h2 id="psyProfileName">Mon Profil</h2>
+                        <p class="specialite" id="psySpecialiteDisplay">Psychologue</p>
                         <div class="profile-stats">
-                            <div><span class="number">12</span><br><span class="label">Patients</span></div>
-                            <div><span class="number">48</span><br><span class="label">Séances</span></div>
-                            <div><span class="number">4.8</span><br><span class="label">Note</span></div>
+                            <div><span class="number" id="statsPatients">0</span><br><span class="label">Patients</span></div>
+                            <div><span class="number" id="statsSessions">0</span><br><span class="label">Séances</span></div>
+                            <div><span class="number" id="statsRating">0.0</span><br><span class="label">Note</span></div>
                         </div>
                     </div>
                 </div>
@@ -112,8 +116,7 @@
                     <div class="profile-section">
                         <h3>Informations personnelles</h3>
                         <div class="form-row">
-                            <div class="form-group"><label>Prénom</label><input type="text" value="Karim"></div>
-                            <div class="form-group"><label>Nom</label><input type="text" value="Benali"></div>
+                            <div class="form-group"><label>Nom complet</label><input type="text" id="psyFullname" placeholder="Votre nom complet"></div>
                         </div>
                         <div class="form-row">
                             <div class="form-group"><label>Date de naissance</label><input type="date" id="psyBirthDate" class="input"></div>
@@ -144,15 +147,15 @@
                         <div class="stats-grid-profile">
                             <div class="stat-card-profile">
                                 <div class="stat-icon-profile"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
-                                <div class="stat-info-profile"><h3>1,245</h3><p>Vues totales</p><div class="stat-trend up">↑ +245 ce mois</div></div>
+                                <div class="stat-info-profile"><h3 id="statViews">0</h3><p>Vues totales</p><div class="stat-trend up">↑ +0 ce mois</div></div>
                             </div>
                             <div class="stat-card-profile">
                                 <div class="stat-icon-profile"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
-                                <div class="stat-info-profile"><h3>48</h3><p>Contacts reçus</p><div class="stat-trend up">↑ +12 ce mois</div></div>
+                                <div class="stat-info-profile"><h3 id="statContacts">0</h3><p>Contacts reçus</p><div class="stat-trend up">↑ +0 ce mois</div></div>
                             </div>
                             <div class="stat-card-profile">
                                 <div class="stat-icon-profile"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
-                                <div class="stat-info-profile"><h3>32</h3><p>RDV réservés</p><div class="stat-trend up">↑ +8 ce mois</div></div>
+                                <div class="stat-info-profile"><h3 id="statAppointments">0</h3><p>RDV réservés</p><div class="stat-trend up">↑ +0 ce mois</div></div>
                             </div>
                         </div>
 
@@ -161,34 +164,28 @@
                             <div class="stats-row">
                                 <div class="stats-item">
                                     <span class="stats-label">Femmes</span>
-                                    <div class="progress-bar"><div class="progress-fill" style="width: 65%; background: #B39DDB;"></div></div>
-                                    <span class="stats-percent">65%</span>
+                                    <div class="progress-bar"><div class="progress-fill" id="femaleBar" style="width: 0%; background: #B39DDB;"></div></div>
+                                    <span class="stats-percent" id="femalePercent">0%</span>
                                 </div>
                                 <div class="stats-item">
                                     <span class="stats-label">Hommes</span>
-                                    <div class="progress-bar"><div class="progress-fill" style="width: 35%; background: #44AA99;"></div></div>
-                                    <span class="stats-percent">35%</span>
+                                    <div class="progress-bar"><div class="progress-fill" id="maleBar" style="width: 0%; background: #44AA99;"></div></div>
+                                    <span class="stats-percent" id="malePercent">0%</span>
                                 </div>
                             </div>
                         </div>
 
                         <div class="stats-detail">
                             <h4>Tranches d'âge</h4>
-                            <div class="stats-item"><span class="stats-label">18-25 ans</span><div class="progress-bar"><div class="progress-fill" style="width: 20%;"></div></div><span class="stats-percent">20%</span></div>
-                            <div class="stats-item"><span class="stats-label">26-35 ans</span><div class="progress-bar"><div class="progress-fill" style="width: 45%;"></div></div><span class="stats-percent">45%</span></div>
-                            <div class="stats-item"><span class="stats-label">36-50 ans</span><div class="progress-bar"><div class="progress-fill" style="width: 25%;"></div></div><span class="stats-percent">25%</span></div>
-                            <div class="stats-item"><span class="stats-label">50+ ans</span><div class="progress-bar"><div class="progress-fill" style="width: 10%;"></div></div><span class="stats-percent">10%</span></div>
+                            <div class="stats-item"><span class="stats-label">18-25 ans</span><div class="progress-bar"><div class="progress-fill" id="age1Bar" style="width: 0%;"></div></div><span class="stats-percent" id="age1Percent">0%</span></div>
+                            <div class="stats-item"><span class="stats-label">26-35 ans</span><div class="progress-bar"><div class="progress-fill" id="age2Bar" style="width: 0%;"></div></div><span class="stats-percent" id="age2Percent">0%</span></div>
+                            <div class="stats-item"><span class="stats-label">36-50 ans</span><div class="progress-bar"><div class="progress-fill" id="age3Bar" style="width: 0%;"></div></div><span class="stats-percent" id="age3Percent">0%</span></div>
+                            <div class="stats-item"><span class="stats-label">50+ ans</span><div class="progress-bar"><div class="progress-fill" id="age4Bar" style="width: 0%;"></div></div><span class="stats-percent" id="age4Percent">0%</span></div>
                         </div>
 
                         <div class="stats-detail">
                             <h4>Motifs les plus recherchés</h4>
-                            <div class="tags-list">
-                                <span class="tag">Anxiété (245)</span>
-                                <span class="tag">Stress (189)</span>
-                                <span class="tag">Dépression (156)</span>
-                                <span class="tag">Confiance en soi (98)</span>
-                                <span class="tag">Couple (76)</span>
-                            </div>
+                            <div class="tags-list" id="motifsTags"></div>
                         </div>
                     </div>
                 </div>
@@ -221,16 +218,15 @@
                     <div class="profile-section">
                         <h3>Informations de connexion</h3>
                         <div class="info-row">
-                            <div><p class="info-label">Adresse email</p><p class="info-value" id="psyEmail">karim.benali@nebras.dz</p></div>
-                            <button class="link-btn" onclick="alert('Modifier email')">Modifier</button>
+                            <div><p class="info-label">Adresse email</p><p class="info-value" id="psyEmail">-</p></div>
                         </div>
                         <div class="info-row">
                             <div><p class="info-label">Mot de passe</p><p class="info-value">************</p></div>
-                            <button class="link-btn" onclick="alert('Modifier mot de passe')">Modifier</button>
+                            <button class="link-btn" onclick="openPasswordModal()">Modifier</button>
                         </div>
                         <div class="info-row">
                             <div><p class="info-label">Notifications email</p><p class="info-value">Activées</p></div>
-                            <button class="link-btn" onclick="alert('Gérer les notifications')">Gérer</button>
+                            <button class="link-btn" onclick="showToast('Fonctionnalité bientôt disponible', 'info')">Gérer</button>
                         </div>
                     </div>
 
@@ -242,6 +238,27 @@
                 </div>
             </div>
 </div>
+    </div>
+
+    <!-- Password Change Modal -->
+    <div id="passwordModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 400px; padding: 30px;">
+            <span class="close-modal" onclick="closePasswordModal()" style="position: absolute; right: 20px; top: 15px; font-size: 28px; cursor: pointer;">&times;</span>
+            <h3 style="margin-bottom: 20px; color: #091346;">Changer le mot de passe</h3>
+            <div class="form-group">
+                <label>Mot de passe actuel</label>
+                <input type="password" id="currentPassword" class="input" placeholder="Entrez le mot de passe actuel">
+            </div>
+            <div class="form-group">
+                <label>Nouveau mot de passe</label>
+                <input type="password" id="newPassword" class="input" placeholder="Entrez le nouveau mot de passe">
+            </div>
+            <div class="form-group">
+                <label>Confirmer le mot de passe</label>
+                <input type="password" id="confirmPassword" class="input" placeholder="Confirmez le nouveau mot de passe">
+            </div>
+            <button class="update-btn" onclick="changePassword()" style="width: 100%; margin-top: 15px;">Enregistrer</button>
+        </div>
     </div>
 
 <script src="js/api.js"></script>

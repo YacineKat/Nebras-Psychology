@@ -167,9 +167,14 @@ exports.updateProfile = async (req, res) => {
     const { fullname, birthDate, gender, specialite, universite, bio, phone, adresse, diplomes, agrement, tarif, language, motifs, prefGender, prefType, avatar } = req.body;
 
     // Update user name
+    const userData = {};
+    if (fullname !== undefined && fullname !== null && fullname !== '') {
+      userData.fullname = fullname;
+    }
+    
     const user = await prisma.user.update({
       where: { id: userId },
-      data: { fullname: fullname || undefined }
+      data: userData
     });
     console.log('User updated:', user.id);
 
@@ -245,6 +250,51 @@ exports.updateProfile = async (req, res) => {
 exports.logout = async (req, res) => {
   // In a production app, you might want to blacklist the token
   res.json({ message: 'Logout successful' });
+};
+
+// ============================================
+exports.changePassword = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { currentPassword, newPassword, confirmPassword } = req.body;
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      return res.status(400).json({ error: 'Veuillez remplir tous les champs' });
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({ error: 'Les mots de passe ne correspondent pas' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: 'Le mot de passe doit contenir au moins 6 caractères' });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId }
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'Utilisateur non trouvé' });
+    }
+
+    const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+    if (!isPasswordValid) {
+      return res.status(400).json({ error: 'Mot de passe actuel incorrect' });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedPassword }
+    });
+
+    res.json({ message: 'Mot de passe mis à jour avec succès' });
+
+  } catch (error) {
+    console.error('ChangePassword error:', error);
+    res.status(500).json({ error: 'Erreur lors du changement de mot de passe' });
+  }
 };
 
 // Close Prisma connection on process exit

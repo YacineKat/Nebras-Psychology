@@ -29,6 +29,8 @@ model User {
   receivedMessages  Message[] @relation("ReceivedMessages")
   groupMemberships GroupMember[]
   createdGroups     TherapyGroup[] @relation("PsychologueGroups")
+  vipSubscriptions VIPSubscription[]
+  vipForm          VIPForm?
 }
 
 // ============== PROFILES TABLE ==============
@@ -146,4 +148,31 @@ model GroupMember {
   joinedAt    DateTime @default(now())
 
   @@unique([groupId, userId])
+}
+
+// ============== VIP SUBSCRIPTION TABLE ==============
+model VIPSubscription {
+  id            String   @id @default(uuid())
+  psychologueId String
+  psychologue   User     @relation(fields: [psychologueId], references: [id], onDelete: Cascade)
+  plan          String   // 'mensuel' or 'annuel'
+  price         Int
+  startDate     DateTime @default(now())
+  endDate       DateTime
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+}
+
+// ============== VIP FORM TABLE ==============
+model VIPForm {
+  id            String   @id @default(uuid())
+  psychologueId String   @unique
+  psychologue   User     @relation(fields: [psychologueId], references: [id], onDelete: Cascade)
+  question1     String?
+  question2     String?
+  question3     String?
+  question4     String?
+  question5     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }

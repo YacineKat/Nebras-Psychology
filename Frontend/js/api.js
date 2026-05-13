@@ -64,6 +64,13 @@ const authAPI = {
     });
   },
 
+  changePassword: async (passwordData) => {
+    return fetchAPI('/auth/password', {
+      method: 'PUT',
+      body: JSON.stringify(passwordData)
+    });
+  },
+
   logout: () => {
     localStorage.removeItem('nebras_token');
     localStorage.removeItem('nebras_user');
@@ -150,6 +157,24 @@ const doctorAPI = {
     return fetchAPI('/doctors/tarif', {
       method: 'PUT',
       body: JSON.stringify({ tarif })
+    });
+  },
+
+  getVipStatus: async () => {
+    return fetchAPI('/doctors/vip');
+  },
+
+  activateVip: async (plan, ccpNumber) => {
+    return fetchAPI('/doctors/vip/activate', {
+      method: 'POST',
+      body: JSON.stringify({ plan, ccpNumber })
+    });
+  },
+
+  saveVipForm: async (formData) => {
+    return fetchAPI('/doctors/vip/form', {
+      method: 'POST',
+      body: JSON.stringify(formData)
     });
   }
 };

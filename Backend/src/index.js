@@ -23,7 +23,7 @@ app.use(cors({
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization']
 })); // Allow cross-origin requests
-app.use(express.json()); // Parse JSON bodies
+app.use(express.json({ limit: '10mb' })); // Parse JSON bodies (increased for avatar uploads)
 
 // ============================================
 // API ROUTES

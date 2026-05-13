@@ -935,6 +935,141 @@ exports.updateTarif = async (req, res) => {
   }
 };
 
+// ============================================
+// GET VIP STATUS
+// ============================================
+exports.getVipStatus = async (req, res) => {
+  try {
+    const doctorId = req.user.id;
+
+    const subscription = await prisma.vIPSubscription.findFirst({
+      where: {
+        psychologueId: doctorId,
+        isActive: true
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    const form = await prisma.vIPForm.findUnique({
+      where: { psychologueId: doctorId }
+    });
+
+    const isVIP = subscription && new Date(subscription.endDate) > new Date();
+
+    res.json({
+      isVIP: isVIP || false,
+      subscription: subscription || null,
+      form: form || null
+    });
+
+  } catch (error) {
+    console.error('GetVipStatus error:', error);
+    res.status(500).json({ error: 'Failed to get VIP status' });
+  }
+};
+
+// ============================================
+// ACTIVATE VIP SUBSCRIPTION
+// ============================================
+exports.activateVip = async (req, res) => {
+  try {
+    const doctorId = req.user.id;
+    const { plan, ccpNumber } = req.body;
+
+    if (!plan || !['mensuel', 'annuel'].includes(plan)) {
+      return res.status(400).json({ error: 'Plan invalide' });
+    }
+
+    const price = plan === 'mensuel' ? 5000 : 50000;
+    const duration = plan === 'mensuel' ? 30 : 365;
+    const startDate = new Date();
+    const endDate = new Date();
+    endDate.setDate(endDate.getDate() + duration);
+
+    // Deactivate any existing VIP subscription
+    await prisma.vIPSubscription.updateMany({
+      where: { psychologueId: doctorId, isActive: true },
+      data: { isActive: false }
+    });
+
+    // Create new subscription
+    const subscription = await prisma.vIPSubscription.create({
+      data: {
+        psychologueId: doctorId,
+        plan,
+        price,
+        startDate,
+        endDate,
+        isActive: true
+      }
+    });
+
+    res.json({
+      message: 'VIP activé avec succès',
+      subscription
+    });
+
+  } catch (error) {
+    console.error('ActivateVip error:', error);
+    res.status(500).json({ error: 'Failed to activate VIP' });
+  }
+};
+
+// ============================================
+// SAVE VIP FORM
+// ============================================
+exports.saveVipForm = async (req, res) => {
+  try {
+    const doctorId = req.user.id;
+    const { question1, question2, question3, question4, question5 } = req.body;
+
+    if (!question1 || !question2 || !question4 || !question5) {
+      return res.status(400).json({ error: 'Veuillez remplir toutes les questions obligatoires' });
+    }
+
+    // Check if VIP is active
+    const subscription = await prisma.vIPSubscription.findFirst({
+      where: {
+        psychologueId: doctorId,
+        isActive: true
+      }
+    });
+
+    if (!subscription || new Date(subscription.endDate) < new Date()) {
+      return res.status(403).json({ error: 'Vous devez avoir un abonnement VIP actif' });
+    }
+
+    const form = await prisma.vIPForm.upsert({
+      where: { psychologueId: doctorId },
+      update: {
+        question1,
+        question2,
+        question3,
+        question4,
+        question5,
+        updatedAt: new Date()
+      },
+      create: {
+        psychologueId: doctorId,
+        question1,
+        question2,
+        question3,
+        question4,
+        question5
+      }
+    });
+
+    res.json({
+      message: 'Formulaire VIP enregistré avec succès',
+      form
+    });
+
+  } catch (error) {
+    console.error('SaveVipForm error:', error);
+    res.status(500).json({ error: 'Failed to save VIP form' });
+  }
+};
+
 process.on('beforeExit', async () => {
   await prisma.$disconnect();
 });
