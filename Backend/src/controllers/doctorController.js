@@ -528,14 +528,15 @@ exports.getSchedule = async (req, res) => {
     let where = { doctorId };
     
     // Include both: specific date slots AND weekly recurring slots (specificDate: null)
-    // If date range provided, filter specific date slots
+    // If date range provided, filter specific date slots within the range
     if (startDate && endDate) {
       const start = new Date(startDate);
       const end = new Date(endDate);
       
+      // Always include recurring slots (specificDate: null) plus specific date slots in range
       where.OR = [
         { specificDate: { gte: start, lte: end } },
-        { specificDate: null } // Always include weekly recurring slots
+        { specificDate: null }
       ];
     }
 
@@ -548,7 +549,18 @@ exports.getSchedule = async (req, res) => {
       ]
     });
 
-    res.json(slots);
+    // Also get all appointments for this doctor (to display in schedule grid)
+    const appointments = await prisma.appointment.findMany({
+      where: {
+        doctorId,
+        status: { in: ['confirmed', 'pending', 'completed'] }
+      },
+      include: {
+        patient: { include: { profile: true } }
+      }
+    });
+
+    res.json({ slots, appointments });
 
   } catch (error) {
     console.error('GetSchedule error:', error);
@@ -599,7 +611,7 @@ exports.getDashboard = async (req, res) => {
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
     const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
     const nextWeek = new Date(today);
-    nextWeek.setDate(nextWeek.getDate() + 7);
+    nextWeek.setDate(nextWeek.getDate() + 8);
 
     // Single optimized query: get all needed data in parallel
     const [allAppointments, doctor, timeSlots] = await Promise.all([
@@ -638,7 +650,7 @@ exports.getDashboard = async (req, res) => {
     const upcomingAppointments = allAppointments
       .filter(a => {
         const aptDate = new Date(a.appointmentDate);
-        return aptDate >= tomorrow && aptDate <= nextWeek && a.status === 'confirmed';
+        return aptDate >= tomorrow && aptDate <= nextWeek && (a.status === 'confirmed' || a.status === 'pending');
       })
       .sort((a, b) => {
         const dateCompare = new Date(a.appointmentDate) - new Date(b.appointmentDate);

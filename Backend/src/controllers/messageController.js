@@ -70,8 +70,12 @@ exports.getConversations = async (req, res) => {
       },
       orderBy: { createdAt: 'desc' },
       include: {
-        sender: { select: { id: true, fullname: true, userType: true } },
-        receiver: { select: { id: true, fullname: true, userType: true } }
+        sender: {
+          include: { profile: true }
+        },
+        receiver: {
+          include: { profile: true }
+        }
       }
     });
 
@@ -87,7 +91,12 @@ exports.getConversations = async (req, res) => {
           partner: {
             id: partner.id,
             fullname: partner.fullname,
-            userType: partner.userType
+            userType: partner.userType,
+            profile: partner.profile ? {
+              id: partner.profile.id,
+              avatar: partner.profile.avatar,
+              photo: partner.profile.photo
+            } : null
           },
           lastMessage: msg.content,
           lastMessageTime: msg.createdAt,

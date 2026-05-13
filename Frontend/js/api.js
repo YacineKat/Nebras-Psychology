@@ -102,13 +102,27 @@ const doctorAPI = {
     });
   },
 
-  getSchedule: async () => {
-    return fetchAPI('/doctors/schedule');
+  getSchedule: async (startDate, endDate) => {
+    const queryString = startDate && endDate ? `?startDate=${startDate}&endDate=${endDate}` : '';
+    return fetchAPI(`/doctors/schedule${queryString}`);
   },
 
   deleteTimeSlot: async (slotId) => {
     return fetchAPI(`/doctors/schedule/${slotId}`, {
       method: 'DELETE'
+    });
+  },
+
+  blockTimeSlot: async (slotData) => {
+    return fetchAPI('/doctors/schedule/block', {
+      method: 'POST',
+      body: JSON.stringify(slotData)
+    });
+  },
+
+  unblockTimeSlot: async (slotId) => {
+    return fetchAPI(`/doctors/schedule/${slotId}/unblock`, {
+      method: 'POST'
     });
   },
 
@@ -223,8 +237,10 @@ function redirectByUserType(userType) {
 }
 
 function formatDate(dateString) {
+  if (!dateString) return '-';
   const date = new Date(dateString);
-  return date.toLocaleDateString('fr-FR');
+  if (isNaN(date.getTime())) return '-';
+  return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 function formatTime(timeString) {

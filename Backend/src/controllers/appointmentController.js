@@ -221,6 +221,39 @@ exports.updateAppointmentStatus = async (req, res) => {
       }
     });
 
+    // If confirmed, mark the time slot as booked
+    if (status === 'confirmed') {
+      const appointmentDate = new Date(updated.appointmentDate);
+      const dayOfWeek = appointmentDate.getDay();
+      
+      // Try to find an existing specificDate slot first, then fall back to dayOfWeek slot
+      let slot = await prisma.timeSlot.findFirst({
+        where: {
+          doctorId: updated.doctorId,
+          specificDate: appointmentDate,
+          startTime: updated.appointmentTime
+        }
+      });
+      
+      if (!slot) {
+        slot = await prisma.timeSlot.findFirst({
+          where: {
+            doctorId: updated.doctorId,
+            dayOfWeek,
+            startTime: updated.appointmentTime,
+            specificDate: null
+          }
+        });
+      }
+      
+      if (slot && !slot.isBooked) {
+        await prisma.timeSlot.update({
+          where: { id: slot.id },
+          data: { isBooked: true }
+        });
+      }
+    }
+
     // If cancelled, free up the time slot
     if (status === 'cancelled') {
       const dayOfWeek = new Date(appointment.appointmentDate).getDay();

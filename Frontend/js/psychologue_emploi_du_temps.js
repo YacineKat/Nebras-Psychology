@@ -5,6 +5,7 @@
 let currentWeekStart = null;
 let timeSlots = [];
 let weekAppointments = [];
+let allAppointments = []; // All appointments for "Prochain rendez-vous"
 let patientsCache = null;
 let isLoading = false;
 let selectedCell = null; // { dayOfWeek, startTime, specificDate }
@@ -40,15 +41,76 @@ document.addEventListener('DOMContentLoaded', async () => {
 function initWeek() {
     const today = new Date();
     const dayOfWeek = today.getDay();
-    const diff = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
-    currentWeekStart = new Date(today);
-    currentWeekStart.setDate(diff);
+    const diff = -dayOfWeek;
+    currentWeekStart = new Date(today.getFullYear(), today.getMonth(), today.getDate() + diff);
     currentWeekStart.setHours(0, 0, 0, 0);
 }
 
 function initEventListeners() {
     document.getElementById('prevWeekBtn')?.addEventListener('click', () => navigateWeek(-1));
     document.getElementById('nextWeekBtn')?.addEventListener('click', () => navigateWeek(1));
+}
+
+// ============================================
+// HELPERS
+// ============================================
+function parseDateSafe(dateValue) {
+    if (!dateValue) return null;
+    if (dateValue instanceof Date) return isNaN(dateValue.getTime()) ? null : dateValue;
+    
+    let dateStr = String(dateValue);
+    if (dateStr.includes(' ') && !dateStr.includes('T')) {
+        dateStr = dateStr.replace(' ', 'T');
+    }
+    const date = new Date(dateStr);
+    return isNaN(date.getTime()) ? null : date;
+}
+
+function formatDateOnly(date) {
+    if (!date) return '';
+    const d = parseDateSafe(date);
+    if (!d) return '';
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+function formatDateFR(dateStr) {
+    const d = parseDateSafe(dateStr);
+    if (!d) return '-';
+    return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function getMediaLabel(mediaType) {
+    const labels = { 'video': '📹 Vidéo', 'phone': '📞 Téléphone', 'chat': '💬 Chat' };
+    return labels[mediaType] || mediaType || '-';
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Normalize appointment to have standard fields
+function normalizeAppointment(apt) {
+    const patientName = apt.patientName || apt.patient?.fullname || 'Patient';
+    const patientId = apt.patientId || apt.patient?.id || null;
+    const appointmentDate = parseDateSafe(apt.appointmentDate);
+    
+    return {
+        id: apt.id,
+        patientName,
+        patientId,
+        appointmentDate,
+        appointmentTime: apt.appointmentTime || null,
+        mediaType: apt.mediaType || 'video',
+        status: apt.status || 'pending',
+        notes: apt.notes || '',
+        createdAt: apt.createdAt || null
+    };
 }
 
 // ============================================
@@ -73,31 +135,76 @@ async function loadAllData() {
         ]);
 
         console.log('Dashboard:', dashboardResult);
+        console.log('Schedule:', scheduleResult);
         console.log('Today Sessions:', dashboardResult?.todaySessions);
         console.log('Upcoming:', dashboardResult?.upcomingAppointments);
 
-        timeSlots = scheduleResult || [];
+        // Handle both old format (array) and new format ({ slots, appointments })
+        const scheduleData = scheduleResult?.slots !== undefined ? scheduleResult : { slots: [], appointments: [] };
+        
+        // Merge time slots from schedule API and dashboard
+        const scheduleSlots = scheduleData.slots || [];
+        const dashboardSlots = dashboardResult?.timeSlots || [];
+        
+        // Combine and deduplicate time slots by ID
+        const slotsMap = new Map();
+        dashboardSlots.forEach(slot => {
+            if (slot.id) slotsMap.set(slot.id, slot);
+        });
+        scheduleSlots.forEach(slot => {
+            if (slot.id && !slotsMap.has(slot.id)) slotsMap.set(slot.id, slot);
+        });
+        timeSlots = Array.from(slotsMap.values());
+        
         patientsCache = patientsResult?.patients || [];
 
-        // Combine today's sessions + upcoming appointments + pending requests (if confirmed)
-        const allAppointments = [
+        // Get appointments from schedule API (raw format with nested patient)
+        const scheduleAppointments = (scheduleData.appointments || []).map(normalizeAppointment);
+        
+        // Get appointments from dashboard API (flattened format)
+        const dashboardAppointments = [
             ...(dashboardResult?.todaySessions || []),
             ...(dashboardResult?.upcomingAppointments || []),
-            ...(dashboardResult?.pendingRequests?.filter(apt => apt.status === 'confirmed') || [])
-        ];
+            ...(dashboardResult?.pendingRequests || [])
+        ].map(normalizeAppointment);
 
-        // Filter appointments for this week
+        // Combine all appointments and deduplicate by ID
+        const appointmentsMap = new Map();
+        
+        // First add dashboard appointments (more reliable format)
+        dashboardAppointments.forEach(apt => {
+            if (apt.id) {
+                appointmentsMap.set(apt.id, apt);
+            }
+        });
+        
+        // Then add schedule appointments (only if not already present or if they have more info)
+        scheduleAppointments.forEach(apt => {
+            if (apt.id && (!appointmentsMap.has(apt.id) || !appointmentsMap.get(apt.id).patientName || appointmentsMap.get(apt.id).patientName === 'Patient')) {
+                appointmentsMap.set(apt.id, apt);
+            }
+        });
+        
+        allAppointments = Array.from(appointmentsMap.values());
+        console.log('All appointments:', allAppointments);
+
+        // Filter appointments for this week (current week view)
         const weekEndDate = new Date(currentWeekStart);
         weekEndDate.setDate(weekEndDate.getDate() + 6);
         weekEndDate.setHours(23, 59, 59, 999);
 
         weekAppointments = allAppointments.filter(apt => {
             if (!apt.appointmentDate) return false;
-            const aptDate = new Date(apt.appointmentDate);
+            const aptDate = parseDateSafe(apt.appointmentDate);
+            if (!aptDate) return false;
             return aptDate >= currentWeekStart && aptDate <= weekEndDate;
         });
 
-        console.log('Filtered appointments:', weekAppointments);
+        console.log('Dashboard slots:', dashboardSlots);
+        console.log('Schedule slots:', scheduleSlots);
+        console.log('Combined time slots:', timeSlots);
+        console.log('Filtered appointments for week:', weekAppointments);
+        console.log('Current week:', currentWeekStart?.toISOString(), 'to', weekEndDate?.toISOString());
 
         renderAll();
     } catch (error) {
@@ -123,7 +230,7 @@ function setLoading(show) {
 function renderAll() {
     updateWeekRange();
     renderStats();
-    renderSlotsTable();
+    renderWeekView();
     renderNextAppointment();
 }
 
@@ -142,17 +249,22 @@ function updateWeekRange() {
 }
 
 function renderStats() {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const todayStr = today.toISOString().split('T')[0];
+    const now = new Date();
     
-    const todayAppts = weekAppointments.filter(apt => {
-        const aptDate = new Date(apt.appointmentDate).toISOString().split('T')[0];
-        return aptDate === todayStr && apt.status === 'confirmed';
+    const todayAppts = allAppointments.filter(apt => {
+        if (!apt.appointmentDate || apt.status !== 'confirmed') return false;
+        const aptDate = parseDateSafe(apt.appointmentDate);
+        if (!aptDate) return false;
+        const todayStart = new Date(now);
+        todayStart.setHours(0, 0, 0, 0);
+        const todayEnd = new Date(now);
+        todayEnd.setHours(23, 59, 59, 999);
+        return aptDate >= todayStart && aptDate <= todayEnd;
     });
 
-    const availableSlots = timeSlots.filter(slot => !slot.isBooked && !slot.isBlocked);
-    const blockedSlots = timeSlots.filter(slot => slot.isBlocked);
+    // All time slots including recurring ones (specificDate: null)
+    const availableSlots = timeSlots.filter(slot => slot.isBooked === false && slot.isBlocked === false);
+    const blockedSlots = timeSlots.filter(slot => slot.isBlocked === true);
 
     document.getElementById('todayApptCount').textContent = todayAppts.length;
     document.getElementById('weekApptCount').textContent = weekAppointments.length;
@@ -168,11 +280,16 @@ function renderSlotsTable() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
+    // Get the starting day of week from currentWeekStart (should be Monday = 1)
+    const weekStartDay = currentWeekStart.getDay();
+
     // Build header
     let html = `
         <div style="display: grid; grid-template-columns: 80px repeat(7, 1fr); background: #f5f5f0; border-bottom: 2px solid #44AA99;">
             <div style="padding: 12px; font-weight: 600; color: #091346; text-align: center; font-size: 12px;">Horaire</div>
-            ${DAY_SHORT.map((d, i) => {
+            ${Array.from({length: 7}, (_, i) => {
+                const dayIndex = (weekStartDay + i) % 7;
+                const d = DAY_SHORT[dayIndex];
                 const date = new Date(currentWeekStart);
                 date.setDate(date.getDate() + i);
                 const dateStr = date.toISOString().split('T')[0];
@@ -193,22 +310,26 @@ function renderSlotsTable() {
             const dateStr = date.toISOString().split('T')[0];
             const dayOfWeek = date.getDay();
 
-            // Check if there's an appointment at this time
+            // Check if there's an appointment at this time on this date
             const appointment = weekAppointments.find(apt => {
-                const aptDate = new Date(apt.appointmentDate).toISOString().split('T')[0];
-                return aptDate === dateStr && apt.appointmentTime === time;
+                if (!apt.appointmentDate || !apt.appointmentTime) return false;
+                const aptDate = parseDateSafe(apt.appointmentDate);
+                if (!aptDate) return false;
+                const aptDateStr = formatDateOnly(aptDate);
+                return aptDateStr === dateStr && apt.appointmentTime === time;
             });
 
-            // Check if there's an available slot
+            // Check if there's a time slot for this time on this day
             const slot = timeSlots.find(s => {
-                const slotDate = s.specificDate ? new Date(s.specificDate).toISOString().split('T')[0] : null;
-                const slotDay = s.specificDate ? null : s.dayOfWeek;
-                
-                if (slotDate) {
-                    return slotDate === dateStr && s.startTime === time;
-                } else {
-                    return slotDay === dayOfWeek && s.startTime === time;
+                // Check specific date slots first
+                if (s.specificDate) {
+                    const slotDate = parseDateSafe(s.specificDate);
+                    if (!slotDate) return false;
+                    const slotDateStr = formatDateOnly(slotDate);
+                    return slotDateStr === dateStr && s.startTime === time;
                 }
+                // Then check recurring slots (by day of week)
+                return s.dayOfWeek === dayOfWeek && s.startTime === time && (s.specificDate === null || s.specificDate === undefined);
             });
 
             let content = '';
@@ -221,9 +342,10 @@ function renderSlotsTable() {
                 // BOOKED - Show patient name
                 bgColor = '#fef3e2';
                 textColor = '#e67e22';
-                content = `<strong style="font-size: 10px;">${escapeHtml(appointment.patientName?.split(' ')[0] || 'Patient')}</strong><br><small>${getMediaLabel(appointment.mediaType)}</small>`;
+                const displayName = (appointment.patientName || 'Patient').split(' ')[0];
+                content = `<strong style="font-size: 10px;">${escapeHtml(displayName)}</strong><br><small>${getMediaLabel(appointment.mediaType)}</small>`;
                 cursor = 'pointer';
-                onclick = `viewPatientFromSchedule('${appointment.patientId}')`;
+                onclick = appointment.patientId ? `viewPatientFromSchedule('${appointment.patientId}')` : '';
             } else if (slot?.isBlocked) {
                 // BLOCKED
                 bgColor = '#f5f5f5';
@@ -231,8 +353,8 @@ function renderSlotsTable() {
                 content = `<span style="font-size: 10px;">🔒</span>`;
                 cursor = 'pointer';
                 onclick = `unblockSlot('${slot.id}')`;
-            } else if (slot?.isBooked === false && slot?.isBlocked === false) {
-                // AVAILABLE
+            } else if (slot && !slot.isBooked && !slot.isBlocked) {
+                // AVAILABLE (slot exists but not booked)
                 bgColor = '#e8f4ee';
                 textColor = '#44AA99';
                 content = `<span style="font-size: 10px; cursor: pointer; text-decoration: underline;" onclick="event.stopPropagation(); confirmDeleteSlot('${slot.id}')">Supprimer</span>`;
@@ -256,11 +378,26 @@ function renderNextAppointment() {
     const container = document.getElementById('nextAppointment');
     if (!section || !container) return;
 
+    console.log('All appointments for next appointment:', allAppointments);
+
     const now = new Date();
-    const nextApt = weekAppointments
-        .filter(apt => new Date(apt.appointmentDate) >= now && apt.status === 'confirmed')
+    now.setHours(0, 0, 0, 0);
+
+    // Find next confirmed/accepted appointment from ALL appointments (not just this week)
+    const validStatuses = ['confirmed', 'accepted', 'completed'];
+    const nextApt = allAppointments
+        .filter(apt => {
+            if (!apt.appointmentDate) return false;
+            const aptDate = parseDateSafe(apt.appointmentDate);
+            if (!aptDate) return false;
+            const status = (apt.status || '').toLowerCase();
+            const isValidStatus = validStatuses.includes(status) || status === '';
+            return isValidStatus && aptDate >= now;
+        })
         .sort((a, b) => {
-            const dateCompare = new Date(a.appointmentDate) - new Date(b.appointmentDate);
+            const dateA = parseDateSafe(a.appointmentDate) || new Date(0);
+            const dateB = parseDateSafe(b.appointmentDate) || new Date(0);
+            const dateCompare = dateA - dateB;
             if (dateCompare !== 0) return dateCompare;
             return (a.appointmentTime || '').localeCompare(b.appointmentTime || '');
         })[0];
@@ -271,15 +408,19 @@ function renderNextAppointment() {
     }
 
     section.style.display = 'block';
-    const aptDate = new Date(nextApt.appointmentDate);
-    
+    const aptDate = parseDateSafe(nextApt.appointmentDate) || new Date();
+    if (!aptDate) {
+        section.style.display = 'none';
+        return;
+    }
+
     container.innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <div>
                 <div style="font-size: 14px; opacity: 0.8;">Prochain rendez-vous</div>
-                <div style="font-size: 18px; font-weight: 600; margin-top: 5px;">${escapeHtml(nextApt.patientName)}</div>
+                <div style="font-size: 18px; font-weight: 600; margin-top: 5px;">${escapeHtml(nextApt.patientName || 'Patient')}</div>
                 <div style="font-size: 14px; margin-top: 5px;">
-                    ${aptDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })} à ${nextApt.appointmentTime}
+                    ${aptDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })} à ${nextApt.appointmentTime || '-'}
                 </div>
                 <div style="font-size: 13px; margin-top: 5px; opacity: 0.8;">
                     Type: ${getMediaLabel(nextApt.mediaType)}
@@ -292,6 +433,161 @@ function renderNextAppointment() {
             </div>
         </div>
     `;
+}
+
+function renderWeekView() {
+    const container = document.getElementById('weekView');
+    if (!container) return;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Build header row with day names and dates
+    let html = '';
+    const weekDays = [];
+    for (let i = 0; i < 7; i++) {
+        const date = new Date(currentWeekStart);
+        date.setDate(date.getDate() + i);
+        weekDays.push(date);
+    }
+
+    // Header with day names
+    html += weekDays.map((date, i) => {
+        const dayName = DAY_NAMES[date.getDay()];
+        const dayNum = date.getDate();
+        const month = date.toLocaleDateString('fr-FR', { month: 'short' });
+        const dateStr = formatDateOnly(date);
+        const isToday = dateStr === formatDateOnly(today);
+        return `
+            <div style="background: ${isToday ? '#44AA99' : '#091346'}; color: white; padding: 12px 8px; border-radius: 8px; text-align: center;">
+                <div style="font-weight: 600; font-size: 13px;">${dayName}</div>
+                <div style="font-size: 18px; font-weight: 700;">${dayNum}</div>
+                <div style="font-size: 11px; opacity: 0.9;">${month}</div>
+            </div>
+        `;
+    }).join('');
+
+    // Content for each day (appointments and slots)
+    weekDays.forEach((date, dayIndex) => {
+        const dateStr = formatDateOnly(date);
+        const dayOfWeek = date.getDay();
+
+        // Get appointments for this day
+        const dayAppointments = weekAppointments.filter(apt => {
+            if (!apt.appointmentDate || !apt.appointmentTime) return false;
+            const aptDate = parseDateSafe(apt.appointmentDate);
+            if (!aptDate) return false;
+            const aptDateStr = formatDateOnly(aptDate);
+            return aptDateStr === dateStr;
+        }).sort((a, b) => (a.appointmentTime || '').localeCompare(b.appointmentTime || ''));
+
+        // Get appointment times for this day
+        const appointmentTimes = new Set(dayAppointments.map(apt => apt.appointmentTime));
+
+        // Get available slots for this day (excluding times that have appointments)
+        const dayAvailableSlots = timeSlots.filter(slot => {
+            if (slot.isBlocked) return false;
+            if (appointmentTimes.has(slot.startTime)) return false;
+            if (slot.specificDate) {
+                const slotDate = parseDateSafe(slot.specificDate);
+                if (!slotDate) return false;
+                return formatDateOnly(slotDate) === dateStr;
+            }
+            return slot.dayOfWeek === dayOfWeek && (slot.specificDate === null || slot.specificDate === undefined);
+        }).sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''));
+
+        // Get blocked slots for this day
+        const dayBlockedSlots = timeSlots.filter(slot => {
+            if (!slot.isBlocked) return false;
+            if (slot.specificDate) {
+                const slotDate = parseDateSafe(slot.specificDate);
+                if (!slotDate) return false;
+                return formatDateOnly(slotDate) === dateStr;
+            }
+            return slot.dayOfWeek === dayOfWeek && (slot.specificDate === null || slot.specificDate === undefined);
+        }).sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''));
+
+        // Combine and sort all items (appointments + slots) together chronologically
+        const allItems = [];
+
+        // Add appointments
+        dayAppointments.forEach(apt => {
+            allItems.push({
+                type: 'appointment',
+                time: apt.appointmentTime,
+                data: apt
+            });
+        });
+
+        // Add available slots
+        dayAvailableSlots.forEach(slot => {
+            allItems.push({
+                type: 'available',
+                time: slot.startTime,
+                data: slot
+            });
+        });
+
+        // Add blocked slots
+        dayBlockedSlots.forEach(slot => {
+            allItems.push({
+                type: 'blocked',
+                time: slot.startTime,
+                data: slot
+            });
+        });
+
+        // Sort all items by time
+        allItems.sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+
+        const hasContent = allItems.length > 0;
+
+        html += `<div style="min-height: 200px; background: #f9f9f9; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 8px;">`;
+
+        if (!hasContent) {
+            html += `<div style="color: #999; font-size: 12px; text-align: center; padding: 20px;">Aucun créneau</div>`;
+        } else {
+            // Show all items in chronological order
+            allItems.forEach(item => {
+                const time = item.time || '-';
+
+                if (item.type === 'appointment') {
+                    const apt = item.data;
+                    const patientName = (apt.patientName || 'Patient').split(' ')[0];
+                    const mediaIcon = apt.mediaType === 'video' ? '📹' : apt.mediaType === 'phone' ? '📞' : '💬';
+                    html += `
+                        <div style="background: #fef3e2; border-left: 4px solid #e67e22; padding: 10px; border-radius: 4px; cursor: pointer;" onclick="viewPatientProfile('${apt.patientId}')">
+                            <div style="font-weight: 600; font-size: 13px; color: #091346;">${time}</div>
+                            <div style="font-size: 12px; color: #e67e22;">${escapeHtml(patientName)}</div>
+                            <div style="font-size: 11px; color: #999;">${mediaIcon}</div>
+                        </div>
+                    `;
+                } else if (item.type === 'blocked') {
+                    const slot = item.data;
+                    const slotId = slot.id || '';
+                    html += `
+                        <div style="background: #ffebee; border-left: 4px solid #e74c3c; padding: 10px; border-radius: 4px; cursor: pointer;" onclick="event.stopPropagation(); confirmUnblockSlot('${slotId}', '${dateStr}', '${time}')">
+                            <div style="font-weight: 600; font-size: 13px; color: #c62828;">${time}</div>
+                            <div style="font-size: 11px; color: #e74c3c;">Bloqué</div>
+                        </div>
+                    `;
+                } else {
+                    const slot = item.data;
+                    const slotId = slot.id || '';
+                    html += `
+                        <div style="background: #e8f4ee; border-left: 4px solid #44AA99; padding: 10px; border-radius: 4px; cursor: pointer;" onclick="event.stopPropagation(); confirmUnavailable('${slotId}', '${dateStr}', '${time}')">
+                            <div style="font-weight: 600; font-size: 13px; color: #091346;">${time}</div>
+                            <div style="font-size: 11px; color: #44AA99;">Disponible</div>
+                        </div>
+                    `;
+                }
+            });
+        }
+
+        html += `</div>`;
+    });
+
+    container.innerHTML = html;
 }
 
 // ============================================
@@ -313,22 +609,15 @@ function goToToday() {
 // ============================================
 function openSlotModal(dayOfWeek, startTime, specificDate) {
     selectedCell = { dayOfWeek: parseInt(dayOfWeek), startTime, specificDate };
-    
+
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('slotSpecificDate').value = specificDate || today;
     document.getElementById('slotStartTime').value = startTime;
-    
-    // Set end time to start time + 30 min
-    const [hours, minutes] = startTime.split(':');
-    const endDate = new Date();
-    endDate.setHours(parseInt(hours), parseInt(minutes) + 30);
-    const endTime = endDate.toTimeString().substring(0, 5);
-    document.getElementById('slotEndTime').value = endTime;
-    
+
     document.getElementById('slotRecurrence').value = 'none';
     document.getElementById('blockOptions').style.display = 'none';
     document.getElementById('blockEntireDay').checked = false;
-    
+
     document.getElementById('slotModal').style.display = 'flex';
 }
 
@@ -342,19 +631,15 @@ async function saveSlot(isBlock) {
 
     const specificDate = document.getElementById('slotSpecificDate').value;
     const startTime = document.getElementById('slotStartTime').value;
-    const endTime = document.getElementById('slotEndTime').value;
     const recurrence = document.getElementById('slotRecurrence').value;
     const blockEntireDay = document.getElementById('blockEntireDay').checked;
 
-    if (!startTime || !endTime) {
-        showToast('Veuillez sélectionner les heures', 'error');
+    if (!startTime) {
+        showToast('Veuillez sélectionner une heure', 'error');
         return;
     }
 
-    if (startTime >= endTime) {
-        showToast('L\'heure de fin doit être après le début', 'error');
-        return;
-    }
+    const endTime = getEndTime(startTime);
 
     try {
         if (isBlock) {
@@ -408,8 +693,6 @@ function getEndTime(startTime) {
 }
 
 async function unblockSlot(slotId) {
-    if (!confirm('Débloquer ce créneau?')) return;
-    
     try {
         await doctorAPI.unblockTimeSlot(slotId);
         showToast('Créneau débloqué', 'success');
@@ -420,8 +703,6 @@ async function unblockSlot(slotId) {
 }
 
 async function deleteSlot(slotId) {
-    if (!confirm('Supprimer ce créneau?')) return;
-    
     try {
         await doctorAPI.deleteTimeSlot(slotId);
         showToast('Créneau supprimé', 'success');
@@ -432,9 +713,64 @@ async function deleteSlot(slotId) {
 }
 
 function confirmDeleteSlot(slotId) {
-    if (confirm('Supprimer ce créneau disponible?')) {
-        deleteSlot(slotId);
+    showConfirmModal('Supprimer ce créneau ?', 'Êtes-vous sûr de vouloir supprimer ce créneau disponible ?', () => deleteSlot(slotId));
+}
+
+let currentUnavailableSlot = null;
+let currentConfirmAction = null;
+
+function confirmUnavailable(slotId, dateStr, time) {
+    currentUnavailableSlot = { slotId, dateStr, time };
+    const modal = document.getElementById('unavailableModal');
+    const timeText = document.getElementById('unavailableTimeText');
+    const date = new Date(dateStr);
+    const dateFormatted = date.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+    timeText.textContent = `${dateFormatted} à ${time}`;
+    modal.style.display = 'flex';
+}
+
+function closeUnavailableModal() {
+    document.getElementById('unavailableModal').style.display = 'none';
+    currentUnavailableSlot = null;
+}
+
+function confirmUnavailableAction() {
+    if (currentUnavailableSlot && currentUnavailableSlot.slotId) {
+        deleteSlot(currentUnavailableSlot.slotId);
+        closeUnavailableModal();
+    } else {
+        showToast('Créneau non trouvé', 'error');
+        closeUnavailableModal();
     }
+}
+
+function showConfirmModal(title, text, action) {
+    currentConfirmAction = action;
+    document.getElementById('confirmModalTitle').textContent = title;
+    document.getElementById('confirmModalText').textContent = text;
+    document.getElementById('confirmModal').style.display = 'flex';
+}
+
+function closeConfirmModal() {
+    document.getElementById('confirmModal').style.display = 'none';
+    currentConfirmAction = null;
+}
+
+function confirmModalAction() {
+    if (currentConfirmAction) {
+        currentConfirmAction();
+    }
+    closeConfirmModal();
+}
+
+function confirmUnblockSlot(slotId, dateStr, time) {
+    showConfirmModal('Débloquer ce créneau ?', 'Voulez-vous débloquer ce créneau à ' + time + ' ?', () => {
+        if (slotId) {
+            unblockSlot(slotId);
+        } else {
+            showToast('Créneau non trouvé', 'error');
+        }
+    });
 }
 
 function viewPatientFromSchedule(patientId) {
@@ -520,24 +856,6 @@ function closePatientModal() {
     document.body.style.overflow = 'auto';
 }
 
-function formatDateFR(dateStr) {
-    if (!dateStr) return '-';
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
-}
-
-function getMediaLabel(mediaType) {
-    const labels = { 'video': '📹 Vidéo', 'phone': '📞 Téléphone', 'chat': '💬 Chat' };
-    return labels[mediaType] || mediaType || '-';
-}
-
-function escapeHtml(text) {
-    if (!text) return '';
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
 // Click outside to close modals
 document.getElementById('patientProfileModal')?.addEventListener('click', function(e) {
     if (e.target === this) closePatientModal();
@@ -557,6 +875,13 @@ window.closeSlotModal = closeSlotModal;
 window.saveSlot = saveSlot;
 window.deleteSlot = deleteSlot;
 window.confirmDeleteSlot = confirmDeleteSlot;
+window.confirmUnavailable = confirmUnavailable;
+window.closeUnavailableModal = closeUnavailableModal;
+window.confirmUnavailableAction = confirmUnavailableAction;
+window.confirmUnblockSlot = confirmUnblockSlot;
+window.showConfirmModal = showConfirmModal;
+window.closeConfirmModal = closeConfirmModal;
+window.confirmModalAction = confirmModalAction;
 window.unblockSlot = unblockSlot;
 window.viewPatientFromSchedule = viewPatientFromSchedule;
 window.viewPatientProfile = viewPatientProfile;
