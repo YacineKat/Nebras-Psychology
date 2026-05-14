@@ -49,11 +49,10 @@ function updateSidebarAvatar(avatarUrl) {
 
 async function updateSidebarBadges() {
     try {
-        const [dashboardResult, unreadMessages, vipResult] = await Promise.all([
-            doctorAPI.getDashboard().catch(() => null),
-            messageAPI.getUnreadCount().catch(() => null),
-            doctorAPI.getVipStatus().catch(() => null)
-        ]);
+        // Load sequentially to avoid connection pool exhaustion
+        const dashboardResult = await doctorAPI.getDashboard().catch(() => null);
+        const unreadMessages = await messageAPI.getUnreadCount().catch(() => null);
+        const vipResult = await doctorAPI.getVipStatus().catch(() => null);
         
         const navItems = document.querySelectorAll('.nav-item');
         navItems.forEach(item => {
@@ -120,7 +119,6 @@ async function loadProfileData() {
     }
 
     updateSidebarWithUserData();
-    updateSidebarBadges();
 
     const formContainer = document.getElementById('tabProfil');
     if (formContainer) {
@@ -129,11 +127,10 @@ async function loadProfileData() {
     }
 
     try {
-        const [profileResult, dashboardResult, patientsResult] = await Promise.all([
-            authAPI.getMe(),
-            doctorAPI.getDashboard().catch(() => null),
-            doctorAPI.getPatients().catch(() => null)
-        ]);
+        // Load data sequentially to avoid connection pool exhaustion
+        const profileResult = await authAPI.getMe();
+        const dashboardResult = await doctorAPI.getDashboard().catch(() => null);
+        const patientsResult = await doctorAPI.getPatients().catch(() => null);
 
         const profile = profileResult.user;
         const p = profile?.profile || {};
@@ -204,6 +201,8 @@ async function loadProfileData() {
             formContainer.style.opacity = '1';
             formContainer.style.pointerEvents = 'auto';
         }
+        // Update sidebar badges after profile loads
+        setTimeout(() => updateSidebarBadges(), 100);
     }
 }
 

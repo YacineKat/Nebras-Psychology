@@ -42,10 +42,9 @@ async function loadDashboardData() {
     showLoadingState(true);
     
     try {
-        const [dashboard, patientsResult] = await Promise.all([
-            doctorAPI.getDashboard(),
-            doctorAPI.getPatients()
-        ]);
+        // Load sequentially to avoid connection pool issues
+        const dashboard = await doctorAPI.getDashboard();
+        const patientsResult = await doctorAPI.getPatients().catch(() => ({ patients: [], count: 0 }));
         
         console.log('Dashboard data:', dashboard);
         console.log('Patients data:', patientsResult);

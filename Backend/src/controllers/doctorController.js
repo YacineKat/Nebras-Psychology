@@ -744,6 +744,10 @@ exports.getPatients = async (req, res) => {
       orderBy: { appointmentDate: 'desc' }
     });
     
+    if (!appointments || appointments.length === 0) {
+      return res.json({ count: 0, patients: [] });
+    }
+    
     // Group by patient and aggregate data
     const patientMap = new Map();
     
