@@ -19,20 +19,14 @@ let localStream = null;
 let isMuted = true;
 let isVideoOff = true;
 
-// Canvas flip pipeline
-let flippedVideoTrack = null;
-let flippedVideoStream = null;
-let flipAnimFrame = null;
-let flipVideoEl = null;
-let flipCanvas = null;
-let flipCtx = null;
-let flipDrawFn = null;
-
-// Visibility handling
-let visibilityHandler = null;
 let isEndingCall = false;
 let doctorIdForRating = null;
 let doctorNameForRating = null;
+
+// Avatar images
+let localAvatarUrl = null;
+let remoteAvatarUrl = null;
+let remoteVideoOff = true; // assume OFF until we know otherwise
 
 const AVATAR_COLORS = ['#44AA99', '#091346', '#EF4444', '#F59E0B', '#6366F1', '#EC4899', '#14B8A6', '#F97316'];
 
@@ -45,95 +39,16 @@ function getAvatarColor(name) {
     return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
 }
 
-function setAvatarInitial(elementId, name) {
+function setAvatarInitial(elementId, name, imageUrl) {
     const el = document.getElementById(elementId);
     if (!el) return;
-    const initial = name ? name.charAt(0).toUpperCase() : '?';
-    el.textContent = initial;
-    el.style.background = getAvatarColor(name);
-}
-
-async function buildFlippedTrack(rawVideoTrack) {
-    return new Promise((resolve) => {
-        const trackSettings = rawVideoTrack.getSettings();
-        const W = trackSettings.width || 640;
-        const H = trackSettings.height || 480;
-
-        const canvas = document.createElement('canvas');
-        canvas.width = W;
-        canvas.height = H;
-        const ctx = canvas.getContext('2d');
-
-        const offVideo = document.createElement('video');
-        offVideo.muted = true;
-        offVideo.playsInline = true;
-        offVideo.srcObject = new MediaStream([rawVideoTrack]);
-        offVideo.style.cssText = 'position:fixed;opacity:0;pointer-events:none;width:1px;height:1px;top:-9999px';
-        document.body.appendChild(offVideo);
-
-        offVideo.onloadedmetadata = () => {
-            if (offVideo.videoWidth > 0) {
-                canvas.width = offVideo.videoWidth;
-                canvas.height = offVideo.videoHeight;
-            }
-
-            offVideo.play().then(() => {
-                const animRef = { current: null };
-                let resolved = false;
-
-                const draw = () => {
-                    if (offVideo.readyState >= 2 && offVideo.videoWidth > 0) {
-                        if (canvas.width !== offVideo.videoWidth) {
-                            canvas.width = offVideo.videoWidth;
-                            canvas.height = offVideo.videoHeight;
-                        }
-                        ctx.save();
-                        ctx.translate(canvas.width, 0);
-                        ctx.scale(-1, 1);
-                        ctx.drawImage(offVideo, 0, 0, canvas.width, canvas.height);
-                        ctx.restore();
-
-                        if (!resolved) {
-                            resolved = true;
-                            const flippedStream = canvas.captureStream(30);
-                            resolve({
-                                flippedTrack: flippedStream.getVideoTracks()[0],
-                                flippedStream,
-                                animId: animRef,
-                                offVideo,
-                                canvas,
-                                ctx,
-                                drawFn: draw
-                            });
-                        }
-                    }
-                    animRef.current = requestAnimationFrame(draw);
-                };
-                draw();
-            });
-        };
-    });
-}
-
-function setupVisibilityHandler() {
-    if (visibilityHandler) return;
-    visibilityHandler = () => {
-        if (document.hidden) {
-            if (flipAnimFrame?.current) {
-                cancelAnimationFrame(flipAnimFrame.current);
-                flipAnimFrame.current = null;
-            }
-        } else {
-            if (flipVideoEl && flipDrawFn && flipAnimFrame && !flipAnimFrame.current) {
-                flipVideoEl.play().then(() => {
-                    if (!document.hidden && flipAnimFrame && !flipAnimFrame.current) {
-                        flipDrawFn();
-                    }
-                }).catch(() => {});
-            }
-        }
-    };
-    document.addEventListener('visibilitychange', visibilityHandler);
+    if (imageUrl) {
+        el.innerHTML = `<img src="${encodeURI(imageUrl)}" alt="${name || ''}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;">`;
+        el.style.background = 'transparent';
+    } else {
+        el.textContent = name ? name.charAt(0).toUpperCase() : '?';
+        el.style.background = getAvatarColor(name);
+    }
 }
 
 // P2P Connection
@@ -172,7 +87,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Update UI with user info
     const userName = currentUser.fullname || 'Vous';
     document.getElementById('localName').textContent = userName;
-    setAvatarInitial('localAvatarCircle', currentUser.fullname);
+    localAvatarUrl = currentUser.profile?.avatar || null;
+    setAvatarInitial('localAvatarCircle', currentUser.fullname, localAvatarUrl);
     document.getElementById('callTitle').textContent = isDoctor ? 'Appel vidéo avec patient' : 'Appel vidéo avec psychologue';
     
     // Initialize connections
@@ -192,34 +108,39 @@ async function initializeSession() {
             return;
         }
 
-        // Resolve chat partner and load shared persisted history
-        await initializeCallChat();
+        // Start media + signaling + chat in parallel
+        await Promise.all([
+            initializeMedia(),
+            connectToVideoServer(),
+            initializeCallChat()
+        ]);
+
+        // Attach local tracks to the peer connection (handles race: either finishes first)
+        attachTracksToPeerConnection();
+
+        // Timer starts on ICE connected (both participants at same time)
+        // No longer called here — see onconnectionstatechange
         
-        // Initialize media
-        await initializeMedia();
-        
-        // Connect to video server
-        await connectToVideoServer();
-        
-        // Start call timer
-        startCallTimer();
-        
-        // Handle tab visibility for canvas flip pipeline
-        setupVisibilityHandler();
-        
-        // Store doctor info for post-call rating (patient only)
-        if (!isDoctor && sessionAppointmentId) {
+        // Store appointment participant info for rating + remote avatar
+        if (sessionAppointmentId) {
             try {
                 const apt = await appointmentAPI.getById(sessionAppointmentId);
-                if (apt && apt.appointment) {
-                    doctorIdForRating = apt.appointment.doctorId;
-                    doctorNameForRating = apt.appointment.doctor?.fullname || 'Psychologue';
-                } else if (apt && apt.doctorId) {
-                    doctorIdForRating = apt.doctorId;
-                    doctorNameForRating = apt.doctor?.fullname || 'Psychologue';
+                if (apt) {
+                    const appt = apt.appointment || apt;
+                    // Extract remote avatar
+                    if (isDoctor) {
+                        remoteAvatarUrl = appt.patient?.profile?.avatar || null;
+                        remoteAvatarUrl = remoteAvatarUrl || appt.patient?.avatar || null;
+                    } else {
+                        remoteAvatarUrl = appt.doctor?.profile?.avatar || null;
+                        remoteAvatarUrl = remoteAvatarUrl || appt.doctor?.avatar || null;
+                        // Rating info (patient only)
+                        doctorIdForRating = appt.doctorId;
+                        doctorNameForRating = appt.doctor?.fullname || 'Psychologue';
+                    }
                 }
             } catch (e) {
-                console.log('Could not load appointment details for rating');
+                console.log('Could not load appointment details for rating/avatar');
             }
         }
         
@@ -229,36 +150,35 @@ async function initializeSession() {
     }
 }
 
+function attachTracksToPeerConnection() {
+    if (!peerConnection || !localStream) return;
+    
+    const existingKinds = new Set(
+        peerConnection.getSenders().map(s => s.track?.kind).filter(Boolean)
+    );
+    
+    localStream.getTracks().forEach(track => {
+        if (!existingKinds.has(track.kind)) {
+            peerConnection.addTrack(track, localStream);
+            existingKinds.add(track.kind);
+        }
+    });
+}
+
 async function initializeMedia() {
     try {
         localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         
-        // Canvas-based horizontal flip for raw track data (fixes USB camera hardware flip)
-        const rawVideoTrack = localStream.getVideoTracks()[0];
-        const flipResult = await buildFlippedTrack(rawVideoTrack);
-        flippedVideoTrack = flipResult.flippedTrack;
-        flippedVideoStream = flipResult.flippedStream;
-        flipAnimFrame = flipResult.animId;
-        flipVideoEl = flipResult.offVideo;
-        flipCanvas = flipResult.canvas;
-        flipCtx = flipResult.ctx;
-        flipDrawFn = flipResult.drawFn;
-        
-        // Attach original stream to local video element for preview
+        // Attach raw stream to local video element for preview with CSS mirror
         const videoEl = document.getElementById('localVideo');
         if (videoEl) {
-            videoEl.srcObject = null;
             videoEl.srcObject = localStream;
-            videoEl.play().catch(e => console.log('Play error:', e));
-            videoEl.style.display = 'none';
             videoEl.style.transform = 'scaleX(-1)';
+            videoEl.play().catch(e => console.log('Play error:', e));
         }
         
-        const placeholder = document.getElementById('localVideoPlaceholder');
-        if (placeholder) placeholder.style.display = 'flex';
-        
         // Start with camera and microphone OFF by default
-        rawVideoTrack.enabled = false;
+        localStream.getVideoTracks()[0].enabled = false;
         localStream.getAudioTracks()[0].enabled = false;
         
         isMuted = true;
@@ -295,16 +215,20 @@ async function connectToVideoServer() {
                     otherParticipantId = response.participants[0].id;
                     otherParticipantName = response.participants[0].name;
                     console.log('Other participant:', otherParticipantName, otherParticipantId);
+                    // Notify existing participant that camera is OFF (default state)
+                    videoSocket.emit('participant-video-update', {
+                        roomId,
+                        targetId: otherParticipantId,
+                        isVideoOff: true
+                    });
                 }
                 
-                // Create P2P connection
+                // Create P2P connection and add tracks if media is ready
                 createPeerConnection();
                 
                 // If we're the doctor/host and there's a patient, create offer immediately
                 if (isDoctor && otherParticipantId) {
-                    setTimeout(() => {
-                        createAndSendOffer();
-                    }, 500);
+                    createAndSendOffer();
                 }
                 
                 resolve();
@@ -321,8 +245,17 @@ async function connectToVideoServer() {
             console.log('Participant joined:', participant);
             otherParticipantId = participant.id;
             otherParticipantName = participant.name;
+            setAvatarInitial('remoteAvatarCircle', otherParticipantName, remoteAvatarUrl);
             
-            // If patient just joined and we're doctor, send offer
+            // Send current video state so the new participant knows
+            if (videoSocket?.connected && isVideoOff) {
+                videoSocket.emit('participant-video-update', {
+                    roomId,
+                    targetId: otherParticipantId,
+                    isVideoOff
+                });
+            }
+            
             if (isDoctor && peerConnection && otherParticipantId) {
                 createAndSendOffer();
             }
@@ -333,12 +266,11 @@ async function connectToVideoServer() {
             console.log('Received P2P offer from:', fromName);
             otherParticipantId = fromId;
             otherParticipantName = fromName;
+            setAvatarInitial('remoteAvatarCircle', otherParticipantName, remoteAvatarUrl);
             
             if (!peerConnection) createPeerConnection();
             await handleOffer(offer);
-            
-            // Automatically create and send answer
-            setTimeout(() => createAndSendAnswer(), 300);
+            createAndSendAnswer();
         });
         
         videoSocket.on('p2p-answer', async ({ answer, fromId }) => {
@@ -349,6 +281,24 @@ async function connectToVideoServer() {
         videoSocket.on('p2p-ice-candidate', async ({ candidate, fromId }) => {
             console.log('Received ICE candidate from:', fromId);
             await handleIceCandidate(candidate);
+        });
+        
+        // Remote video state: hide/show avatar when other participant toggles camera
+        videoSocket.on('participant-video-update', ({ isVideoOff: off }) => {
+            console.log('Remote video state:', off ? 'OFF' : 'ON');
+            remoteVideoOff = off;
+            const remoteVideo = document.getElementById('remoteVideo');
+            const remoteAvatar = document.getElementById('remoteAvatar');
+            if (off) {
+                if (remoteVideo) remoteVideo.style.display = 'none';
+                if (remoteAvatar) remoteAvatar.style.display = 'flex';
+            } else {
+                if (remoteVideo) {
+                    remoteVideo.style.display = 'block';
+                    remoteVideo.play().catch(() => {});
+                }
+                if (remoteAvatar) remoteAvatar.style.display = 'none';
+            }
         });
         
         videoSocket.on('participant-left', ({ socketId }) => {
@@ -375,14 +325,16 @@ function createPeerConnection() {
     
     peerConnection = new RTCPeerConnection(config);
     
-    // Add flipped video track and original audio track
-    if (flippedVideoTrack && flippedVideoStream) {
-        peerConnection.addTrack(flippedVideoTrack, flippedVideoStream);
-    }
-    const audioTrack = localStream.getAudioTracks()[0];
-    if (audioTrack) {
-        peerConnection.addTrack(audioTrack, localStream);
-    }
+    // Renegotiate when tracks are added late (parallel init race)
+    peerConnection.onnegotiationneeded = async () => {
+        try {
+            if (isDoctor) {
+                await createAndSendOffer();
+            }
+        } catch (err) {
+            console.error('onnegotiationneeded error:', err);
+        }
+    };
     
     // Create a single remote stream and attach it to the video element once
     const remoteStream = new MediaStream();
@@ -395,28 +347,10 @@ function createPeerConnection() {
     peerConnection.ontrack = (event) => {
         remoteStream.addTrack(event.track);
 
-        if (event.track.kind === 'video') {
-            const remoteVideo = document.getElementById('remoteVideo');
-            const remoteAvatar = document.getElementById('remoteAvatar');
-
-            event.track.onmute = () => {
-                if (remoteVideo) remoteVideo.style.display = 'none';
-                if (remoteAvatar) remoteAvatar.style.display = 'flex';
-            };
-
-            event.track.onunmute = () => {
-                if (remoteVideo) {
-                    remoteVideo.style.display = 'block';
-                    remoteVideo.play().catch(() => {});
-                }
-                if (remoteAvatar) remoteAvatar.style.display = 'none';
-            };
-
-            if (event.track.muted) {
-                if (remoteVideo) remoteVideo.style.display = 'none';
-                if (remoteAvatar) remoteAvatar.style.display = 'flex';
-            }
-        }
+        // NOTE: Remote video visibility is controlled by the
+        // participant-video-update signaling event, NOT by track.onmute/onunmute.
+        // The browser does NOT fire onmute when the sender disables
+        // via track.enabled = false, so signaling is the reliable mechanism.
     };
     
     // Handle ICE candidates - send to specific participant
@@ -434,13 +368,19 @@ function createPeerConnection() {
     peerConnection.onconnectionstatechange = () => {
         console.log('Connection state:', peerConnection.connectionState);
         if (peerConnection.connectionState === 'connected') {
-            setAvatarInitial('remoteAvatarCircle', otherParticipantName);
+            setAvatarInitial('remoteAvatarCircle', otherParticipantName, remoteAvatarUrl);
             
             const remoteVideo = document.getElementById('remoteVideo');
-            if (remoteVideo) {
-                remoteVideo.style.display = 'block';
-                remoteVideo.style.transform = 'none';
-                remoteVideo.play().catch(e => console.log('play error:', e));
+            const remoteAvatar = document.getElementById('remoteAvatar');
+            if (remoteVideoOff) {
+                if (remoteVideo) remoteVideo.style.display = 'none';
+                if (remoteAvatar) remoteAvatar.style.display = 'flex';
+            } else {
+                if (remoteVideo) {
+                    remoteVideo.style.display = 'block';
+                    remoteVideo.play().catch(e => console.log('play error:', e));
+                }
+                if (remoteAvatar) remoteAvatar.style.display = 'none';
             }
             const placeholder = document.getElementById('remotePlaceholder');
             if (placeholder) placeholder.style.display = 'none';
@@ -449,6 +389,12 @@ function createPeerConnection() {
                 badge.style.display = 'flex';
                 const nameEl = document.getElementById('currentSpeakerName');
                 if (nameEl) nameEl.textContent = otherParticipantName || 'Participant';
+            }
+            
+            // Start timer only when fully connected (both participants)
+            if (!callTimerInterval && callStartTime === null) {
+                callStartTime = Date.now();
+                callTimerInterval = setInterval(updateCallDuration, 1000);
             }
         }
     };
@@ -466,6 +412,11 @@ async function createAndSendOffer() {
     
     if (!otherParticipantId) {
         console.log('Waiting for other participant to join...');
+        return;
+    }
+    
+    if (peerConnection.signalingState !== 'stable') {
+        console.log('Cannot create offer in state:', peerConnection.signalingState);
         return;
     }
     
@@ -596,6 +547,15 @@ function toggleVideo() {
     isVideoOff = !isVideoOff;
     videoTrack.enabled = !isVideoOff;
     updateVideoButton();
+    
+    // Notify the other participant about video state change
+    if (videoSocket?.connected && otherParticipantId) {
+        videoSocket.emit('participant-video-update', {
+            roomId,
+            targetId: otherParticipantId,
+            isVideoOff
+        });
+    }
 }
 
 function updateVideoButton() {
@@ -748,7 +708,18 @@ async function initializeCallChat() {
         const appointment = await appointmentAPI.getById(sessionAppointmentId);
         if (!appointment) return;
 
-        chatPartnerId = isDoctor ? appointment.patientId : appointment.doctorId;
+        const appt = appointment.appointment || appointment;
+        chatPartnerId = isDoctor ? appt.patientId : appt.doctorId;
+
+        // Set remote avatar if not already set from initializeSession
+        if (!remoteAvatarUrl) {
+            if (isDoctor) {
+                remoteAvatarUrl = appt.patient?.profile?.avatar || appt.patient?.avatar || null;
+            } else {
+                remoteAvatarUrl = appt.doctor?.profile?.avatar || appt.doctor?.avatar || null;
+            }
+        }
+
         await loadCallChatHistory(true);
         connectCallChatRealtime();
     } catch (error) {
@@ -830,28 +801,6 @@ async function endCall() {
     isEndingCall = true;
     
     try {
-        // Remove visibility handler
-        if (visibilityHandler) {
-            document.removeEventListener('visibilitychange', visibilityHandler);
-            visibilityHandler = null;
-        }
-        
-        // Stop canvas flip pipeline
-        cancelAnimationFrame(flipAnimFrame?.current);
-        flipAnimFrame = null;
-        if (flipVideoEl) {
-            flipVideoEl.srcObject = null;
-            if (document.body.contains(flipVideoEl)) {
-                document.body.removeChild(flipVideoEl);
-            }
-            flipVideoEl = null;
-        }
-        flipCanvas = null;
-        flipCtx = null;
-        flipDrawFn = null;
-        flippedVideoTrack = null;
-        flippedVideoStream = null;
-        
         // Stop media
         if (localStream) {
             localStream.getTracks().forEach(track => track.stop());
