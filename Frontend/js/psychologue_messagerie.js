@@ -4,6 +4,10 @@
 
 let conversations = [];
 let currentChat = null;
+let messagingRefreshInterval = null;
+let conversationsSignature = '';
+let currentMessagesSignature = '';
+let isChatOpen = false;
 
 document.addEventListener('DOMContentLoaded', init);
 
@@ -31,18 +35,33 @@ async function init() {
     // Update badge
     await updateUnreadBadge();
 
+    // Keep messaging synchronized with other interfaces (e.g. video call chat)
+    startMessagingSync();
+
     highlightCurrentSidebarLink();
 }
 
-async function loadConversations() {
+async function loadConversations(silent = false) {
     const listEl = document.querySelector('.conversations-list');
-    listEl.innerHTML = '<div class="loading">Chargement...</div>';
-
-    try {
-        conversations = await messageAPI.getConversations() || [];
-    } catch (e) {
-        conversations = [];
+    if (!silent && !listEl.dataset.loaded) {
+        listEl.innerHTML = '<div class="loading">Chargement...</div>';
     }
+
+    let nextConversations = [];
+    try {
+        nextConversations = await messageAPI.getConversations() || [];
+    } catch (e) {
+        nextConversations = [];
+    }
+
+    const nextSignature = nextConversations.map(c => `${c.partner?.id}:${c.lastMessageTime || ''}:${c.lastMessage || ''}:${c.unreadCount || 0}`).join('|');
+    conversations = nextConversations;
+
+    if (nextSignature === conversationsSignature && listEl.dataset.loaded === '1') {
+        return false;
+    }
+
+    conversationsSignature = nextSignature;
 
     if (conversations.length === 0) {
         listEl.innerHTML = `
@@ -51,34 +70,18 @@ async function loadConversations() {
                 <p>Aucune conversation</p>
             </div>
         `;
-        return;
+        listEl.dataset.loaded = '1';
+        return true;
     }
 
-    listEl.innerHTML = conversations.map(c => {
-        const profile = c.partner?.profile;
-        
-        let avatar = null;
-        if (profile) {
-            avatar = profile.avatar || profile.photo || profile.image || profile.profileImage || profile.picture;
-        }
-        
-        const avatarHtml = avatar 
-            ? `<img src="${avatar}" alt="Avatar" style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover;">`
-            : `<div style="width: 48px; height: 48px; background: var(--primary-beige); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px;">👤</div>`;
-        
-        return `
-            <div class="conversation-item" data-id="${c.partner?.id}" onclick="openChatById('${c.partner?.id}')">
-                <div class="conv-avatar">
-                    ${avatarHtml}
-                </div>
-                <div class="conv-details">
-                    <div class="conv-name" style="font-weight: 600; color: var(--text-dark);">${c.partner?.fullname || 'Patient'}</div>
-                    <div style="font-size: 13px; color: var(--text-light); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${c.lastMessage || 'Aucun message'}</div>
-                </div>
-                <div class="conv-time" style="font-size: 12px; color: var(--text-light);">${formatTime(c.lastMessageTime)}</div>
-            </div>
-        `;
-    }).join('');
+    listEl.innerHTML = conversations.map(c => renderConversationItem(c)).join('');
+    listEl.dataset.loaded = '1';
+
+    if (currentChat?.partner?.id) {
+        document.querySelector(`.conversation-item[data-id="${currentChat.partner.id}"]`)?.classList.add('active');
+    }
+
+    return true;
 }
 
 function openChatById(userId) {
@@ -88,13 +91,10 @@ function openChatById(userId) {
 
 async function openChat(conv) {
     currentChat = conv;
+    isChatOpen = true;
+    currentMessagesSignature = '';
     const userId = conv.partner?.id;
     const userName = conv.partner?.fullname || 'Patient';
-    const partnerAvatar = conv.partner?.profile?.avatar || conv.partner?.avatar;
-    
-    const avatarHtml = partnerAvatar 
-        ? `<img src="${partnerAvatar}" alt="Avatar" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">`
-        : `<div style="width: 40px; height: 40px; background: var(--primary-beige); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px;">👤</div>`;
 
     // Update UI
     document.querySelectorAll('.conversation-item')?.forEach(el => el.classList.remove('active'));
@@ -103,20 +103,18 @@ async function openChat(conv) {
     // Show chat area
     const area = document.querySelector('.conversation-area');
     area.innerHTML = `
-        <div class="conversation-header" style="display: flex; padding: 16px 20px; border-bottom: 1px solid var(--border-color); background: white;">
-            <div style="display: flex; align-items: center; gap: 12px;">
-                ${avatarHtml}
-                <span style="font-weight: 600; color: var(--primary-dark);">${userName}</span>
+        <div class="chat-header">
+            <div class="chat-user">
+                ${renderAvatarMarkup(conv.partner, 40, '18px')}
+                <span class="name">${escapeHtml(userName)}</span>
             </div>
         </div>
-        <div class="chat-messages" id="chatMessages" style="flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 10px;">
+        <div class="chat-messages" id="chatMessages">
             <div class="loading">Chargement...</div>
         </div>
-        <div style="display: flex; padding: 8px 16px; border-top: 1px solid #eee; background: white; gap: 8px; align-items: center;">
-            <input type="text" id="msgInput" placeholder="Tapez votre message..." onkeypress="if(event.key==='Enter')sendMsg()" style="flex: 1; padding: 6px 12px; border: 1px solid #ddd; border-radius: 20px; outline: none; font-size: 13px; height: 32px; line-height: 20px;">
-            <button onclick="sendMsg()" style="padding: 6px 12px; background: #44AA99; color: white; border: none; border-radius: 50%; cursor: pointer; width: 32px; height: 32px; font-size: 14px;">
-                ➤
-            </button>
+        <div class="chat-input">
+            <input type="text" id="msgInput" placeholder="Tapez votre message..." onkeypress="if(event.key==='Enter')sendMsg()">
+            <button onclick="sendMsg()" class="send-btn">➤</button>
         </div>
     `;
 
@@ -126,7 +124,7 @@ async function openChat(conv) {
         renderMessages(messages, userId);
     } catch (e) {
         console.error(e);
-        document.getElementById('chatMessages').innerHTML = '<div style="text-align: center; color: var(--text-light);">Erreur de chargement</div>';
+        document.getElementById('chatMessages').innerHTML = '<div style="text-align: center; color: var(--text-light); padding: 40px;">Erreur de chargement</div>';
     }
 }
 
@@ -134,20 +132,25 @@ function renderMessages(messages, partnerId) {
     const user = getCurrentUser();
     const currentUserId = user?.id;
     const container = document.getElementById('chatMessages');
+    const nextSignature = messages.map(m => `${m.id}:${m.createdAt}`).join('|');
+
+    if (nextSignature === currentMessagesSignature) {
+        return;
+    }
+
+    currentMessagesSignature = nextSignature;
 
     if (!messages.length) {
-        container.innerHTML = '<div style="text-align: center; color: var(--text-light); padding: 40px;">Commencez la conversation!</div>';
+        container.innerHTML = '<div style="text-align: center; color: var(--text-light); padding: 40px;">Commencez la conversation !</div>';
         return;
     }
 
     container.innerHTML = messages.map(m => {
         const isMe = m.senderId === currentUserId;
         return `
-            <div style="display: flex; ${isMe ? 'justify-content: flex-end;' : 'justify-content: flex-start;'}">
-                <div style="max-width: 70%; padding: 12px 16px; border-radius: 16px; ${isMe ? 'background: var(--primary-green); color: white; border-bottom-right-radius: 4px;' : 'background: var(--primary-beige); color: var(--text-dark); border-bottom-left-radius: 4px;'}">
-                    <div style="font-size: 14px;">${escapeHtml(m.content)}</div>
-                    <div style="font-size: 11px; opacity: 0.7; margin-top: 4px; text-align: ${isMe ? 'right' : 'left'};">${formatTime(m.createdAt)}</div>
-                </div>
+            <div class="msg ${isMe ? 'sent' : 'received'}">
+                <div class="msg-bubble">${escapeHtml(m.content)}</div>
+                <div class="msg-time">${formatTime(m.createdAt)}</div>
             </div>
         `;
     }).join('');
@@ -164,12 +167,94 @@ async function sendMsg() {
     input.value = '';
 
     try {
-        await messageAPI.send(currentChat.partner?.id, content);
-        await openChat(currentChat);
+            await messageAPI.send(currentChat.partner?.id, content);
+            await loadCurrentThread();
+            await refreshConversationListIfNeeded();
     } catch (e) {
         console.error(e);
         showToast('Erreur: ' + e.message, 'error');
     }
+}
+
+function startMessagingSync() {
+    stopMessagingSync();
+    messagingRefreshInterval = setInterval(() => {
+        if (document.hidden) return;
+        refreshMessagingData();
+    }, 12000);
+}
+
+function stopMessagingSync() {
+    if (messagingRefreshInterval) {
+        clearInterval(messagingRefreshInterval);
+        messagingRefreshInterval = null;
+    }
+}
+
+async function refreshMessagingData() {
+    try {
+        const activePartnerId = currentChat?.partner?.id;
+
+        const changed = await loadConversations(true);
+        if (changed !== false) {
+            await updateUnreadBadge();
+        }
+
+        if (!activePartnerId) return;
+
+        if (isChatOpen) {
+            await loadCurrentThread();
+        }
+    } catch (e) {
+        console.error('Messaging sync error:', e);
+    }
+}
+
+async function loadCurrentThread() {
+    const activePartnerId = currentChat?.partner?.id;
+    if (!activePartnerId) return;
+
+    const messages = await messageAPI.getWithUser(activePartnerId) || [];
+    renderMessages(messages, activePartnerId);
+}
+
+async function refreshConversationListIfNeeded() {
+    await loadConversations(true);
+    await updateUnreadBadge();
+}
+
+function renderConversationItem(c) {
+    const partner = c.partner || {};
+    const name = partner.fullname || 'Patient';
+
+    return `
+        <div class="conversation-item" data-id="${partner.id}" onclick="openChatById('${partner.id}')">
+            <div class="conv-avatar">
+                ${renderAvatarMarkup(partner, 48, '20px')}
+            </div>
+            <div class="conv-details">
+                <div class="conv-name" style="font-weight: 600; color: var(--text-dark);">${escapeHtml(name)}</div>
+                <div style="font-size: 13px; color: var(--text-light); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(c.lastMessage || 'Aucun message')}</div>
+            </div>
+            <div class="conv-time" style="font-size: 12px; color: var(--text-light);">${formatTime(c.lastMessageTime)}</div>
+        </div>
+    `;
+}
+
+function renderAvatarMarkup(userLike, size, fontSize) {
+    const avatarUrl = getUserAvatarUrl(userLike);
+    const name = userLike?.fullname || userLike?.name || userLike?.email || '';
+    const initial = (name.trim().charAt(0) || '?').toUpperCase();
+
+    if (avatarUrl) {
+        return `<img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(name)}" style="width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;display:block;">`;
+    }
+
+    return `<div style="width:${size}px;height:${size}px;background: linear-gradient(135deg, var(--primary-green), #2F8F83);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:${fontSize};font-weight:700;color:white;flex-shrink:0;">${escapeHtml(initial)}</div>`;
+}
+
+function getUserAvatarUrl(userLike) {
+    return userLike?.profile?.avatar || userLike?.avatar || userLike?.photo || userLike?.image || userLike?.profileImage || userLike?.picture || null;
 }
 
 function formatTime(dateStr) {
@@ -186,7 +271,7 @@ function formatTime(dateStr) {
 
 function escapeHtml(text) {
     const div = document.createElement('div');
-    div.textContent = text;
+    div.textContent = text || '';
     return div.innerHTML;
 }
 
@@ -207,8 +292,16 @@ function highlightCurrentSidebarLink() {
     });
 }
 
+document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+        refreshMessagingData();
+    }
+});
+
 // Expose functions globally
 window.openChatById = openChatById;
 window.sendMsg = sendMsg;
 window.highlightCurrentSidebarLink = highlightCurrentSidebarLink;
 window.showToast = showToast;
+
+window.addEventListener('beforeunload', stopMessagingSync);

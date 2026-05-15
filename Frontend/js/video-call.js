@@ -6,8 +6,11 @@ let currentUser = null;
 let roomId = null;
 let isDoctor = false;
 let sessionAppointmentId = null;
+let chatPartnerId = null;
 let callStartTime = null;
 let callTimerInterval = null;
+let callChatRefreshInterval = null;
+let lastRenderedChatSignature = null;
 
 // Media state
 let localStream = null;
@@ -184,6 +187,9 @@ async function initializeSession() {
             }, 2000);
             return;
         }
+
+        // Resolve chat partner and load shared persisted history
+        await initializeCallChat();
         
         // Initialize media
         await initializeMedia();
@@ -331,11 +337,6 @@ async function connectToVideoServer() {
                 handleParticipantLeft();
                 otherParticipantId = null;
             }
-        });
-        
-        // Chat messages
-        videoSocket.on('chat-message', (msg) => {
-            displayChatMessage(msg);
         });
         
         videoSocket.on('disconnect', () => {
@@ -610,28 +611,27 @@ function toggleChat() {
     if (chatSection.style.display === 'none') {
         chatSection.style.display = 'flex';
         if (btn) btn.classList.add('active');
+        loadCallChatHistory();
     } else {
         chatSection.style.display = 'none';
         if (btn) btn.classList.remove('active');
     }
 }
 
-function sendChatMessage() {
+async function sendChatMessage() {
     const input = document.getElementById('chatInput');
     const content = input?.value.trim();
-    if (!content || !videoSocket) return;
-    
-    const message = {
-        fromId: currentUser.id,
-        fromName: currentUser.fullname || 'User',
-        text: content,
-        timestamp: new Date().toISOString()
-    };
-    
-    videoSocket.emit('chat-message', { roomId, ...message });
-    displayChatMessage(message);
+    if (!content || !chatPartnerId) return;
+
+    try {
+        await messageAPI.send(chatPartnerId, content);
+    } catch (error) {
+        console.error('Failed to send call message:', error);
+        return;
+    }
     
     input.value = '';
+    loadCallChatHistory();
 }
 
 function handleChatKeyPress(event) {
@@ -645,17 +645,83 @@ function displayChatMessage(msg) {
     if (!container) return;
     
     const currentUserId = currentUser?.id;
-    const isSent = msg.fromId === currentUserId;
+    const senderId = msg.senderId || msg.fromId;
+    const messageText = msg.content || msg.text || '';
+    const timestamp = msg.createdAt || msg.timestamp;
+    const isSent = senderId === currentUserId;
     
     const msgDiv = document.createElement('div');
     msgDiv.className = `message ${isSent ? 'sent' : 'received'}`;
     msgDiv.innerHTML = `
-        <div class="message-content">${escapeHtml(msg.text)}</div>
-        <div class="message-time">${new Date(msg.timestamp).toLocaleString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</div>
+        <div class="message-content">${escapeHtml(messageText)}</div>
+        <div class="message-time">${new Date(timestamp).toLocaleString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</div>
     `;
     
     container.appendChild(msgDiv);
     container.scrollTop = container.scrollHeight;
+}
+
+async function initializeCallChat() {
+    try {
+        const appointment = await appointmentAPI.getById(sessionAppointmentId);
+        if (!appointment) return;
+
+        chatPartnerId = isDoctor ? appointment.patientId : appointment.doctorId;
+        await loadCallChatHistory(true);
+        startCallChatSync();
+    } catch (error) {
+        console.error('Failed to initialize call chat:', error);
+    }
+}
+
+function startCallChatSync() {
+    stopCallChatSync();
+    callChatRefreshInterval = setInterval(() => {
+        loadCallChatHistory();
+    }, 3000);
+}
+
+function stopCallChatSync() {
+    if (callChatRefreshInterval) {
+        clearInterval(callChatRefreshInterval);
+        callChatRefreshInterval = null;
+    }
+}
+
+async function loadCallChatHistory(forceScroll = false) {
+    if (!chatPartnerId) return;
+
+    try {
+        const messages = await messageAPI.getWithUser(chatPartnerId);
+        renderCallChatMessages(messages || [], forceScroll);
+    } catch (error) {
+        console.error('Failed to load call chat history:', error);
+    }
+}
+
+function renderCallChatMessages(messages, forceScroll = false) {
+    const container = document.getElementById('messagesContainer');
+    if (!container) return;
+
+    const signature = messages.map(m => `${m.id}:${m.createdAt}`).join('|');
+    if (!forceScroll && signature === lastRenderedChatSignature) {
+        return;
+    }
+
+    lastRenderedChatSignature = signature;
+
+    if (!messages.length) {
+        container.innerHTML = '<div class="no-messages" style="text-align: center; padding: 20px; color: #9CA3AF;">Aucun message</div>';
+        return;
+    }
+
+    const isNearBottom = (container.scrollHeight - container.scrollTop - container.clientHeight) < 80;
+    container.innerHTML = '';
+    messages.forEach((msg) => displayChatMessage(msg));
+
+    if (forceScroll || isNearBottom) {
+        container.scrollTop = container.scrollHeight;
+    }
 }
 
 function escapeHtml(text) {
@@ -718,6 +784,8 @@ async function endCall() {
         flippedVideoStream = null;
         
         // Stop media
+        stopCallChatSync();
+
         if (localStream) {
             localStream.getTracks().forEach(track => track.stop());
             localStream = null;
