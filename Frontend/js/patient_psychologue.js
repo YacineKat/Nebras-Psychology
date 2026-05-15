@@ -6,6 +6,8 @@ let doctors = [];
 let userPreferences = null;
 let selectedDoctor = null;
 let urgentActif = false;
+let doctorCache = new Map();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
 // Toast notification system
 function showToast(message, type = 'success') {
@@ -46,8 +48,35 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     await loadUserPreferences();
     await fetchDoctors();
+    await checkUrgentAccessStatus();
     highlightCurrentSidebarLink();
+    
+    // Check URL for joining a call
+    const urlParams = new URLSearchParams(window.location.search);
+    const joinCall = urlParams.get('joinCall');
+    if (joinCall) {
+        // Clean URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+    
+    // Init call listener
+    if (typeof initPatientCallListener === 'function') {
+        setTimeout(initPatientCallListener, 500);
+    }
 });
+
+async function checkUrgentAccessStatus() {
+    try {
+        const status = await appointmentAPI.getUrgentAccessStatus();
+        if (status.isActive) {
+            urgentActif = true;
+            document.getElementById('urgentBanner').style.display = 'flex';
+            showToast(`URGENT actif! ${status.daysLeft} jour(s) restant(s)`, 'info');
+        }
+    } catch (error) {
+        console.log('Could not load urgent access status');
+    }
+}
 
 async function loadUserPreferences() {
     try {
@@ -62,8 +91,11 @@ async function loadUserPreferences() {
 
 async function fetchDoctors() {
     try {
-        const result = await doctorAPI.getAll();
+        const result = await doctorAPI.getAll({ view: 'summary' });
         doctors = result || [];
+        
+        // Clear cache when new doctors are fetched
+        doctorCache.clear();
         
         if (userPreferences && userPreferences.prefGender) {
             doctors = filterDoctorsByPreferences(doctors);
@@ -115,33 +147,46 @@ function renderDoctors(doctorsList) {
     grid.innerHTML = doctorsList.map(doctor => {
         const nextAvailable = getNextAvailableSlot(doctor.availableSlots);
         const onlineStatus = doctor.isAvailable ? 'En ligne' : (nextAvailable ? `Disponible ${nextAvailable}` : 'Non disponible');
+        const avatarHtml = doctor.avatar 
+            ? `<img src="${doctor.avatar}" alt="${doctor.fullname}" class="psy-avatar-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">`
+            : '';
+        const defaultAvatarSvg = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="psy-avatar-default">
+                <circle cx="12" cy="8" r="4"/>
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            </svg>
+        `;
         
         return `
         <div class="psy-card" 
              data-name="${doctor.fullname.toLowerCase()}" 
              data-online="${doctor.isAvailable}"
              onclick="viewDoctor('${doctor.id}')">
-            <div class="psy-image">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="50" height="50">
-                    <circle cx="12" cy="8" r="4"/>
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                </svg>
-                ${doctor.isAvailable ? '<div class="online-badge">En ligne</div>' : ''}
-            </div>
-            <div class="psy-info">
-                <h3>${doctor.fullname}</h3>
-                <p class="psy-specialite">${doctor.specialite || 'Psychologie'}</p>
-                <div class="psy-status ${doctor.isAvailable ? 'online' : 'offline'}">
-                    ${onlineStatus}
-                </div>
-                <div class="psy-rating">
-                    ${'★'.repeat(Math.floor(doctor.rating || 0))}${'☆'.repeat(5 - Math.floor(doctor.rating || 0))}
-                    <span>${doctor.rating ? doctor.rating.toFixed(1) : '0'}</span>
+            <div class="psy-card-header">
+                <div class="psy-avatar-container">
+                    ${avatarHtml}
+                    <div class="psy-avatar-default" ${doctor.avatar ? 'style="display:none"' : ''}>
+                        ${defaultAvatarSvg}
+                    </div>
+                    ${doctor.isAvailable ? '<div class="online-indicator"></div>' : ''}
                 </div>
             </div>
-            <button class="psy-contact-btn" onclick="event.stopPropagation(); viewDoctor('${doctor.id}')">
-                Voir profil
-            </button>
+            <div class="psy-card-body">
+                <h3 class="psy-name">${doctor.fullname}</h3>
+                <p class="psy-specialite">${doctor.specialite || 'Psychologie générale'}</p>
+                <div class="psy-meta">
+                    <div class="psy-rating">
+                        ${'★'.repeat(Math.floor(doctor.rating || 0))}${'☆'.repeat(5 - Math.floor(doctor.rating || 0))}
+                        <span class="rating-value">${doctor.rating ? doctor.rating.toFixed(1) : '0'}</span>
+                    </div>
+                    <div class="psy-price">${doctor.tarif || 2000} DA</div>
+                </div>
+            </div>
+            <div class="psy-card-footer">
+                <button class="psy-view-btn" onclick="event.stopPropagation(); viewDoctor('${doctor.id}')">
+                    Voir profil
+                </button>
+            </div>
         </div>
         `;
     }).join('');
@@ -171,70 +216,94 @@ function getNextAvailableSlot(slots) {
 
 async function viewDoctor(doctorId) {
     try {
-        const doctor = await doctorAPI.getById(doctorId);
-        selectedDoctor = doctor;
-
-        document.getElementById('detailName').textContent = doctor.fullname;
+        // Check cache first
+        const cachedDoctor = doctorCache.get(doctorId);
+        let doctor;
         
-        const statusSpan = document.getElementById('detailOnlineStatus');
-        statusSpan.textContent = doctor.isAvailable ? 'En ligne' : 'Hors ligne';
-        statusSpan.style.background = doctor.isAvailable ? '#27ae60' : '#999';
-
-        const ratingText = document.querySelector('.rating-text');
-        if (ratingText) {
-            const rating = doctor.rating || 0;
-            ratingText.textContent = rating.toFixed(1) + '/5';
+        if (cachedDoctor && (Date.now() - cachedDoctor._cachedAt) < CACHE_DURATION) {
+            doctor = cachedDoctor;
+        } else {
+            // Fetch from API and cache
+            doctor = await doctorAPI.getById(doctorId);
+            doctor._cachedAt = Date.now();
+            doctorCache.set(doctorId, doctor);
         }
         
-        const starsDiv = document.querySelector('.stars');
-        if (starsDiv) {
-            const rating = doctor.rating || 0;
-            starsDiv.innerHTML = 
+        selectedDoctor = doctor;
+
+        // Avatar
+        const avatarImg = document.querySelector('.psy-detail-avatar');
+        if (avatarImg) {
+            if (doctor.avatar) {
+                avatarImg.src = doctor.avatar;
+                avatarImg.style.display = 'block';
+            } else {
+                avatarImg.style.display = 'none';
+            }
+        }
+
+        // Name
+        document.getElementById('detailName').textContent = doctor.fullname || 'Psychologue';
+        
+        // Specialité (was missing - BUG FIX)
+        const specialiteSpan = document.getElementById('detailSpecialite');
+        if (specialiteSpan) {
+            specialiteSpan.textContent = doctor.specialite || 'Psychologie';
+        }
+
+        // Rating with stars (NEW)
+        const rating = doctor.rating || 0;
+        const starsEl = document.getElementById('detailStars');
+        if (starsEl) {
+            starsEl.innerHTML = 
                 '<span class="star filled">★</span>'.repeat(Math.floor(rating)) +
                 '<span class="star">★</span>'.repeat(5 - Math.floor(rating));
         }
-
-        const quickInfo = document.querySelector('.quick-info');
-        if (quickInfo) {
-            const duration = doctor.tarif ? Math.ceil(doctor.tarif / 40) : 45;
-            quickInfo.innerHTML = `
-                <div class="info-item-detail"><svg viewBox="0 0 24 24" fill="none"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z" fill="currentColor"/></svg><span>${duration} min.</span></div>
-                <div class="info-item-detail"><span>${doctor.tarif || '2000'} DA</span></div>
-            `;
+        
+        const ratingValueEl = document.getElementById('detailRating');
+        if (ratingValueEl) {
+            ratingValueEl.textContent = rating.toFixed(1);
         }
 
-        const langSection = document.querySelector('.detail-section:nth-child(5)');
-        if (langSection && doctor.language) {
-            const langTags = langSection.querySelector('.tags-list');
-            if (langTags) {
-                const langs = doctor.language.split(',').map(l => l.trim());
-                langTags.innerHTML = langs.map(l => `<span class="tag">${l}</span>`).join('');
-            }
+        // System metrics (NEW)
+        const patientsCountEl = document.getElementById('detailPatientsCount');
+        if (patientsCountEl) {
+            patientsCountEl.textContent = doctor.patientsCount || 0;
         }
 
-        const approachSection = document.querySelector('.detail-section:nth-child(6)');
-        if (approachSection && doctor.specialite) {
-            const tags = approachSection.querySelector('.tags-list');
-            if (tags) {
-                tags.innerHTML = `<span class="tag">${doctor.specialite}</span>`;
-            }
+        const sessionsEl = document.getElementById('detailSessionsCompleted');
+        if (sessionsEl) {
+            sessionsEl.textContent = doctor.sessionsCompleted || 0;
         }
 
-        const motifsSection = document.querySelector('.detail-section:nth-child(7)');
-        if (motifsSection && doctor.motifs) {
-            const tags = motifsSection.querySelector('.tags-list');
-            if (tags) {
-                const motifList = doctor.motifs.split(',').map(m => m.trim());
-                tags.innerHTML = motifList.map(m => `<span class="tag">${m}</span>`).join('');
-            }
+        // Phone
+        const phoneEl = document.getElementById('detailPhone');
+        if (phoneEl) {
+            phoneEl.textContent = doctor.phone || 'Non spécifié';
         }
 
-        const descSection = document.querySelector('.detail-section:nth-child(8)');
-        if (descSection) {
-            const descText = descSection.querySelector('.description-text');
-            if (descText) {
-                descText.textContent = doctor.bio || 'Aucune description disponible.';
-            }
+        // Adresse
+        const adresseEl = document.getElementById('detailAdresse');
+        if (adresseEl) {
+            adresseEl.textContent = doctor.adresse || 'Non spécifié';
+        }
+
+        // Numéro d'agrément
+        const agrementEl = document.getElementById('detailAgrement');
+        if (agrementEl) {
+            agrementEl.textContent = doctor.agrement || 'Non spécifié';
+        }
+
+        // Diplômes
+        const diplomesEl = document.getElementById('detailDiplomes');
+        if (diplomesEl) {
+            diplomesEl.textContent = doctor.diplomes || 'Non spécifié';
+        }
+
+        // Bio/Description
+        const bioEl = document.getElementById('detailBio');
+        if (bioEl) {
+            bioEl.textContent = doctor.bio || 'Aucune description disponible.';
         }
 
         document.getElementById('psyDetailPanel').classList.add('active');
@@ -271,6 +340,18 @@ function openBookingModal() {
     const minDate = today.toISOString().split('T')[0];
     document.getElementById('bookingDate').min = minDate;
     document.getElementById('bookingDate').value = minDate;
+    
+    // Populate time slots - show all standard times (user can choose freely)
+    const timeSelect = document.getElementById('bookingTime');
+    const standardTimes = ['08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30', '20:00'];
+    
+    timeSelect.innerHTML = '<option value="">Sélectionner une heure</option>';
+    standardTimes.forEach(time => {
+        const option = document.createElement('option');
+        option.value = time;
+        option.textContent = time;
+        timeSelect.appendChild(option);
+    });
     
     document.getElementById('bookingModal').classList.add('active');
     document.body.style.overflow = 'hidden';
@@ -393,8 +474,56 @@ function filterPsychologues() {
     }
 }
 
-function openUrgentPayment() {
-    showToast('Fonctionnalité URGENT bientôt disponible!', 'info');
+async function openUrgentPayment() {
+    // Check if user already has active 7-day urgent access
+    try {
+        const status = await appointmentAPI.getUrgentAccessStatus();
+        
+        if (status.isActive) {
+            // User has active urgent access - skip payment and activate immediately
+            showToast(`URGENT déjà actif! ${status.daysLeft} jour(s) restant(s)`, 'info');
+            await activateUrgentNoPayment();
+            return;
+        }
+    } catch (error) {
+        console.log('Could not check urgent access status, showing payment modal');
+    }
+    
+    // No active access - show payment modal
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const defaultTime = `${hours}:${minutes}`;
+    
+    const timeInput = document.getElementById('urgentAppointmentTime');
+    if (timeInput) {
+        timeInput.value = defaultTime;
+    }
+    
+    document.getElementById('urgentModal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+async function activateUrgentNoPayment() {
+    // Direct activation without payment - for users with active 7-day access
+    try {
+        const onlineDoctor = doctors.find(d => d.isAvailable);
+        const selectedDoctorId = onlineDoctor?.id;
+        
+        const result = await appointmentAPI.createUrgent(
+            selectedDoctorId,
+            'Patient requested URGENT VIP consultation',
+            undefined
+        );
+        
+        urgentActif = true;
+        document.getElementById('urgentBanner').style.display = 'flex';
+        filterPsychologues();
+        
+    } catch (error) {
+        console.error('Error activating urgent:', error);
+        showToast('Erreur lors de l\'activation URGENT', 'error');
+    }
 }
 
 function closeUrgentModal() {
@@ -402,11 +531,48 @@ function closeUrgentModal() {
     document.body.style.overflow = 'auto';
 }
 
-function activateUrgent() {
-    showToast('Paiement réussi! Mode URGENT activé (simulation)', 'success');
-    urgentActif = true;
-    document.getElementById('urgentBanner').style.display = 'flex';
-    filterPsychologues();
+async function activateUrgent() {
+    const ccpNumber = document.getElementById('ccpNumber')?.value;
+    const cvv = document.getElementById('cvv')?.value;
+    const appointmentTime = document.getElementById('urgentAppointmentTime')?.value;
+    
+    if (!ccpNumber || !cvv) {
+        showToast('Veuillez remplir tous les champs de paiement', 'error');
+        return;
+    }
+    
+    try {
+        // Simulate payment processing
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Activate 7-day urgent access
+        await appointmentAPI.activateUrgentAccess();
+        
+        // Find an online doctor - use first available
+        const onlineDoctor = doctors.find(d => d.isAvailable);
+        const selectedDoctorId = onlineDoctor?.id;
+        
+        // Create urgent VIP request via API with custom time
+        const result = await appointmentAPI.createUrgent(
+            selectedDoctorId,
+            'Patient requested URGENT VIP consultation',
+            appointmentTime || undefined
+        );
+        
+        showToast('Demande URGENTE VIP envoyée avec succès! Accès actif pour 7 jours.', 'success');
+        urgentActif = true;
+        document.getElementById('urgentBanner').style.display = 'flex';
+        closeUrgentModal();
+        filterPsychologues();
+        
+        // Clear form
+        document.getElementById('ccpNumber').value = '';
+        document.getElementById('cvv').value = '';
+        
+    } catch (error) {
+        console.error('Error activating urgent:', error);
+        showToast('Erreur lors de l\'activation URGENT', 'error');
+    }
 }
 
 function switchTab(tab) {

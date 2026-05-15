@@ -37,6 +37,25 @@ async function loadGroups() {
     }
 }
 
+async function updateMessagesBadge() {
+    try {
+        if (!window.messageAPI) return;
+        const result = await messageAPI.getUnreadCount().catch(() => null);
+        const count = result?.unreadCount || 0;
+        const badge = document.getElementById('messagesBadge');
+        if (!badge) return;
+        if (count > 0) {
+            badge.textContent = count;
+            badge.style.display = 'inline-flex';
+        } else {
+            badge.textContent = '';
+            badge.style.display = 'none';
+        }
+    } catch (error) {
+        console.error('Error updating messages badge:', error);
+    }
+}
+
 function isGroupPast(group) {
     if (!group.day || !group.time) return false;
     
@@ -110,12 +129,34 @@ async function openGroupDetailModal(groupId) {
             document.getElementById('detailGroupTitle').innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#091346" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg> ${data.group.name}`;
             document.getElementById('maxPlacesSpan').innerText = data.group.maxPlaces;
             updateWaitingAndParticipants();
+            syncGroupSummary(data.group);
             document.getElementById('groupDetailModal').classList.add('active');
             document.body.style.overflow = 'hidden';
         }
     } catch (error) {
         console.error('Error loading group details:', error);
     }
+}
+
+function syncGroupSummary(groupDetails) {
+    if (!groupDetails) return;
+    const index = groups.findIndex(g => g.id === groupDetails.id);
+    if (index === -1) return;
+
+    groups[index] = {
+        ...groups[index],
+        name: groupDetails.name,
+        theme: groupDetails.theme,
+        day: groupDetails.day,
+        time: groupDetails.time,
+        duration: groupDetails.duration,
+        maxPlaces: groupDetails.maxPlaces,
+        currentPlaces: groupDetails.currentPlaces,
+        price: groupDetails.price,
+        waitingCount: groupDetails.waitingList?.length || 0
+    };
+
+    renderGroups();
 }
 
 function updateWaitingAndParticipants() {
@@ -173,8 +214,7 @@ async function acceptRequest(memberId) {
             body: JSON.stringify({ memberId })
         });
         if (response.ok) {
-            openGroupDetailModal(currentGroupId);
-            loadGroups();
+            await openGroupDetailModal(currentGroupId);
         }
     } catch (error) {
         console.error('Error accepting request:', error);
@@ -189,8 +229,7 @@ async function rejectRequest(memberId) {
             body: JSON.stringify({ memberId })
         });
         if (response.ok) {
-            openGroupDetailModal(currentGroupId);
-            loadGroups();
+            await openGroupDetailModal(currentGroupId);
         }
     } catch (error) {
         console.error('Error rejecting request:', error);
@@ -204,6 +243,18 @@ function closeGroupDetailModal() {
 }
 
 function openCreateGroupModal() {
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    document.getElementById('groupTime').value = `${hours}:${minutes}`;
+    
+    const dayNames = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+    const today = dayNames[now.getDay()];
+    const daySelect = document.getElementById('groupDay');
+    if (today !== 'Dimanche' && daySelect.value !== today) {
+        daySelect.value = today;
+    }
+    
     document.getElementById('createGroupModal').classList.add('active');
     document.body.style.overflow = 'hidden';
 }
@@ -216,8 +267,8 @@ function closeCreateGroupModal() {
 }
 
 async function createGroup() {
-    const title = document.getElementById('groupTitle').value;
-    const desc = document.getElementById('groupDesc').value;
+    const title = document.getElementById('groupTitle').value.trim();
+    const desc = document.getElementById('groupDesc').value.trim();
     const theme = document.getElementById('groupTheme').value;
     const dayMap = { 'Dimanche': 0, 'Lundi': 1, 'Mardi': 2, 'Mercredi': 3, 'Jeudi': 4, 'Vendredi': 5, 'Samedi': 6 };
     const day = document.getElementById('groupDay').value;
@@ -228,10 +279,22 @@ async function createGroup() {
     const price = parseInt(document.getElementById('groupPrice').value);
 
     if (!title || !desc) {
+        console.warn('Title or description missing');
+        return;
+    }
+
+    if (!day || !time) {
+        console.warn('Day or time not selected');
         return;
     }
 
     try {
+        console.log('Sending request to create group...');
+        console.log('Title:', title);
+        console.log('Day:', day, '-> dayOfWeek:', dayMap[day]);
+        console.log('Time:', time);
+        console.log('Auth headers:', getAuthHeaders());
+        
         const response = await fetch(`${API_BASE}/psychologue/groups`, {
             method: 'POST',
             headers: getAuthHeaders(),
@@ -247,9 +310,12 @@ async function createGroup() {
             })
         });
 
+        console.log('Response status:', response.status);
         const data = await response.json();
+        console.log('Response data:', data);
         
         if (response.ok) {
+            console.log('Group created successfully');
             closeCreateGroupModal();
             loadGroups();
         } else {
@@ -362,8 +428,44 @@ async function initGroupCall(roomId, group) {
         localVideoTrack = localStream.getVideoTracks()[0];
         localAudioTrack = localStream.getAudioTracks()[0];
         
+        // Canvas-based horizontal flip for raw track data
+        const rawVideoTrack = localStream.getVideoTracks()[0];
+        const flipResult = await buildFlippedTrack(rawVideoTrack);
+        flippedVideoTrack = flipResult.flippedTrack;
+        flippedVideoStream = flipResult.flippedStream;
+        flipAnimFrame = flipResult.animId;
+        flipVideoEl = flipResult.offVideo;
+        
+        // Start with camera and microphone OFF
+        localVideoTrack.enabled = false;
+        localAudioTrack.enabled = false;
+        isMuted = true;
+        isVideoOff = true;
+        
         document.getElementById('localVideo').srcObject = localStream;
         document.getElementById('localVideo').style.transform = 'scaleX(-1)';
+        document.getElementById('localVideo').style.display = 'none';
+        
+        // Add avatar placeholder
+        const localVideoContainer = document.getElementById('localVideoContainer');
+        let avatarPlaceholder = document.getElementById('localVideoAvatar');
+        if (!avatarPlaceholder) {
+            avatarPlaceholder = document.createElement('div');
+            avatarPlaceholder.id = 'localVideoAvatar';
+            avatarPlaceholder.style.cssText = 'position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #F3F4F6; font-size: 32px; color: #6B7280;';
+            localVideoContainer.appendChild(avatarPlaceholder);
+        }
+        const userInitial = getCurrentUser()?.fullname?.charAt(0).toUpperCase() || 'V';
+        avatarPlaceholder.innerHTML = userInitial;
+        
+        // Update UI to show OFF state
+        document.getElementById('muteBtn').classList.add('muted');
+        document.getElementById('muteBtn').classList.remove('active');
+        document.getElementById('localMuteIndicator').style.display = 'flex';
+        
+        document.getElementById('videoBtn').classList.add('muted');
+        document.getElementById('videoBtn').classList.remove('active');
+        document.getElementById('localVideoOffIndicator').style.display = 'flex';
         
         // Update local name with user name
         const userName = getCurrentUser()?.fullname || 'Vous';
@@ -378,7 +480,7 @@ async function initGroupCall(roomId, group) {
     }
     
     // Connect to video server
-    const videoServerUrl = 'http://localhost:5000';
+    const videoServerUrl = window.APP_CONFIG.videoServerUrl;
     socket = io(videoServerUrl);
     
     const userName = getCurrentUser()?.fullname || 'Psychologue';
@@ -425,7 +527,7 @@ async function initGroupCall(roomId, group) {
     socket.on('p2p-answer', ({ answer, fromId }) => {
         const pc = peerConnections[fromId];
         if (pc) {
-            pc.setRemoteDescription(new RTCSessionDescription(answer));
+                pc.setRemoteDescription(new RTCSessionDescription(answer));
         }
     });
     
@@ -458,11 +560,75 @@ async function initGroupCall(roomId, group) {
 }
 
 let localStream = null;
+let flippedVideoTrack = null;
+let flippedVideoStream = null;
+let flipAnimFrame = null;
+let flipVideoEl = null;
+
+async function buildFlippedTrack(rawVideoTrack) {
+    return new Promise((resolve) => {
+        const trackSettings = rawVideoTrack.getSettings();
+        const W = trackSettings.width || 640;
+        const H = trackSettings.height || 480;
+
+        const canvas = document.createElement('canvas');
+        canvas.width = W;
+        canvas.height = H;
+        const ctx = canvas.getContext('2d');
+
+        const offVideo = document.createElement('video');
+        offVideo.muted = true;
+        offVideo.playsInline = true;
+        offVideo.srcObject = new MediaStream([rawVideoTrack]);
+        offVideo.style.cssText = 'position:fixed;opacity:0;pointer-events:none;width:1px;height:1px;top:-9999px';
+        document.body.appendChild(offVideo);
+
+        offVideo.onloadedmetadata = () => {
+            if (offVideo.videoWidth > 0) {
+                canvas.width = offVideo.videoWidth;
+                canvas.height = offVideo.videoHeight;
+            }
+
+            offVideo.play().then(() => {
+                let animId = null;
+                let resolved = false;
+
+                function draw() {
+                    if (offVideo.readyState >= 2 && offVideo.videoWidth > 0) {
+                        if (canvas.width !== offVideo.videoWidth) {
+                            canvas.width = offVideo.videoWidth;
+                            canvas.height = offVideo.videoHeight;
+                        }
+                        ctx.save();
+                        ctx.translate(canvas.width, 0);
+                        ctx.scale(-1, 1);
+                        ctx.drawImage(offVideo, 0, 0, canvas.width, canvas.height);
+                        ctx.restore();
+
+                        if (!resolved) {
+                            resolved = true;
+                            const flippedStream = canvas.captureStream(30);
+                            resolve({
+                                flippedTrack: flippedStream.getVideoTracks()[0],
+                                flippedStream,
+                                animId: { current: animId },
+                                offVideo
+                            });
+                        }
+                    }
+                    animId = requestAnimationFrame(draw);
+                }
+                draw();
+            });
+        };
+    });
+}
 let isMuted = false;
 let isVideoOff = false;
 let isScreenSharing = false;
 let socket = null;
 let peerConnections = {};
+let peerStreams = {};
 let currentRoomId = null;
 let callStartTime = null;
 let callDurationInterval = null;
@@ -491,7 +657,7 @@ function addRemoteParticipant(participant) {
     video.id = `video_${participant.socketId}`;
     video.autoplay = true;
     video.playsinline = true;
-    video.style.cssText = 'width: 100%; height: 100%; object-fit: cover;';
+    video.style.cssText = 'width: 100%; height: 100%; object-fit: cover; transform: none;';
     
     const nameDiv = document.createElement('div');
     nameDiv.style.cssText = 'position: absolute; bottom: 8px; left: 8px; background: rgba(0,0,0,0.7); color: white; padding: 4px 10px; border-radius: 4px; font-size: 11px; display: flex; align-items: center; gap: 5px;';
@@ -537,15 +703,25 @@ function setupPeerConnection(peerId, videoElement) {
     
     peerConnections[peerId] = pc;
     
-    // Add local tracks
-    if (localStream) {
-        localStream.getTracks().forEach(track => {
-            pc.addTrack(track, localStream);
-        });
+    // Add flipped video track and original audio track
+    if (flippedVideoTrack && flippedVideoStream) {
+        pc.addTrack(flippedVideoTrack, flippedVideoStream);
+    }
+    const audioTrack = localStream?.getAudioTracks()[0];
+    if (audioTrack) {
+        pc.addTrack(audioTrack, localStream);
     }
     
+    // Create a per-peer remote stream and attach it to the video element once
+    const remoteStream = new MediaStream();
+    peerStreams[peerId] = remoteStream;
+    if (videoElement) {
+        videoElement.srcObject = remoteStream;
+    }
+    
+    // Handle incoming tracks — add to the shared stream
     pc.ontrack = (event) => {
-        videoElement.srcObject = event.streams[0];
+        remoteStream.addTrack(event.track);
     };
     
     pc.onicecandidate = (event) => {
@@ -560,6 +736,9 @@ function setupPeerConnection(peerId, videoElement) {
     
     pc.onconnectionstatechange = () => {
         console.log(`Connection state with ${peerId}: ${pc.connectionState}`);
+        if (pc.connectionState === 'connected' && videoElement) {
+            videoElement.play().catch(e => console.log('play error:', e));
+        }
     };
     
     // Create and send offer
@@ -581,17 +760,25 @@ async function handleOffer(offer, fromId, fromName) {
     
     peerConnections[fromId] = pc;
     
-    if (localStream) {
-        localStream.getTracks().forEach(track => {
-            pc.addTrack(track, localStream);
-        });
+    if (flippedVideoTrack && flippedVideoStream) {
+        pc.addTrack(flippedVideoTrack, flippedVideoStream);
+    }
+    const audioTrack = localStream?.getAudioTracks()[0];
+    if (audioTrack) {
+        pc.addTrack(audioTrack, localStream);
     }
     
+    // Create a per-peer remote stream and attach it to the video element once
+    const remoteStream = new MediaStream();
+    peerStreams[fromId] = remoteStream;
+    const videoEl = document.getElementById(`video_${fromId}`);
+    if (videoEl) {
+        videoEl.srcObject = remoteStream;
+    }
+    
+    // Handle incoming tracks — add to the shared stream
     pc.ontrack = (event) => {
-        const video = document.getElementById(`video_${fromId}`);
-        if (video) {
-            video.srcObject = event.streams[0];
-        }
+        remoteStream.addTrack(event.track);
     };
     
     pc.onicecandidate = (event) => {
@@ -601,6 +788,13 @@ async function handleOffer(offer, fromId, fromName) {
                 candidate: event.candidate,
                 targetId: fromId
             });
+        }
+    };
+    
+    pc.onconnectionstatechange = () => {
+        console.log(`Connection state with ${fromId}: ${pc.connectionState}`);
+        if (pc.connectionState === 'connected' && videoEl) {
+            videoEl.play().catch(e => console.log('play error:', e));
         }
     };
     
@@ -655,17 +849,17 @@ function startCallTimer(durationMinutes) {
 }
 
 function updateSpeakerView(participant) {
-    const speakerBadge = document.getElementById('speakerNameBadge');
+    const speakerBadge = document.getElementById('speakerBadge');
     const speakerName = document.getElementById('currentSpeakerName');
-    const speakerVideo = document.getElementById('speakerVideo');
+    const speakerView = document.getElementById('speakerView');
     
     if (participant) {
-        speakerName.textContent = participant.name || 'Participant';
-        speakerBadge.style.display = 'flex';
-        speakerVideo.style.borderColor = '#44AA99';
+        if (speakerName) speakerName.textContent = participant.name || 'Participant';
+        if (speakerBadge) speakerBadge.style.display = 'flex';
+        if (speakerView) speakerView.style.borderColor = '#44AA99';
     } else if (Object.keys(peerConnections).length === 0) {
-        speakerBadge.style.display = 'none';
-        speakerVideo.style.borderColor = 'rgba(68,170,153,0.3)';
+        if (speakerBadge) speakerBadge.style.display = 'none';
+        if (speakerView) speakerView.style.borderColor = 'rgba(68,170,153,0.3)';
     }
 }
 
@@ -704,17 +898,28 @@ function toggleVideo() {
         
         const videoBtn = document.getElementById('videoBtn');
         const videoIcon = document.getElementById('videoIcon');
+        const videoEl = document.getElementById('localVideo');
+        const avatarEl = document.getElementById('localVideoAvatar');
         
         if (isVideoOff) {
             videoBtn.classList.add('muted');
             videoBtn.classList.remove('active');
             videoIcon.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 1l22 22M21 21H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3m3-3h6l2 3h4a2 2 0 0 1 2 2v9.34"/></svg>`;
-            document.getElementById('localVideo').style.opacity = '0.3';
+            document.getElementById('localVideoOffIndicator').style.display = 'flex';
+            if (videoEl) videoEl.style.display = 'none';
+            if (avatarEl) avatarEl.style.display = 'flex';
         } else {
             videoBtn.classList.remove('muted');
             videoBtn.classList.add('active');
             videoIcon.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>`;
-            document.getElementById('localVideo').style.opacity = '1';
+            document.getElementById('localVideoOffIndicator').style.display = 'none';
+            if (videoEl) videoEl.style.display = 'block';
+            if (avatarEl) avatarEl.style.display = 'none';
+        }
+        
+        // Notify other participants
+        if (socket) {
+            socket.emit('participant-update', { roomId: currentRoomId, socketId: socket.id, isVideoOff });
         }
     }
 }
@@ -801,6 +1006,17 @@ function endGroupSession(wasAutoEnded = false) {
 }
 
 function finishEndingSession() {
+    // Stop canvas flip pipeline
+    cancelAnimationFrame(flipAnimFrame?.current);
+    flipAnimFrame = null;
+    if (flipVideoEl) {
+        flipVideoEl.srcObject = null;
+        if (document.body.contains(flipVideoEl)) {
+            document.body.removeChild(flipVideoEl);
+        }
+        flipVideoEl = null;
+    }
+    
     // Stop local stream
     if (localStream) {
         localStream.getTracks().forEach(track => track.stop());
@@ -1075,20 +1291,34 @@ window.addEventListener('load', function() {
     }
     loadGroups();
     initUserAvatar();
+    updateMessagesBadge();
 });
 
 // Initialize user avatar
 function initUserAvatar() {
     const user = getCurrentUser();
     const avatarContainer = document.getElementById('userAvatarContainer');
-    if (user && avatarContainer) {
+    if (!avatarContainer) return;
+
+    if (user?.profile?.avatar) {
+        avatarContainer.innerHTML = '';
+        avatarContainer.style.backgroundImage = `url(${user.profile.avatar})`;
+        avatarContainer.style.backgroundSize = 'cover';
+        avatarContainer.style.backgroundPosition = 'center';
+        avatarContainer.style.borderRadius = '50%';
+    } else if (user) {
         const name = user.fullname || user.email || '';
         const initial = name.charAt(0).toUpperCase();
+        avatarContainer.style.backgroundImage = '';
         avatarContainer.innerHTML = `
             <div style="width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #091346, #44AA99); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 18px;">
                 ${initial}
             </div>
         `;
+    }
+
+    if (user) {
+        const name = user.fullname || user.email || '';
         const userNameEl = document.querySelector('.user-name');
         if (userNameEl) userNameEl.textContent = name;
     }

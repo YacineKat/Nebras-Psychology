@@ -4,6 +4,8 @@
 
 const express = require('express');
 const cors = require('cors');
+const http = require('http');
+const { Server } = require('socket.io');
 require('dotenv').config();
 
 // Import Routes
@@ -14,6 +16,13 @@ const messageRoutes = require('./routes/messageRoutes');
 const therapyGroupRoutes = require('./routes/therapyGroupRoutes');
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+    cors: { origin: '*', methods: ['GET', 'POST'] }
+});
+
+// Make io available globally
+global.io = io;
 
 // ============================================
 // MIDDLEWARE
@@ -51,6 +60,31 @@ app.use('/api/messages', messageRoutes);
 app.use('/api', therapyGroupRoutes);
 
 // ============================================
+// SOCKET.IO - Real-time Session Events
+// ============================================
+
+io.on('connection', (socket) => {
+    console.log(`Client connected: ${socket.id}`);
+    
+    // Join a room to receive session notifications for a specific patient
+    socket.on('join-patient-room', (patientId) => {
+        socket.join(`patient:${patientId}`);
+        console.log(`Socket ${socket.id} joined patient room: patient:${patientId}`);
+    });
+    
+    // Join a room to receive session notifications for a specific doctor
+    socket.on('join-doctor-room', (doctorId) => {
+        socket.join(`doctor:${doctorId}`);
+        console.log(`Socket ${socket.id} joined doctor room: doctor:${doctorId}`);
+    });
+    
+    // Leave rooms on disconnect
+    socket.on('disconnect', () => {
+        console.log(`Client disconnected: ${socket.id}`);
+    });
+});
+
+// ============================================
 // ERROR HANDLING
 // ============================================
 
@@ -70,7 +104,7 @@ app.use((err, req, res, next) => {
 // ============================================
 const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`
   | NEBRAS SERVER RUNNING ON PORT ${PORT}   
   | Visit: http://localhost:${PORT}         

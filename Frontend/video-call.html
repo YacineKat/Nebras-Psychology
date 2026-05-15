@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Appel vidéo - Nebras</title>
+    <link rel="stylesheet" href="./css/psychologue_style.css">
+    <link rel="icon" type="image/png" href="./assets/image/logo.png">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #F5F6F8;
+            overflow: hidden;
+        }
+        .video-page-container {
+            display: flex;
+            height: 100vh;
+            flex-direction: column;
+        }
+        .video-header {
+            background: #091346;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .video-header-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .video-header h2 {
+            margin: 0;
+            font-size: 18px;
+        }
+        .call-timer {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .header-btn {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .header-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        /* ISOLATED VIDEO STYLES - ENSURE NO CROSS-CONTAMINATION */
+        
+        /* Remote video - NEVER mirror - always display as received from WebRTC */
+        #remoteVideo {
+            transform: none !important;
+        }
+
+        /* Ensure speaker-view container doesn't inherit any transforms */
+        .speaker-view {
+            transform: none !important;
+        }
+
+        /* Explicitly ensure remote video container has no transform */
+        #speakerView {
+            transform: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="video-page-container">
+        <div class="video-header">
+            <div class="video-header-info">
+                <h2 id="callTitle">Appel vidéo</h2>
+                <span class="call-timer" id="callDuration">00:00</span>
+            </div>
+            <div class="header-actions">
+                <button class="header-btn" onclick="toggleChat()" id="chatToggleBtn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    Chat
+                    <span id="unreadBadge" style="display:none; background:#EF4444; padding:2px 6px; border-radius:10px; font-size:11px;">0</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="video-call-container" id="videoCallContainer">
+            <div class="video-main-section">
+                <div id="speakerView" class="speaker-view">
+                    <div class="empty-state" id="remotePlaceholder" style="display: flex; flex-direction: column; align-items: center;">
+                        <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                        </svg>
+                        <p style="margin-top:15px; font-size:16px;" id="remotePlaceholderText">En attente de l'autre participant...</p>
+                    </div>
+                    <video id="remoteVideo" autoplay playsinline style="display:none; width:100%; height:100%; object-fit:cover; transform:none !important;"></video>
+                    <div id="speakerBadge" class="speaker-badge" style="display:none;">
+                        <div class="speaking-indicator"></div>
+                        <span id="currentSpeakerName">Participant</span>
+                    </div>
+                </div>
+
+                <div id="thumbnailGrid" class="thumbnail-section">
+                    <div id="localVideoContainer" class="thumbnail-video active">
+                        <div id="localVideoPlaceholder" class="video-avatar" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#F3F4F6; font-size:32px; color:#6B7280;">P</div>
+                        <video id="localVideo" autoplay muted playsinline style="display:none;"></video>
+                        <div class="thumbnail-info">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 15c1.66 0 2.99-1.34 2.99-3L15 6c0-1.66-1.34-3-3-3S9 4.34 9 6v6c0 1.66 1.34 3 3 3z"/>
+                            </svg>
+                            <span id="localName">Vous</span>
+                        </div>
+                        <div id="localMuteIndicator" class="thumbnail-badge muted" style="display:none;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                                <line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/>
+                            </svg>
+                        </div>
+                        <div id="localVideoOffIndicator" class="thumbnail-badge video-off" style="display:none;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                                <path d="M1 1l22 22M21 21H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3m3-3h6l2 3h4a2 2 0 0 1 2 2v9.34"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="chatSection" class="chat-section" style="display:none;">
+                <div class="chat-header">
+                    <h3>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                        </svg>
+                        Chat
+                    </h3>
+                </div>
+                <div id="messagesContainer" class="messages-container scrollbar"></div>
+                <div class="chat-input-container">
+                    <input type="text" id="chatInput" class="chat-input" placeholder="Écrire un message..." onkeypress="handleChatKeyPress(event)">
+                    <button onclick="sendChatMessage()" id="sendBtn" class="send-btn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                            <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls-bar">
+            <button onclick="toggleMute()" id="muteBtn" class="control-btn" title="Couper le micro">
+                <svg id="muteIcon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 15c1.66 0 2.99-1.34 2.99-3L15 6c0-1.66-1.34-3-3-3S9 4.34 9 6v6c0 1.66 1.34 3 3 3z"/>
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>
+                </svg>
+            </button>
+            <button onclick="toggleVideo()" id="videoBtn" class="control-btn" title="Couper la caméra">
+                <svg id="videoIcon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+                </svg>
+            </button>
+            <div class="control-separator"></div>
+            <button onclick="endCall()" id="endCallBtn" class="control-btn end-call">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+                </svg>
+                Terminer
+            </button>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/video-call.js"></script>
+</body>
+</html>

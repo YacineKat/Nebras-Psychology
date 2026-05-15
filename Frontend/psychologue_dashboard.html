@@ -109,6 +109,14 @@
                 </div>
             </div>
 
+            <!-- Urgent Requests Section -->
+            <div class="dashboard-section urgent-section" id="urgentSection" style="display: none;">
+                <h2><svg viewBox="0 0 24 24" fill="none" stroke="#e74c3c" stroke-width="2" width="20" height="20"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>Demandes Urgentes</h2>
+                <div class="urgent-requests-list" id="urgentRequestsList">
+                    <div class="loading-spinner">Chargement des demandes urgentes...</div>
+                </div>
+            </div>
+
             <!-- Séances du jour -->
             <div class="dashboard-section">
                 <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20" height="20"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Séances du jour</h2>
@@ -145,7 +153,136 @@
             </div>
         </div>
     </div>
+
+    <!-- VIDEO CALL SECTION (matching groupes design) -->
+    <div id="privateVideoCallSection" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 1000;">
+        <div class="header-section">
+            <div class="header-info">
+                <button onclick="endPrivateSession()" class="back-btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                </button>
+                <div class="header-text">
+                    <h3 id="videoCallPatientName">Appel vidéo</h3>
+                    <div class="header-stats">
+                        <span class="stat-item">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                            <span id="callParticipantText">1 participant</span>
+                        </span>
+                        <span class="stat-separator">|</span>
+                        <span class="stat-item" id="privateCallDuration">00:00</span>
+                    </div>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button onclick="togglePrivateChat()" id="privateChatToggleBtn" class="header-btn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    Chat
+                    <span id="privateUnreadBadge" class="notification-badge" style="display: none;">0</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="video-call-container">
+            <div class="video-main-section">
+                <div id="privateSpeakerView" class="speaker-view">
+                    <div class="empty-state" id="privatePatientPlaceholder">
+                        <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        <p style="margin-top: 15px; font-size: 16px;">En attente du patient...</p>
+                    </div>
+                    <video id="privateRemoteVideo" autoplay playsinline style="display: none; width: 100%; height: 100%; object-fit: cover;"></video>
+                    <div id="privateSpeakerBadge" class="speaker-badge" style="display: none;">
+                        <div class="speaking-indicator"></div>
+                        <span id="privateCurrentSpeakerName">Patient</span>
+                    </div>
+                </div>
+
+                <div id="privateThumbnailGrid" class="thumbnail-section">
+                    <div id="privateLocalVideoContainer" class="thumbnail-video mirrored active">
+                        <div id="privateLocalVideoPlaceholder" class="video-avatar" style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #F3F4F6; font-size: 32px; color: #6B7280;"></div>
+                        <video id="privateLocalVideo" autoplay muted playsinline style="display: none;"></video>
+                        <div class="thumbnail-info">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15c1.66 0 2.99-1.34 2.99-3L15 6c0-1.66-1.34-3-3-3S9 4.34 9 6v6c0 1.66 1.34 3 3 3z"/></svg>
+                            <span id="privateLocalName">Vous</span>
+                        </div>
+                        <div id="privateLocalMuteIndicator" class="thumbnail-badge muted" style="display: none;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/></svg>
+                        </div>
+                        <div id="privateLocalVideoOffIndicator" class="thumbnail-badge video-off" style="display: none;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M1 1l22 22M21 21H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3m3-3h6l2 3h4a2 2 0 0 1 2 2v9.34"/></svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="privateChatSection" class="chat-section" style="display: none;">
+                <div class="chat-header">
+                    <h3>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                        Chat
+                    </h3>
+                    <div class="chat-header-actions">
+                        <button onclick="clearPrivateChat()" class="chat-header-btn" title="Effacer le chat">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                        </button>
+                    </div>
+                </div>
+                <div id="privateMessagesContainer" class="messages-container scrollbar"></div>
+                <div id="privateTypingIndicator" class="typing-indicator" style="display: none;">Quelqu'un écrit...</div>
+                <div class="chat-input-container">
+                    <div class="emoji-btn">
+                        <button onclick="togglePrivateEmojiPicker()" class="chat-header-btn">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+                        </button>
+                        <div id="privateEmojiPicker" class="emoji-picker" style="display: none;">
+                            <div class="emoji-picker-header">
+                                <span>Émojis</span>
+                            </div>
+                            <div class="emoji-picker-grid">
+                                <span class="emoji-item" onclick="insertPrivateEmoji('😀')">😀</span>
+                                <span class="emoji-item" onclick="insertPrivateEmoji('😂')">😂</span>
+                                <span class="emoji-item" onclick="insertPrivateEmoji('🥰')">🥰</span>
+                                <span class="emoji-item" onclick="insertPrivateEmoji('😔')">😔</span>
+                                <span class="emoji-item" onclick="insertPrivateEmoji('😎')">😎</span>
+                                <span class="emoji-item" onclick="insertPrivateEmoji('🤔')">🤔</span>
+                                <span class="emoji-item" onclick="insertPrivateEmoji('👍')">👍</span>
+                                <span class="emoji-item" onclick="insertPrivateEmoji('👎')">👎</span>
+                                <span class="emoji-item" onclick="insertPrivateEmoji('👏')">👏</span>
+                                <span class="emoji-item" onclick="insertPrivateEmoji('❤️')">❤️</span>
+                                <span class="emoji-item" onclick="insertPrivateEmoji('👋')">👋</span>
+                                <span class="emoji-item" onclick="insertPrivateEmoji('🙏')">🙏</span>
+                                <span class="emoji-item" onclick="insertPrivateEmoji('✅')">✅</span>
+                                <span class="emoji-item" onclick="insertPrivateEmoji('❌')">❌</span>
+                                <span class="emoji-item" onclick="insertPrivateEmoji('💡')">💡</span>
+                                <span class="emoji-item" onclick="insertPrivateEmoji('🎉')">🎉</span>
+                                <span class="emoji-item" onclick="insertPrivateEmoji('🔥')">🔥</span>
+                                <span class="emoji-item" onclick="insertPrivateEmoji('⭐')">⭐</span>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="text" id="privateChatInput" class="chat-input" placeholder="Écrire un message..." onkeypress="handlePrivateChatKeyPress(event)">
+                    <button onclick="sendPrivateMessage()" id="privateSendBtn" class="send-btn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls-bar">
+            <button onclick="togglePrivateMute()" id="privateMuteBtn" class="control-btn" title="Couper le micro">
+                <svg id="privateMuteIcon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15c1.66 0 2.99-1.34 2.99-3L15 6c0-1.66-1.34-3-3-3S9 4.34 9 6v6c0 1.66 1.34 3 3 3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+            </button>
+            <button onclick="togglePrivateVideo()" id="privateVideoBtn" class="control-btn" title="Couper la caméra">
+                <svg id="privateVideoIcon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+            </button>
+            <div class="control-separator"></div>
+            <button onclick="endPrivateSession()" id="privateEndCallBtn" class="control-btn end-call">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                Terminer
+            </button>
+        </div>
+    </div>
   
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
   <script src="js/api.js"></script>
   <script>
 (function() {

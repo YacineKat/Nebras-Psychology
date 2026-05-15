@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     initUserDisplay();
     await loadDashboardData();
+    await loadUrgentRequests();
     highlightCurrentSidebarLink();
 });
 
@@ -207,16 +208,8 @@ function renderPendingRequests(requests) {
                 <small>Demande reçue le ${formatDate(apt.createdAt)}</small>
             </div>
             <div class="demande-actions">
-                <button class="accept-btn" onclick="acceptRequest('${apt.id}')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                        <polyline points="20 6 9 17 4 12"/>
-                    </svg> Accepter
-                </button>
-                <button class="refuse-btn" onclick="refuseRequest('${apt.id}')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                    </svg> Refuser
-                </button>
+                <button class="accept-btn" onclick="acceptRequest('${apt.id}')">✓ Accepter</button>
+                <button class="refuse-btn" onclick="refuseRequest('${apt.id}')">✗ Refuser</button>
             </div>
         </div>
     `}).join('');
@@ -274,17 +267,222 @@ async function refuseRequest(appointmentId) {
     }
 }
 
-function startSession(appointmentId) {
-    const sessionData = {
-        appointmentId: appointmentId,
-        prepared: true,
-        timestamp: new Date().toISOString()
-    };
-    sessionStorage.setItem('currentSession', JSON.stringify(sessionData));
-    showToast('Séance préparée! Vous pouvez commencer.', 'success');
-    setTimeout(() => {
-        window.location.href = 'psychologue_messagerie.html?session=' + appointmentId;
-    }, 1000);
+let currentVideoAppointment = null;
+
+async function startSession(appointmentId) {
+    try {
+        // Get appointment details
+        const appointment = dashboardData.todaySessions?.find(s => s.id === appointmentId) 
+            || dashboardData.upcomingAppointments?.find(s => s.id === appointmentId);
+        
+        if (!appointment) {
+            showToast('Appointment non trouvé', 'error');
+            return;
+        }
+
+        // Start video session via API
+        await doctorAPI.startVideoSession(appointmentId);
+        
+        currentVideoAppointment = {
+            id: appointmentId,
+            patientName: appointment.patientName,
+            patientId: appointment.patientId
+        };
+
+        // Update call state for real-time sync
+        try {
+            await appointmentAPI.startCallState(appointment.patientId, appointmentId);
+            localStorage.setItem('doctorInCall', 'true');
+            localStorage.setItem('currentCallAppointment', appointmentId);
+        } catch (e) {
+            console.log('Call state sync skipped');
+        }
+
+        // Redirect to video call page
+        window.location.href = `video-call.html?room=${appointmentId}&appointment=${appointmentId}&type=doctor`;
+        
+        showToast('Session vidéo démarrée', 'success');
+        
+    } catch (error) {
+        console.error('Error starting session:', error);
+        showToast('Erreur lors du démarrage de la session', 'error');
+    }
+}
+
+function showVideoCallUI(appointment) {
+    const videoSection = document.getElementById('privateVideoCallSection');
+    if (!videoSection) return;
+
+    const userName = getCurrentUser()?.fullname || 'Psychologue';
+    const userInitial = userName.charAt(0).toUpperCase();
+    const patientInitial = appointment.patientName ? appointment.patientName.charAt(0).toUpperCase() : 'P';
+
+    document.getElementById('videoCallPatientName').textContent = appointment.patientName || 'Appel vidéo';
+    document.getElementById('privateLocalName').textContent = userName;
+    document.getElementById('privateLocalVideoPlaceholder').textContent = userInitial;
+    document.getElementById('privatePatientPlaceholder').querySelector('p').textContent = 'En attente du patient...';
+
+    videoSection.style.display = 'block';
+    currentVideoAppointment = appointment;
+
+    initPrivateCall(appointment);
+    loadPrivateChatHistory(appointment.patientId);
+    startPrivateCallTimer();
+}
+
+let privateCallStartTime = null;
+let privateCallTimerInterval = null;
+
+function startPrivateCallTimer() {
+    privateCallStartTime = Date.now();
+    privateCallTimerInterval = setInterval(updatePrivateCallDuration, 1000);
+}
+
+function updatePrivateCallDuration() {
+    if (!privateCallStartTime) return;
+    const elapsed = Math.floor((Date.now() - privateCallStartTime) / 1000);
+    const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
+    const seconds = (elapsed % 60).toString().padStart(2, '0');
+    const durationEl = document.getElementById('privateCallDuration');
+    if (durationEl) {
+        durationEl.textContent = `${minutes}:${seconds}`;
+    }
+}
+
+function stopPrivateCallTimer() {
+    if (privateCallTimerInterval) {
+        clearInterval(privateCallTimerInterval);
+        privateCallTimerInterval = null;
+    }
+    privateCallStartTime = null;
+}
+
+let privateStream = null;
+let privateIsMuted = true;
+let privateIsVideoOff = true;
+
+async function initPrivateCall(appointment) {
+    try {
+        privateStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        const videoEl = document.getElementById('privateLocalVideo');
+        if (videoEl) {
+            videoEl.srcObject = privateStream;
+            videoEl.style.display = 'block';
+            videoEl.style.transform = 'scaleX(-1)';
+        }
+
+        const placeholder = document.getElementById('privateLocalVideoPlaceholder');
+        if (placeholder) {
+            placeholder.style.display = 'none';
+        }
+
+        privateStream.getVideoTracks()[0].enabled = false;
+        privateStream.getAudioTracks()[0].enabled = false;
+
+        privateIsMuted = true;
+        privateIsVideoOff = true;
+
+        document.getElementById('privateLocalMuteIndicator').style.display = 'flex';
+        document.getElementById('privateLocalVideoOffIndicator').style.display = 'flex';
+        document.getElementById('privateMuteBtn').style.background = '#e74c3c';
+        document.getElementById('privateVideoBtn').style.background = '#e74c3c';
+        document.getElementById('privateMuteIcon').innerHTML = '<path d="M12 15c1.66 0 2.99-1.34 2.99-3L15 6c0-1.66-1.34-3-3-3S9 4.34 9 6v6c0 1.66 1.34 3 3 3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>';
+        document.getElementById('privateVideoIcon').innerHTML = '<path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2m5.66 0H14a2 2 0 0 1 2 2v3.34l1 1L23 7v10"/><line x1="1" y1="1" x2="23" y2="23"/>';
+
+        window.privateVideoStream = privateStream;
+    } catch (err) {
+        console.error('Error accessing media devices:', err);
+        showToast('Erreur accès caméra/micro', 'error');
+    }
+}
+
+function togglePrivateMute() {
+    if (!privateStream) return;
+
+    const audioTrack = privateStream.getAudioTracks()[0];
+    if (!audioTrack) return;
+
+    privateIsMuted = !privateIsMuted;
+    audioTrack.enabled = !privateIsMuted;
+
+    const btn = document.getElementById('privateMuteBtn');
+    const icon = document.getElementById('privateMuteIcon');
+    const indicator = document.getElementById('privateLocalMuteIndicator');
+
+    if (privateIsMuted) {
+        btn.style.background = '#e74c3c';
+        icon.innerHTML = '<path d="M12 15c1.66 0 2.99-1.34 2.99-3L15 6c0-1.66-1.34-3-3-3S9 4.34 9 6v6c0 1.66 1.34 3 3 3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>';
+        indicator.style.display = 'flex';
+    } else {
+        btn.style.background = '';
+        icon.innerHTML = '<path d="M12 15c1.66 0 2.99-1.34 2.99-3L15 6c0-1.66-1.34-3-3-3S9 4.34 9 6v6c0 1.66 1.34 3 3 3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/>';
+        indicator.style.display = 'none';
+    }
+}
+
+function togglePrivateVideo() {
+    if (!privateStream) return;
+
+    const videoTrack = privateStream.getVideoTracks()[0];
+    if (!videoTrack) return;
+
+    privateIsVideoOff = !privateIsVideoOff;
+    videoTrack.enabled = !privateIsVideoOff;
+
+    const videoEl = document.getElementById('privateLocalVideo');
+    const placeholder = document.getElementById('privateLocalVideoPlaceholder');
+    const btn = document.getElementById('privateVideoBtn');
+    const icon = document.getElementById('privateVideoIcon');
+    const indicator = document.getElementById('privateLocalVideoOffIndicator');
+
+    if (privateIsVideoOff) {
+        btn.style.background = '#e74c3c';
+        icon.innerHTML = '<path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2m5.66 0H14a2 2 0 0 1 2 2v3.34l1 1L23 7v10"/><line x1="1" y1="1" x2="23" y2="23"/>';
+        indicator.style.display = 'flex';
+        if (videoEl) videoEl.style.display = 'none';
+        if (placeholder) placeholder.style.display = 'flex';
+    } else {
+        btn.style.background = '';
+        icon.innerHTML = '<polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>';
+        indicator.style.display = 'none';
+        if (videoEl) videoEl.style.display = 'block';
+        if (placeholder) placeholder.style.display = 'none';
+    }
+}
+
+async function endPrivateSession() {
+    if (!currentVideoAppointment) return;
+
+    try {
+        await doctorAPI.endVideoSession(currentVideoAppointment.id);
+
+        // Clear call state for real-time sync
+        try {
+            await appointmentAPI.endCallState();
+            localStorage.setItem('doctorInCall', 'false');
+            localStorage.removeItem('currentCallAppointment');
+        } catch (e) {
+            console.log('Call state clear skipped');
+        }
+
+        if (privateStream) {
+            privateStream.getTracks().forEach(track => track.stop());
+            privateStream = null;
+        }
+
+        const videoSection = document.getElementById('privateVideoCallSection');
+        if (videoSection) {
+            videoSection.style.display = 'none';
+        }
+
+        stopPrivateCallTimer();
+        currentVideoAppointment = null;
+        showToast('Session terminée', 'success');
+
+    } catch (error) {
+        console.error('Error ending session:', error);
+        showToast('Erreur lors de la terminaison', 'error');
+    }
 }
 
 function getMediaLabel(mediaType) {
@@ -434,6 +632,141 @@ document.getElementById('patientProfileModal').addEventListener('click', functio
     }
 });
 
+// ============================================
+// URGENT REQUESTS
+// ============================================
+async function loadUrgentRequests() {
+    try {
+        const urgentRequests = await appointmentAPI.getUrgentRequests();
+        renderUrgentRequests(urgentRequests);
+    } catch (error) {
+        console.error('Error loading urgent requests:', error);
+    }
+}
+
+function renderUrgentRequests(requests) {
+    const section = document.getElementById('urgentSection');
+    const list = document.getElementById('urgentRequestsList');
+    
+    if (!section || !list) return;
+    
+    const now = Date.now();
+    const pendingRequests = requests.filter(r => {
+        if (r.status !== 'pending') return false;
+        if (r.doctorId && r.doctorId !== currentDoctor?.id) return false;
+        const createdAt = new Date(r.createdAt).getTime();
+        return (now - createdAt) < 60 * 60 * 1000; // Within 1 hour
+    });
+    
+    if (pendingRequests.length === 0) {
+        section.style.display = 'none';
+        return;
+    }
+    
+    section.style.display = 'block';
+    
+    list.innerHTML = pendingRequests.map(req => {
+        const createdAt = new Date(req.createdAt).getTime();
+        const minutesLeft = Math.max(0, Math.floor((60 * 60 * 1000 - (now - createdAt)) / 60000));
+        const secondsLeft = Math.floor(((60 * 60 * 1000 - (now - createdAt)) % 60000) / 1000);
+        
+        return `
+        <div class="urgent-item" data-expires="${createdAt + 60 * 60 * 1000}">
+            <div class="urgent-badge">URGENT <span class="urgent-timer">${minutesLeft}:${secondsLeft.toString().padStart(2, '0')}</span></div>
+            <div class="urgent-content">
+                <strong>${req.patient?.fullname || 'Patient'}</strong>
+                <span class="urgent-time">${req.appointmentTime || 'Maintenant'}</span>
+            </div>
+            <div class="urgent-actions">
+                <button class="btn-accept" onclick="acceptUrgentRequest('${req.id}')">✓ Accepter</button>
+            </div>
+        </div>
+    `}).join('');
+    
+    startUrgentCountdown();
+}
+
+let urgentCountdownInterval = null;
+
+function startUrgentCountdown() {
+    if (urgentCountdownInterval) clearInterval(urgentCountdownInterval);
+    
+    urgentCountdownInterval = setInterval(() => {
+        const items = document.querySelectorAll('.urgent-item[data-expires]');
+        const now = Date.now();
+        let hasExpired = false;
+        
+        items.forEach(item => {
+            const expires = parseInt(item.dataset.expires);
+            const remaining = expires - now;
+            
+            if (remaining <= 0) {
+                item.remove();
+                hasExpired = true;
+            } else {
+                const minutes = Math.floor(remaining / 60000);
+                const seconds = Math.floor((remaining % 60000) / 1000);
+                const timer = item.querySelector('.urgent-timer');
+                if (timer) {
+                    timer.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                }
+                if (remaining < 5 * 60 * 1000) {
+                    item.style.borderColor = '#ef4444';
+                }
+            }
+        });
+        
+        const list = document.getElementById('urgentRequestsList');
+        if (list && list.children.length === 0) {
+            const section = document.getElementById('urgentSection');
+            if (section) section.style.display = 'none';
+            clearInterval(urgentCountdownInterval);
+        }
+    }, 1000);
+}
+
+async function acceptUrgentRequest(requestId) {
+    try {
+        const result = await appointmentAPI.acceptUrgent(requestId);
+        
+        if (result.appointment) {
+            currentVideoAppointment = {
+                id: result.appointment.id,
+                patientName: result.urgentRequest.patient?.fullname || 'Patient',
+                patientId: result.urgentRequest.patient?.id
+            };
+            showVideoCallUI({
+                id: result.appointment.id,
+                patientName: result.urgentRequest.patient?.fullname || 'Patient',
+                patientId: result.urgentRequest.patient?.id,
+                appointmentTime: result.urgentRequest.appointmentTime || 'Maintenant'
+            });
+            showToast('Appel vidéo démarré immédiatement!', 'success');
+        }
+        
+        await loadUrgentRequests();
+        await loadDashboardData();
+    } catch (error) {
+        console.error('Error accepting urgent request:', error);
+        showToast('Erreur lors de l\'acceptation', 'error');
+    }
+}
+
+async function rejectUrgentRequest(requestId) {
+    try {
+        const result = await appointmentAPI.rejectUrgent(requestId, 'Non disponible');
+        showToast('Demande urgente refusée', 'info');
+        await loadUrgentRequests();
+    } catch (error) {
+        console.error('Error rejecting urgent request:', error);
+        showToast('Erreur lors du refus', 'error');
+    }
+}
+
+window.acceptUrgentRequest = acceptUrgentRequest;
+window.rejectUrgentRequest = rejectUrgentRequest;
+window.loadUrgentRequests = loadUrgentRequests;
+
 window.acceptRequest = acceptRequest;
 window.refuseRequest = refuseRequest;
 window.startSession = startSession;
@@ -441,6 +774,107 @@ window.showToast = showToast;
 window.highlightCurrentSidebarLink = highlightCurrentSidebarLink;
 window.viewPatientProfile = viewPatientProfile;
 window.closePatientModal = closePatientModal;
+window.togglePrivateMute = togglePrivateMute;
+window.togglePrivateVideo = togglePrivateVideo;
+window.endPrivateSession = endPrivateSession;
+window.togglePrivateChat = togglePrivateChat;
+window.sendPrivateMessage = sendPrivateMessage;
+window.handlePrivateChatKeyPress = handlePrivateChatKeyPress;
+window.togglePrivateEmojiPicker = togglePrivateEmojiPicker;
+window.insertPrivateEmoji = insertPrivateEmoji;
+window.clearPrivateChat = clearPrivateChat;
+
+function togglePrivateChat() {
+    const chatSection = document.getElementById('privateChatSection');
+    const btn = document.getElementById('privateChatToggleBtn');
+    if (chatSection.style.display === 'none') {
+        chatSection.style.display = 'flex';
+        if (btn) btn.classList.add('active');
+    } else {
+        chatSection.style.display = 'none';
+        if (btn) btn.classList.remove('active');
+    }
+}
+
+async function loadPrivateChatHistory(patientId) {
+    try {
+        const response = await fetch('http://localhost:3000/api/messages/with/' + patientId, {
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('nebras_token') }
+        });
+        const messages = await response.json();
+        const container = document.getElementById('privateMessagesContainer');
+        if (!container) return;
+        
+        const currentUser = getCurrentUser();
+        if (!messages || messages.length === 0) {
+            container.innerHTML = '<div class="no-messages" style="text-align: center; padding: 20px; color: #9CA3AF;">Aucun message</div>';
+            return;
+        }
+        
+        container.innerHTML = messages.map(msg => `
+            <div class="message ${msg.senderId === currentUser.id ? 'sent' : 'received'}">
+                <div class="message-content">${escapeHtml(msg.content)}</div>
+                <div class="message-time">${new Date(msg.createdAt).toLocaleString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</div>
+            </div>
+        `).join('');
+        
+        container.scrollTop = container.scrollHeight;
+    } catch (e) {
+        console.error('Error loading chat history:', e);
+    }
+}
+
+async function sendPrivateMessage() {
+    const input = document.getElementById('privateChatInput');
+    const content = input?.value.trim();
+    if (!content || !currentVideoAppointment) return;
+    
+    try {
+        await fetch('http://localhost:3000/api/messages', {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Bearer ' + localStorage.getItem('nebras_token'),
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                receiverId: currentVideoAppointment.patientId,
+                content: content
+            })
+        });
+        
+        input.value = '';
+        loadPrivateChatHistory(currentVideoAppointment.patientId);
+    } catch (e) {
+        console.error('Error sending message:', e);
+    }
+}
+
+function handlePrivateChatKeyPress(event) {
+    if (event.key === 'Enter') {
+        sendPrivateMessage();
+    }
+}
+
+function togglePrivateEmojiPicker() {
+    const picker = document.getElementById('privateEmojiPicker');
+    picker.style.display = picker.style.display === 'none' ? 'grid' : 'none';
+}
+
+function insertPrivateEmoji(emoji) {
+    const input = document.getElementById('privateChatInput');
+    if (input) {
+        input.value += emoji;
+        input.focus();
+    }
+    document.getElementById('privateEmojiPicker').style.display = 'none';
+}
+
+function clearPrivateChat() {
+    const container = document.getElementById('privateMessagesContainer');
+    if (container) {
+        container.innerHTML = '<div class="no-messages" style="text-align: center; padding: 20px; color: #9CA3AF;">Aucun message</div>';
+    }
+}
 
 document.querySelectorAll('.nav-menu .nav-item').forEach(link => {
     link.addEventListener('click', function() {

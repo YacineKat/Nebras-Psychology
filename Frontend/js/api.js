@@ -137,12 +137,14 @@ const doctorAPI = {
     return fetchAPI(`/appointments?startDate=${startDate}&endDate=${endDate}`);
   },
 
-  getDashboard: async () => {
-    return fetchAPI('/doctors/dashboard');
+  getDashboard: async (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    return fetchAPI(`/doctors/dashboard${queryString ? '?' + queryString : ''}`);
   },
 
-  getPatients: async () => {
-    return fetchAPI('/doctors/patients');
+  getPatients: async (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    return fetchAPI(`/doctors/patients${queryString ? '?' + queryString : ''}`);
   },
 
   getPatientById: async (patientId) => {
@@ -176,6 +178,40 @@ const doctorAPI = {
       method: 'POST',
       body: JSON.stringify(formData)
     });
+  },
+
+  startVideoSession: async (appointmentId) => {
+    return fetchAPI(`/appointments/${appointmentId}/video/start`, {
+      method: 'POST'
+    });
+  },
+
+  endVideoSession: async (appointmentId) => {
+    return fetchAPI(`/appointments/${appointmentId}/video/end`, {
+      method: 'POST'
+    });
+  },
+
+  getActiveVideoSession: async () => {
+    return fetchAPI('/appointments/video/active');
+  },
+
+  // Call state (real-time sync)
+  startCallState: async (patientId, appointmentId) => {
+    return fetchAPI('/appointments/call/start', {
+      method: 'POST',
+      body: JSON.stringify({ patientId, appointmentId })
+    });
+  },
+
+  endCallState: async () => {
+    return fetchAPI('/appointments/call/end', {
+      method: 'POST'
+    });
+  },
+
+  getCallStatus: async (doctorId) => {
+    return fetchAPI(`/appointments/call/status/${doctorId}`);
   }
 };
 
@@ -190,8 +226,9 @@ const appointmentAPI = {
     });
   },
 
-  getAll: async () => {
-    return fetchAPI('/appointments');
+  getAll: async (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    return fetchAPI(`/appointments${queryString ? '?' + queryString : ''}`);
   },
 
   getById: async (id) => {
@@ -209,6 +246,70 @@ const appointmentAPI = {
     return fetchAPI(`/appointments/${id}`, {
       method: 'DELETE'
     });
+  },
+
+  // Urgent requests
+  createUrgent: async (doctorId, notes, appointmentTime) => {
+    return fetchAPI('/appointments/urgent', {
+      method: 'POST',
+      body: JSON.stringify({ doctorId, notes, appointmentTime })
+    });
+  },
+
+  getUrgentRequests: async () => {
+    return fetchAPI('/appointments/urgent');
+  },
+
+  acceptUrgent: async (id) => {
+    return fetchAPI(`/appointments/urgent/${id}/accept`, {
+      method: 'PUT'
+    });
+  },
+
+  rejectUrgent: async (id, reason) => {
+    return fetchAPI(`/appointments/urgent/${id}/reject`, {
+      method: 'PUT',
+      body: JSON.stringify({ reason })
+    });
+  },
+
+  // Urgent Access (7-day)
+  getUrgentAccessStatus: async () => {
+    return fetchAPI('/appointments/urgent/access');
+  },
+
+  activateUrgentAccess: async () => {
+    return fetchAPI('/appointments/urgent/activate', {
+      method: 'POST'
+    });
+  },
+
+  completeUrgent: async (id) => {
+    return fetchAPI(`/appointments/urgent/${id}/complete`, {
+      method: 'PUT'
+    });
+  },
+
+  // Call state (real-time sync)
+  startCallState: async (patientId, appointmentId) => {
+    return fetchAPI('/appointments/call/start', {
+      method: 'POST',
+      body: JSON.stringify({ patientId, appointmentId })
+    });
+  },
+
+  endCallState: async () => {
+    return fetchAPI('/appointments/call/end', {
+      method: 'POST'
+    });
+  },
+
+  getCallStatus: async (doctorId) => {
+    return fetchAPI(`/appointments/call/status/${doctorId}`);
+  },
+
+  getMyCallStatus: async () => {
+    return fetchAPI('/appointments/call/status');
   }
 };
 
@@ -305,14 +406,16 @@ async function loadSidebarUserData() {
   const user = getCurrentUser();
   if (!user) return;
 
-  // Try to get fresh user data from API to ensure we have latest profile/avatar
-  try {
-    const result = await authAPI.getMe();
-    if (result.user) {
-      localStorage.setItem('nebras_user', JSON.stringify(result.user));
+  const shouldRefresh = !user.profile || user.profile.avatar === undefined;
+  if (shouldRefresh) {
+    try {
+      const result = await authAPI.getMe();
+      if (result.user) {
+        localStorage.setItem('nebras_user', JSON.stringify(result.user));
+      }
+    } catch (e) {
+      console.log('Using cached user data');
     }
-  } catch (e) {
-    console.log('Using cached user data');
   }
 
   // Get updated user data

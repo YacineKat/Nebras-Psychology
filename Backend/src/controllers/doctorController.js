@@ -10,7 +10,8 @@ const prisma = new PrismaClient();
 // ============================================
 exports.getAllDoctors = async (req, res) => {
   try {
-    const { search, specialty, available } = req.query;
+    const { search, specialty, available, view } = req.query;
+    const isSummary = view === 'summary';
 
     // Build where clause for doctors only
     const where = {
@@ -22,35 +23,86 @@ exports.getAllDoctors = async (req, res) => {
       where.fullname = { contains: search, mode: 'insensitive' };
     }
 
-    // Get all doctors with their profiles and available slots
-    const doctors = await prisma.user.findMany({
-      where,
-      include: {
-        profile: true,
-        timeSlots: {
-          where: { isBooked: false }
-        }
-      }
-    });
-
-    // Filter by specialty if provided
-    let filteredDoctors = doctors;
-
+    const profileWhere = {};
     if (specialty) {
-      filteredDoctors = doctors.filter(d => 
-        d.profile?.specialite?.toLowerCase().includes(specialty.toLowerCase())
-      );
+      profileWhere.specialite = { contains: specialty, mode: 'insensitive' };
+    }
+    if (available === 'true') {
+      profileWhere.isAvailable = true;
+      where.timeSlots = { some: { isBooked: false } };
+    }
+    if (Object.keys(profileWhere).length > 0) {
+      where.profile = { is: profileWhere };
     }
 
-    // Filter by availability
-    if (available === 'true') {
-      filteredDoctors = filteredDoctors.filter(d => 
-        d.profile?.isAvailable === true && d.timeSlots.length > 0
-      );
+    const select = isSummary ? {
+      id: true,
+      fullname: true,
+      profile: {
+        select: {
+          specialite: true,
+          rating: true,
+          isAvailable: true,
+          avatar: true,
+          tarif: true
+        }
+      },
+      timeSlots: {
+        where: { isBooked: false },
+        select: {
+          dayOfWeek: true
+        }
+      }
+    } : {
+      id: true,
+      fullname: true,
+      email: true,
+      profile: {
+        select: {
+          specialite: true,
+          universite: true,
+          bio: true,
+          rating: true,
+          isAvailable: true,
+          tarif: true,
+          language: true,
+          motifs: true
+        }
+      },
+      timeSlots: {
+        where: { isBooked: false },
+        select: {
+          id: true,
+          dayOfWeek: true,
+          startTime: true,
+          endTime: true
+        }
+      }
+    };
+
+    const doctors = await prisma.user.findMany({
+      where,
+      select
+    });
+
+    if (isSummary) {
+      const response = doctors.map(d => ({
+        id: d.id,
+        fullname: d.fullname,
+        specialite: d.profile?.specialite || 'General',
+        rating: Number(d.profile?.rating) || 0,
+        isAvailable: d.profile?.isAvailable || false,
+        avatar: d.profile?.avatar || null,
+        tarif: d.profile?.tarif || 2000,
+        availableSlots: (d.timeSlots || []).map(slot => ({
+          dayOfWeek: slot.dayOfWeek
+        }))
+      }));
+      return res.json(response);
     }
 
     // Map response to simplified format
-    const response = filteredDoctors.map(d => ({
+    const response = doctors.map(d => ({
       id: d.id,
       fullname: d.fullname,
       email: d.email,
@@ -62,7 +114,7 @@ exports.getAllDoctors = async (req, res) => {
       tarif: d.profile?.tarif,
       language: d.profile?.language,
       motifs: d.profile?.motifs,
-      availableSlots: d.timeSlots.map(slot => ({
+      availableSlots: (d.timeSlots || []).map(slot => ({
         id: slot.id,
         dayOfWeek: slot.dayOfWeek,
         startTime: slot.startTime,
@@ -87,10 +139,36 @@ exports.getDoctorById = async (req, res) => {
 
     const doctor = await prisma.user.findUnique({
       where: { id },
-      include: {
-        profile: true,
+      select: {
+        id: true,
+        fullname: true,
+        email: true,
+        userType: true,
+        profile: {
+          select: {
+            bio: true,
+            rating: true,
+            isAvailable: true,
+            phone: true,
+            diplomes: true,
+            agrement: true,
+            avatar: true,
+            adresse: true,
+            specialite: true
+          }
+        },
         timeSlots: {
-          where: { isBooked: false }
+          where: { isBooked: false },
+          select: {
+            id: true,
+            dayOfWeek: true,
+            startTime: true,
+            endTime: true,
+            specificDate: true,
+            recurrence: true,
+            isBlocked: true,
+            isBooked: true
+          }
         }
       }
     });
@@ -99,21 +177,31 @@ exports.getDoctorById = async (req, res) => {
       return res.status(404).json({ error: 'Doctor not found' });
     }
 
+    // Get additional metrics
+    const completedAppointments = await prisma.appointment.count({
+      where: { doctorId: id, status: 'completed' }
+    });
+    const uniquePatients = await prisma.appointment.groupBy({
+      by: ['patientId'],
+      where: { doctorId: id, status: { in: ['completed', 'confirmed'] } },
+      _count: true
+    });
+
     res.json({
       id: doctor.id,
       fullname: doctor.fullname,
       email: doctor.email,
-      specialite: doctor.profile?.specialite,
-      universite: doctor.profile?.universite,
-      bio: doctor.profile?.bio,
-      rating: Number(doctor.profile?.rating) || 0,
-      isAvailable: doctor.profile?.isAvailable,
       phone: doctor.profile?.phone,
-      tarif: doctor.profile?.tarif,
-      language: doctor.profile?.language,
-      motifs: doctor.profile?.motifs,
-      diplomes: doctor.profile?.diplomes,
+      adresse: doctor.profile?.adresse || null,
+      specialite: doctor.profile?.specialite,
       agrement: doctor.profile?.agrement,
+      diplomes: doctor.profile?.diplomes,
+      bio: doctor.profile?.bio,
+      avatar: doctor.profile?.avatar || null,
+      isAvailable: doctor.profile?.isAvailable,
+      rating: Number(doctor.profile?.rating) || 0,
+      patientsCount: uniquePatients.length,
+      sessionsCompleted: completedAppointments,
       availableSlots: doctor.timeSlots
     });
 
@@ -603,6 +691,7 @@ exports.deleteTimeSlot = async (req, res) => {
 exports.getDashboard = async (req, res) => {
   try {
     const doctorId = req.user.id;
+    const { view } = req.query;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
@@ -613,21 +702,88 @@ exports.getDashboard = async (req, res) => {
     const nextWeek = new Date(today);
     nextWeek.setDate(nextWeek.getDate() + 8);
 
+    if (view === 'summary') {
+      const [confirmedCount, pendingCount, todayCount, monthlyCompletedCount, doctor] = await Promise.all([
+        prisma.appointment.count({
+          where: { doctorId, status: 'confirmed' }
+        }),
+        prisma.appointment.count({
+          where: { doctorId, status: 'pending' }
+        }),
+        prisma.appointment.count({
+          where: {
+            doctorId,
+            status: { not: 'cancelled' },
+            appointmentDate: { gte: today, lt: tomorrow }
+          }
+        }),
+        prisma.appointment.count({
+          where: {
+            doctorId,
+            status: 'completed',
+            appointmentDate: { gte: startOfMonth, lte: endOfMonth }
+          }
+        }),
+        prisma.user.findUnique({
+          where: { id: doctorId },
+          select: { profile: { select: { tarif: true } } }
+        })
+      ]);
+
+      const tarif = doctor?.profile?.tarif || 3000;
+
+      return res.json({
+        stats: {
+          activePatients: confirmedCount,
+          todaySessionsCount: todayCount,
+          pendingRequestsCount: pendingCount,
+          monthlyIncome: monthlyCompletedCount * tarif
+        }
+      });
+    }
+
     // Single optimized query: get all needed data in parallel
     const [allAppointments, doctor, timeSlots] = await Promise.all([
       prisma.appointment.findMany({
         where: { doctorId },
-        include: {
-          patient: { include: { profile: true } }
+        select: {
+          id: true,
+          appointmentDate: true,
+          appointmentTime: true,
+          mediaType: true,
+          status: true,
+          createdAt: true,
+          patient: {
+            select: {
+              id: true,
+              fullname: true,
+              profile: {
+                select: {
+                  phone: true,
+                  gender: true,
+                  motifs: true
+                }
+              }
+            }
+          }
         }
       }),
       prisma.user.findUnique({
         where: { id: doctorId },
-        include: { profile: true }
+        select: { profile: { select: { tarif: true } } }
       }),
       prisma.timeSlot.findMany({
         where: { doctorId },
-        orderBy: [{ dayOfWeek: 'asc' }, { startTime: 'asc' }]
+        orderBy: [{ dayOfWeek: 'asc' }, { startTime: 'asc' }],
+        select: {
+          id: true,
+          dayOfWeek: true,
+          startTime: true,
+          endTime: true,
+          specificDate: true,
+          isBlocked: true,
+          isBooked: true
+        }
       })
     ]);
     
@@ -729,6 +885,27 @@ exports.getDashboard = async (req, res) => {
 exports.getPatients = async (req, res) => {
   try {
     const doctorId = req.user.id;
+    const { view } = req.query;
+    const isSummary = view === 'summary';
+
+    const patientProfileSelect = isSummary ? {
+      gender: true,
+      birthDate: true
+    } : {
+      gender: true,
+      phone: true,
+      birthDate: true,
+      language: true,
+      motifs: true,
+      prefGender: true,
+      prefType: true
+    };
+
+    const patientSelect = {
+      id: true,
+      ...(isSummary ? {} : { fullname: true, email: true }),
+      profile: { select: patientProfileSelect }
+    };
     
     // Get all confirmed appointments for this doctor
     const appointments = await prisma.appointment.findMany({
@@ -736,10 +913,9 @@ exports.getPatients = async (req, res) => {
         doctorId,
         status: { in: ['confirmed', 'completed'] }
       },
-      include: {
-        patient: {
-          include: { profile: true }
-        }
+      select: {
+        appointmentDate: true,
+        patient: { select: patientSelect }
       },
       orderBy: { appointmentDate: 'desc' }
     });
@@ -757,19 +933,21 @@ exports.getPatients = async (req, res) => {
       if (!patientMap.has(patientId)) {
         patientMap.set(patientId, {
           id: apt.patient.id,
-          fullname: apt.patient.fullname,
-          email: apt.patient.email,
+          ...(isSummary ? {} : {
+            fullname: apt.patient.fullname,
+            email: apt.patient.email,
+            phone: apt.patient.profile?.phone,
+            language: apt.patient.profile?.language,
+            motifs: apt.patient.profile?.motifs,
+            prefGender: apt.patient.profile?.prefGender,
+            prefType: apt.patient.profile?.prefType,
+            totalSpent: 0
+          }),
           gender: apt.patient.profile?.gender,
-          phone: apt.patient.profile?.phone,
           birthDate: apt.patient.profile?.birthDate,
-          language: apt.patient.profile?.language,
-          motifs: apt.patient.profile?.motifs,
-          prefGender: apt.patient.profile?.prefGender,
-          prefType: apt.patient.profile?.prefType,
           totalSessions: 0,
           lastSession: null,
-          firstSession: null,
-          totalSpent: 0
+          firstSession: null
         });
       }
       
@@ -786,11 +964,25 @@ exports.getPatients = async (req, res) => {
         patient.firstSession = apt.appointmentDate;
       }
     });
+
+    if (isSummary) {
+      const patients = Array.from(patientMap.values()).map(p => ({
+        id: p.id,
+        gender: p.gender,
+        birthDate: p.birthDate,
+        totalSessions: p.totalSessions
+      }));
+
+      return res.json({
+        count: patients.length,
+        patients
+      });
+    }
     
     // Get doctor's tariff for revenue calculation
     const doctor = await prisma.user.findUnique({
       where: { id: doctorId },
-      include: { profile: true }
+      select: { profile: { select: { tarif: true } } }
     });
     const tarif = doctor?.profile?.tarif || 3000;
     

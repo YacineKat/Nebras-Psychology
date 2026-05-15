@@ -192,8 +192,8 @@ function escapeHtml(text) {
 
 async function updateUnreadBadge() {
     try {
-        const conversations = await messageAPI.getConversations() || [];
-        const count = conversations.length;
+        const result = await messageAPI.getUnreadCount().catch(() => null);
+        const count = result?.unreadCount || 0;
         const badge = document.querySelector('.nav-item[href="psychologue_messagerie.html"] .badge');
         if (badge) badge.textContent = count;
     } catch (e) {}

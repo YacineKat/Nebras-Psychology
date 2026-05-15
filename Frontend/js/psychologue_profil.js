@@ -47,12 +47,12 @@ function updateSidebarAvatar(avatarUrl) {
     });
 }
 
-async function updateSidebarBadges() {
+async function updateSidebarBadges(cache = {}) {
     try {
         // Load sequentially to avoid connection pool exhaustion
-        const dashboardResult = await doctorAPI.getDashboard().catch(() => null);
-        const unreadMessages = await messageAPI.getUnreadCount().catch(() => null);
-        const vipResult = await doctorAPI.getVipStatus().catch(() => null);
+        const dashboardResult = cache.dashboard || await doctorAPI.getDashboard({ view: 'summary' }).catch(() => null);
+        const unreadMessages = cache.unread || await messageAPI.getUnreadCount().catch(() => null);
+        const vipResult = cache.vip || await doctorAPI.getVipStatus().catch(() => null);
         
         const navItems = document.querySelectorAll('.nav-item');
         navItems.forEach(item => {
@@ -65,8 +65,8 @@ async function updateSidebarBadges() {
             }
             if (text.includes('Messagerie')) {
                 const badge = item.querySelector('.badge');
-                if (badge && unreadMessages?.count !== undefined) {
-                    badge.textContent = unreadMessages.count || 0;
+                if (badge && unreadMessages?.unreadCount !== undefined) {
+                    badge.textContent = unreadMessages.unreadCount || 0;
                 }
             }
             if (text.includes('Espace VIP') || item.classList.contains('vip-link')) {
@@ -106,6 +106,27 @@ function updateProfileHeaderAvatar(avatarUrl) {
     }
 }
 
+let statsLoaded = false;
+let statsLoading = false;
+let cachedMotifs = getCurrentUser()?.profile?.motifs || null;
+
+async function loadStatsIfNeeded() {
+    if (statsLoaded || statsLoading) return;
+    statsLoading = true;
+
+    try {
+        const patientsResult = await doctorAPI.getPatients({ view: 'summary' }).catch(() => null);
+        const patients = patientsResult?.patients || [];
+        loadStatsData(patients, cachedMotifs);
+        statsLoaded = true;
+    } catch (error) {
+        console.error('Error loading stats:', error);
+        loadStatsData([], cachedMotifs);
+    } finally {
+        statsLoading = false;
+    }
+}
+
 async function loadProfileData() {
     if (!isLoggedIn()) {
         window.location.href = 'auth.html';
@@ -126,14 +147,16 @@ async function loadProfileData() {
         formContainer.style.pointerEvents = 'none';
     }
 
+    let dashboardResult = null;
+
     try {
-        // Load data sequentially to avoid connection pool exhaustion
+        // Load profile first, then fetch secondary data
         const profileResult = await authAPI.getMe();
-        const dashboardResult = await doctorAPI.getDashboard().catch(() => null);
-        const patientsResult = await doctorAPI.getPatients().catch(() => null);
+        dashboardResult = await doctorAPI.getDashboard({ view: 'summary' }).catch(() => null);
 
         const profile = profileResult.user;
         const p = profile?.profile || {};
+        cachedMotifs = p.motifs || cachedMotifs;
 
         const nameEl = document.getElementById('psyProfileName');
         if (nameEl) nameEl.textContent = profile.fullname || 'Mon Profil';
@@ -149,10 +172,8 @@ async function loadProfileData() {
             document.getElementById('statsRating').textContent = p.rating ? Number(p.rating).toFixed(1) : '0.0';
         }
 
-        if (patientsResult?.patients) {
-            loadStatsData(patientsResult.patients, p.motifs);
-        } else {
-            loadStatsData([], p.motifs);
+        if (document.getElementById('tabStatistiques')?.classList.contains('active')) {
+            loadStatsIfNeeded();
         }
 
         document.getElementById('psyEmailInput').value = profile.email || '';
@@ -202,7 +223,7 @@ async function loadProfileData() {
             formContainer.style.pointerEvents = 'auto';
         }
         // Update sidebar badges after profile loads
-        setTimeout(() => updateSidebarBadges(), 100);
+        setTimeout(() => updateSidebarBadges({ dashboard: dashboardResult }), 100);
     }
 }
 
@@ -491,6 +512,9 @@ function showTab(tabName) {
         document.getElementById(tabId).classList.add('active');
         const btnIndex = ['profil', 'statistiques', 'statut', 'securite'].indexOf(tabName);
         document.querySelectorAll('.tab-btn')[btnIndex]?.classList.add('active');
+        if (tabName === 'statistiques') {
+            loadStatsIfNeeded();
+        }
     }
 }
 

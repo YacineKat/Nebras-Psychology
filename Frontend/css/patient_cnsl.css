@@ -53,6 +53,71 @@ body {
     border-radius: 10px;
 }
 
+/* Call Entry Sidebar - Real-time */
+.call-entry-sidebar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 15px;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    border-radius: 12px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    animation: pulse-call 2s infinite;
+}
+
+@keyframes pulse-call {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+    50% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+}
+
+.call-entry-icon {
+    font-size: 24px;
+    animation: ring 1s infinite;
+    color: white;
+}
+
+@keyframes ring {
+    0%, 100% { transform: rotate(0); }
+    20% { transform: rotate(15deg); }
+    40% { transform: rotate(-15deg); }
+    60% { transform: rotate(10deg); }
+    80% { transform: rotate(-10deg); }
+}
+
+.call-entry-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.call-entry-title {
+    color: white;
+    font-weight: bold;
+    font-size: 13px;
+}
+
+.call-entry-doctor {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 11px;
+}
+
+.call-entry-btn {
+    background: white;
+    color: #059669;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 12px;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.call-entry-btn:hover {
+    transform: scale(1.05);
+}
+
 .logo img {
     max-width: 160px;
     padding-left: 50px;
@@ -1782,6 +1847,10 @@ body {
 
 .message-content {
     max-width: 65%;
+    display: inline-block;
+    vertical-align: top;
+    word-wrap: break-word;
+    white-space: normal;
 }
 
 .message-bubble {
@@ -1789,6 +1858,8 @@ body {
     border-radius: 18px;
     margin-bottom: 4px;
     word-wrap: break-word;
+    white-space: normal;
+    line-height: 1.5;
 }
 
 .received-bubble {
@@ -1878,6 +1949,61 @@ body {
 .emoji-btn:hover svg,
 .attachment-btn:hover svg {
     fill: var(--primary-green);
+}
+
+.emoji-picker {
+    position: absolute;
+    bottom: 70px;
+    right: 0;
+    background: #FFFFFF;
+    border-radius: 16px;
+    padding: 10px;
+    display: none;
+    width: 270px;
+    box-shadow: 0 8px 30px rgba(9,19,70,0.15);
+    z-index: 100;
+    border: 2px solid var(--primary-dark, #091346);
+}
+
+.emoji-picker.show {
+    display: block;
+}
+
+.emoji-picker-header {
+    display: flex;
+    align-items: center;
+    padding: 6px 8px 10px;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 8px;
+}
+
+.emoji-picker-header span {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--primary-dark, #091346);
+}
+
+.emoji-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 4px;
+}
+
+.emoji-item {
+    font-size: 22px;
+    cursor: pointer;
+    padding: 6px;
+    transition: all 0.15s ease;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 1;
+}
+
+.emoji-item:hover {
+    background: var(--primary-beige);
+    transform: scale(1.15);
 }
 
 .message-input {

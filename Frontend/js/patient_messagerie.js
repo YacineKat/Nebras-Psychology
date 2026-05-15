@@ -204,7 +204,8 @@ function escapeHtml(text) {
 
 async function updateUnreadBadge() {
     try {
-        const count = await messageAPI.getUnreadCount() || 0;
+        const result = await messageAPI.getUnreadCount().catch(() => null);
+        const count = result?.unreadCount || 0;
         const badge = document.querySelector('.nav-item[href="patient_messagerie.html"] .badge');
         if (badge) badge.textContent = count;
     } catch (e) {}

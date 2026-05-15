@@ -69,12 +69,37 @@ exports.getConversations = async (req, res) => {
         ]
       },
       orderBy: { createdAt: 'desc' },
-      include: {
+      select: {
+        id: true,
+        content: true,
+        createdAt: true,
+        senderId: true,
+        receiverId: true,
         sender: {
-          include: { profile: true }
+          select: {
+            id: true,
+            fullname: true,
+            userType: true,
+            profile: {
+              select: {
+                id: true,
+                avatar: true
+              }
+            }
+          }
         },
         receiver: {
-          include: { profile: true }
+          select: {
+            id: true,
+            fullname: true,
+            userType: true,
+            profile: {
+              select: {
+                id: true,
+                avatar: true
+              }
+            }
+          }
         }
       }
     });
@@ -95,7 +120,7 @@ exports.getConversations = async (req, res) => {
             profile: partner.profile ? {
               id: partner.profile.id,
               avatar: partner.profile.avatar,
-              photo: partner.profile.photo
+              photo: partner.profile.avatar || null
             } : null
           },
           lastMessage: msg.content,
@@ -105,16 +130,22 @@ exports.getConversations = async (req, res) => {
       }
     });
 
-    // Calculate unread count for each conversation
+    const unreadCounts = await prisma.message.groupBy({
+      by: ['senderId'],
+      where: {
+        receiverId: userId,
+        isRead: false
+      },
+      _count: { _all: true }
+    });
+
+    const unreadMap = new Map(
+      unreadCounts.map(item => [item.senderId, item._count._all])
+    );
+
+    // Apply unread counts per partner
     for (const [partnerId, conv] of conversationsMap) {
-      const unread = await prisma.message.count({
-        where: {
-          senderId: partnerId,
-          receiverId: userId,
-          isRead: false
-        }
-      });
-      conv.unreadCount = unread;
+      conv.unreadCount = unreadMap.get(partnerId) || 0;
     }
 
     // Convert to array and sort by last message time

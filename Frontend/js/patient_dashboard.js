@@ -4,6 +4,19 @@
 
 let currentUser = null;
 
+function highlightCurrentSidebarLink() {
+    const currentPage = window.location.pathname.split('/').pop().toLowerCase();
+    const navItems = document.querySelectorAll('.nav-item');
+    navItems.forEach(item => {
+        const href = item.getAttribute('href')?.split('/').pop().toLowerCase();
+        if (href && href === currentPage) {
+            item.classList.add('active');
+        } else {
+            item.classList.remove('active');
+        }
+    });
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
     if (!isLoggedIn()) {
         window.location.href = 'auth.html';
@@ -25,16 +38,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadAppointments();
     await loadUserProfile();
     highlightCurrentSidebarLink();
-});
-
-async function loadAppointments() {
-    try {
-        const appointments = await appointmentAPI.getAll();
-        renderAppointments(appointments);
-    } catch (error) {
-        console.error('Error loading appointments:', error);
+    await handleJoinCallRequest();
+    
+    if (typeof initPatientCallListener === 'function') {
+        setTimeout(initPatientCallListener, 500);
     }
-}
+});
 
 async function loadUserProfile() {
     try {
@@ -99,10 +108,10 @@ function renderAppointments(appointments) {
 
     container.innerHTML = appointments.map(apt => `
         <div class="apt-card">
-            <div class="apt-date">${formatDate(apt.date)}</div>
+            <div class="apt-date">${formatDate(apt.appointmentDate || apt.date)}</div>
             <div class="apt-info">
-                <h4>${apt.doctorName || 'Psychologue'}</h4>
-                <p>${apt.time} - ${apt.mediaType}</p>
+                <h4>${apt.doctorName || apt.doctor?.fullname || 'Psychologue'}</h4>
+                <p>${(apt.appointmentTime || apt.time)} - ${apt.mediaType}</p>
             </div>
             <div class="apt-status ${apt.status}">${apt.status}</div>
         </div>
@@ -115,7 +124,9 @@ function renderAppointments(appointments) {
 
 async function loadAppointments() {
     try {
-        const appointments = await appointmentAPI.getAll();
+        const appointments = await appointmentAPI.getAll({ view: 'summary' });
+
+        renderAppointments(appointments);
         
         // Display appointments count
         const pendingCount = appointments.filter(a => a.status === 'pending').length;
@@ -356,3 +367,479 @@ window.addEventListener('load', function() {
         document.querySelector('.nav-menu').scrollTop = scrollPos;
     }
 });
+
+let currentVideoSession = null;
+
+async function checkActiveVideoSession() {
+    try {
+        const response = await doctorAPI.getActiveVideoSession();
+        if (response && response.activeSession) {
+            const session = response.activeSession;
+            const sessionSection = document.getElementById('activeSessionSection');
+            const sessionName = document.getElementById('sessionPsychologistName');
+            
+            currentVideoSession = session;
+            sessionName.textContent = `avec ${session.doctorName || 'votre psychologue'}`;
+            sessionSection.style.display = 'block';
+        } else {
+            const sessionSection = document.getElementById('activeSessionSection');
+            if (sessionSection) sessionSection.style.display = 'none';
+            currentVideoSession = null;
+        }
+    } catch (error) {
+        console.log('No active video session');
+    }
+}
+
+async function handleJoinCallRequest() {
+    const params = new URLSearchParams(window.location.search);
+    const joinCallId = params.get('joinCall') || sessionStorage.getItem('joinCall');
+    const cachedDoctorId = sessionStorage.getItem('joinCallDoctorId');
+    const cachedDoctorName = sessionStorage.getItem('joinCallDoctorName');
+
+    if (!joinCallId) return;
+
+    if (params.get('joinCall')) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
+    sessionStorage.removeItem('joinCall');
+    sessionStorage.removeItem('joinCallDoctorId');
+    sessionStorage.removeItem('joinCallDoctorName');
+
+    try {
+        const status = await appointmentAPI.getMyCallStatus();
+        if (status?.inCall && status.appointmentId === joinCallId) {
+            showPatientVideoUI({
+                id: status.appointmentId,
+                doctorId: status.doctorId,
+                doctorName: status.doctorName
+            });
+            return;
+        }
+    } catch (error) {
+        console.log('Join call status check failed');
+    }
+
+    try {
+        const active = await doctorAPI.getActiveVideoSession();
+        if (active?.activeSession) {
+            showPatientVideoUI(active.activeSession);
+            return;
+        }
+    } catch (error) {
+        console.log('Active session check failed');
+    }
+
+    if (cachedDoctorId || cachedDoctorName) {
+        showPatientVideoUI({
+            id: joinCallId,
+            doctorId: cachedDoctorId,
+            doctorName: cachedDoctorName || 'Psychologue'
+        });
+        return;
+    }
+
+    if (typeof showToast === 'function') {
+        showToast('La consultation n\'est plus disponible', 'error');
+    }
+}
+
+function joinVideoSession() {
+    if (!currentVideoSession) return;
+    // Redirect to dedicated video call page
+    const roomId = currentVideoSession.id;
+    window.location.href = `video-call.html?room=${roomId}&appointment=${roomId}&type=patient`;
+}
+
+function showPatientVideoUI(appointment) {
+    let videoContainer = document.getElementById('patientVideoCall');
+    if (!videoContainer) {
+        videoContainer = document.createElement('div');
+        videoContainer.id = 'patientVideoCall';
+        videoContainer.className = 'video-call-container';
+        document.querySelector('.main-content').appendChild(videoContainer);
+    }
+
+    const userName = currentUser?.fullname || 'Patient';
+    const doctorInitial = appointment.doctorName ? appointment.doctorName.charAt(0).toUpperCase() : 'P';
+    window.PatientCallState.currentDoctorId = appointment.doctorId;
+
+    videoContainer.innerHTML = `
+        <div class="video-main-section">
+            <div id="speakerView" class="speaker-view">
+                <div class="empty-state" id="doctorVideoPlaceholder" style="color: #9CA3AF; display: flex; flex-direction: column; align-items: center;">
+                    <div class="video-avatar" style="width: 120px; height: 120px; border-radius: 50%; background: #E5E7EB; display: flex; align-items: center; justify-content: center; font-size: 48px; color: #6B7280; margin-bottom: 15px;">${doctorInitial}</div>
+                    <p style="margin-top: 15px; font-size: 16px;">Connexion en cours...</p>
+                    <p style="font-size: 14px; opacity: 0.7; margin-top: 8px; color: #6B7280;">Psychologue: ${appointment.doctorName}</p>
+                </div>
+                <video id="doctorRemoteVideo" autoplay playsinline style="display: none; width: 100%; height: 100%; object-fit: cover; transform: none;"></video>
+                <div id="speakerBadge" class="speaker-badge" style="display: none;">
+                    <div class="speaking-indicator"></div>
+                    <span id="currentSpeakerName">${appointment.doctorName}</span>
+                </div>
+            </div>
+            <div id="thumbnailGrid" class="thumbnail-section">
+                <div id="localVideoContainer" class="thumbnail-video mirrored active">
+                    <div id="localVideoPlaceholder" class="video-avatar" style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #F3F4F6; font-size: 32px; color: #6B7280;">${userName.charAt(0).toUpperCase()}</div>
+                    <video id="patientLocalVideo" autoplay muted playsinline style="display: none;"></video>
+                    <div class="thumbnail-info">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15c1.66 0 2.99-1.34 2.99-3L15 6c0-1.66-1.34-3-3-3S9 4.34 9 6v6c0 1.66 1.34 3 3 3z"/></svg>
+                        <span id="localName">${userName}</span>
+                    </div>
+                    <div id="localMuteIndicator" class="thumbnail-badge muted">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/></svg>
+                    </div>
+                    <div id="localVideoOffIndicator" class="thumbnail-badge video-off">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M1 1l22 22M21 21H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3m3-3h6l2 3h4a2 2 0 0 1 2 2v9.34"/></svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="patientChatSection" class="chat-section" style="display: none; width: 350px; border-left: 1px solid #E5E7EB;">
+            <div class="chat-header">
+                <h3>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    Chat
+                </h3>
+            </div>
+            <div id="patientMessagesContainer" class="messages-container scrollbar"></div>
+            <div class="chat-input-container">
+                <div class="emoji-btn">
+                    <button onclick="togglePatientEmojiPicker()" class="chat-header-btn">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+                    </button>
+                    <div id="patientEmojiPicker" class="emoji-picker" style="display: none;">
+                        <span class="emoji-item" onclick="insertPatientEmoji('😀')">😀</span>
+                        <span class="emoji-item" onclick="insertPatientEmoji('😂')">😂</span>
+                        <span class="emoji-item" onclick="insertPatientEmoji('🥰')">🥰</span>
+                        <span class="emoji-item" onclick="insertPatientEmoji('😔')">😔</span>
+                        <span class="emoji-item" onclick="insertPatientEmoji('😎')">😎</span>
+                        <span class="emoji-item" onclick="insertPatientEmoji('🤔')">🤔</span>
+                        <span class="emoji-item" onclick="insertPatientEmoji('👍')">👍</span>
+                        <span class="emoji-item" onclick="insertPatientEmoji('👎')">👎</span>
+                        <span class="emoji-item" onclick="insertPatientEmoji('👏')">👏</span>
+                        <span class="emoji-item" onclick="insertPatientEmoji('❤️')">❤️</span>
+                        <span class="emoji-item" onclick="insertPatientEmoji('👋')">👋</span>
+                        <span class="emoji-item" onclick="insertPatientEmoji('🙏')">🙏</span>
+                        <span class="emoji-item" onclick="insertPatientEmoji('✅')">✅</span>
+                        <span class="emoji-item" onclick="insertPatientEmoji('❌')">❌</span>
+                        <span class="emoji-item" onclick="insertPatientEmoji('💡')">💡</span>
+                        <span class="emoji-item" onclick="insertPatientEmoji('🎉')">🎉</span>
+                    </div>
+                </div>
+                <input type="text" id="patientChatInput" class="chat-input" placeholder="Écrire un message..." onkeypress="handlePatientChatKeyPress(event)">
+                <button onclick="sendPatientMessage()" id="patientSendBtn" class="send-btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                </button>
+            </div>
+        </div>
+        <div class="controls-bar">
+            <button onclick="togglePatientMute()" id="muteBtn" class="control-btn" title="Activer le micro">
+                <svg id="muteIcon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15c1.66 0 2.99-1.34 2.99-3L15 6c0-1.66-1.34-3-3-3S9 4.34 9 6v6c0 1.66 1.34 3 3 3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+            </button>
+            <button onclick="togglePatientVideo()" id="videoBtn" class="control-btn" title="Activer la caméra">
+                <svg id="videoIcon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2m5.66 0H14a2 2 0 0 1 2 2v3.34l1 1L23 7v10"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+            </button>
+            <button onclick="togglePatientChat()" id="chatToggleBtn" class="control-btn" title="Ouvrir le chat">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            </button>
+            <div class="control-separator"></div>
+            <button onclick="leavePatientSession()" id="endCallBtn" class="control-btn end-call">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                Quitter
+            </button>
+        </div>
+    `;
+
+    videoContainer.style.display = 'flex';
+    initPatientCall(appointment);
+    loadPatientChatHistory(window.PatientCallState.currentDoctorId);
+}
+
+let patientStream = null;
+let patientFlippedVideoTrack = null;
+let patientFlippedStream = null;
+let patientFlipAnimFrame = null;
+let patientFlipVideoEl = null;
+
+async function buildFlippedTrack(rawVideoTrack) {
+    return new Promise((resolve) => {
+        const trackSettings = rawVideoTrack.getSettings();
+        const W = trackSettings.width || 640;
+        const H = trackSettings.height || 480;
+
+        const canvas = document.createElement('canvas');
+        canvas.width = W;
+        canvas.height = H;
+        const ctx = canvas.getContext('2d');
+
+        const offVideo = document.createElement('video');
+        offVideo.muted = true;
+        offVideo.playsInline = true;
+        offVideo.srcObject = new MediaStream([rawVideoTrack]);
+        offVideo.style.cssText = 'position:fixed;opacity:0;pointer-events:none;width:1px;height:1px;top:-9999px';
+        document.body.appendChild(offVideo);
+
+        offVideo.onloadedmetadata = () => {
+            if (offVideo.videoWidth > 0) {
+                canvas.width = offVideo.videoWidth;
+                canvas.height = offVideo.videoHeight;
+            }
+
+            offVideo.play().then(() => {
+                let animId = null;
+                let resolved = false;
+
+                function draw() {
+                    if (offVideo.readyState >= 2 && offVideo.videoWidth > 0) {
+                        if (canvas.width !== offVideo.videoWidth) {
+                            canvas.width = offVideo.videoWidth;
+                            canvas.height = offVideo.videoHeight;
+                        }
+                        ctx.save();
+                        ctx.translate(canvas.width, 0);
+                        ctx.scale(-1, 1);
+                        ctx.drawImage(offVideo, 0, 0, canvas.width, canvas.height);
+                        ctx.restore();
+
+                        if (!resolved) {
+                            resolved = true;
+                            const flippedStream = canvas.captureStream(30);
+                            resolve({
+                                flippedTrack: flippedStream.getVideoTracks()[0],
+                                flippedStream,
+                                animId: { current: animId },
+                                offVideo
+                            });
+                        }
+                    }
+                    animId = requestAnimationFrame(draw);
+                }
+                draw();
+            });
+        };
+    });
+}
+let patientIsMuted = true;
+let patientIsVideoOff = true;
+
+async function initPatientCall(appointment) {
+    try {
+        patientStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        
+        // Canvas-based horizontal flip for raw track data
+        const rawVideoTrack = patientStream.getVideoTracks()[0];
+        const flipResult = await buildFlippedTrack(rawVideoTrack);
+        patientFlippedVideoTrack = flipResult.flippedTrack;
+        patientFlippedStream = flipResult.flippedStream;
+        patientFlipAnimFrame = flipResult.animId;
+        patientFlipVideoEl = flipResult.offVideo;
+        
+        // Attach original stream to local video element for preview
+        const videoEl = document.getElementById('patientLocalVideo');
+        if (videoEl) {
+            videoEl.srcObject = patientStream;
+            videoEl.style.transform = 'scaleX(-1)';
+        }
+        
+        rawVideoTrack.enabled = false;
+        patientStream.getAudioTracks()[0].enabled = false;
+        
+        patientIsMuted = true;
+        patientIsVideoOff = true;
+        
+        document.getElementById('localMuteIndicator').style.display = 'flex';
+        document.getElementById('localVideoOffIndicator').style.display = 'flex';
+        document.getElementById('muteBtn').style.background = '#e74c3c';
+        document.getElementById('videoBtn').style.background = '#e74c3c';
+        document.getElementById('muteIcon').innerHTML = '<path d="M12 15c1.66 0 2.99-1.34 2.99-3L15 6c0-1.66-1.34-3-3-3S9 4.34 9 6v6c0 1.66 1.34 3 3 3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>';
+        document.getElementById('videoIcon').innerHTML = '<path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2m5.66 0H14a2 2 0 0 1 2 2v3.34l1 1L23 7v10"/><line x1="1" y1="1" x2="23" y2="23"/>';
+        
+        window.patientFlippedStream = patientFlippedStream;
+        window.patientFlippedVideoTrack = patientFlippedVideoTrack;
+    } catch (err) {
+        console.error('Error accessing media devices:', err);
+    }
+}
+
+function togglePatientMute() {
+    if (!patientStream) return;
+    
+    const audioTrack = patientStream.getAudioTracks()[0];
+    if (!audioTrack) return;
+    
+    patientIsMuted = !patientIsMuted;
+    audioTrack.enabled = !patientIsMuted;
+    
+    const btn = document.getElementById('muteBtn');
+    const icon = document.getElementById('muteIcon');
+    const indicator = document.getElementById('localMuteIndicator');
+    
+    if (patientIsMuted) {
+        btn.style.background = '#e74c3c';
+        icon.innerHTML = '<path d="M12 15c1.66 0 2.99-1.34 2.99-3L15 6c0-1.66-1.34-3-3-3S9 4.34 9 6v6c0 1.66 1.34 3 3 3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>';
+        indicator.style.display = 'flex';
+    } else {
+        btn.style.background = '';
+        icon.innerHTML = '<path d="M12 15c1.66 0 2.99-1.34 2.99-3L15 6c0-1.66-1.34-3-3-3S9 4.34 9 6v6c0 1.66 1.34 3 3 3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/>';
+        indicator.style.display = 'none';
+    }
+}
+
+function togglePatientVideo() {
+    if (!patientStream) return;
+    
+    const videoTrack = patientStream.getVideoTracks()[0];
+    if (!videoTrack) return;
+    
+    patientIsVideoOff = !patientIsVideoOff;
+    videoTrack.enabled = !patientIsVideoOff;
+    
+    const videoEl = document.getElementById('patientLocalVideo');
+    const placeholder = document.getElementById('localVideoPlaceholder');
+    const btn = document.getElementById('videoBtn');
+    const icon = document.getElementById('videoIcon');
+    const indicator = document.getElementById('localVideoOffIndicator');
+    
+    if (patientIsVideoOff) {
+        btn.style.background = '#e74c3c';
+        icon.innerHTML = '<path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2m5.66 0H14a2 2 0 0 1 2 2v3.34l1 1L23 7v10"/><line x1="1" y1="1" x2="23" y2="23"/>';
+        indicator.style.display = 'flex';
+        if (videoEl && placeholder) {
+            videoEl.style.display = 'none';
+            placeholder.style.display = 'flex';
+        }
+    } else {
+        btn.style.background = '';
+        icon.innerHTML = '<polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>';
+        indicator.style.display = 'none';
+        if (videoEl && placeholder) {
+            videoEl.style.display = 'block';
+            placeholder.style.display = 'none';
+        }
+    }
+}
+
+function leavePatientSession() {
+    cancelAnimationFrame(patientFlipAnimFrame?.current);
+    patientFlipAnimFrame = null;
+    if (patientFlipVideoEl) {
+        patientFlipVideoEl.srcObject = null;
+        if (document.body.contains(patientFlipVideoEl)) {
+            document.body.removeChild(patientFlipVideoEl);
+        }
+        patientFlipVideoEl = null;
+    }
+    if (patientStream) {
+        patientStream.getTracks().forEach(track => track.stop());
+        patientStream = null;
+    }
+    const videoContainer = document.getElementById('patientVideoCall');
+    if (videoContainer) {
+        videoContainer.style.display = 'none';
+        videoContainer.remove();
+    }
+}
+
+window.togglePatientMute = togglePatientMute;
+window.togglePatientVideo = togglePatientVideo;
+window.leavePatientSession = leavePatientSession;
+window.togglePatientChat = togglePatientChat;
+window.sendPatientMessage = sendPatientMessage;
+window.handlePatientChatKeyPress = handlePatientChatKeyPress;
+
+function togglePatientChat() {
+    const chatSection = document.getElementById('patientChatSection');
+    const btn = document.getElementById('chatToggleBtn');
+    if (chatSection.style.display === 'none') {
+        chatSection.style.display = 'flex';
+        btn.classList.add('active');
+    } else {
+        chatSection.style.display = 'none';
+        btn.classList.remove('active');
+    }
+}
+
+async function loadPatientChatHistory(doctorId) {
+    try {
+        const response = await fetch('http://localhost:3000/api/messages/with/' + doctorId, {
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('nebras_token') }
+        });
+        const messages = await response.json();
+        const container = document.getElementById('patientMessagesContainer');
+        if (!container) return;
+        
+        if (!messages || messages.length === 0) {
+            container.innerHTML = '<div class="no-messages" style="text-align: center; padding: 20px; color: #9CA3AF;">Aucun message</div>';
+            return;
+        }
+        
+        container.innerHTML = messages.map(msg => `
+            <div class="message ${msg.senderId === currentUser.id ? 'sent' : 'received'}">
+                <div class="message-content">${msg.content.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+                <div class="message-time">${new Date(msg.createdAt).toLocaleString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</div>
+            </div>
+        `).join('');
+        
+        container.scrollTop = container.scrollHeight;
+    } catch (e) {
+        console.error('Error loading chat history:', e);
+    }
+}
+
+async function sendPatientMessage() {
+    const input = document.getElementById('patientChatInput');
+    const content = input?.value.trim();
+    if (!content || !window.PatientCallState.currentDoctorId) return;
+    
+    try {
+        const response = await fetch('http://localhost:3000/api/messages', {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Bearer ' + localStorage.getItem('nebras_token'),
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                receiverId: window.PatientCallState.currentDoctorId,
+                content: content
+            })
+        });
+        
+        if (response.ok) {
+            input.value = '';
+            loadPatientChatHistory(window.PatientCallState.currentDoctorId);
+        }
+    } catch (e) {
+        console.error('Error sending message:', e);
+    }
+}
+
+function handlePatientChatKeyPress(event) {
+    if (event.key === 'Enter') {
+        sendPatientMessage();
+    }
+}
+
+window.togglePatientMute = togglePatientMute;
+window.togglePatientVideo = togglePatientVideo;
+window.leavePatientSession = leavePatientSession;
+window.togglePatientChat = togglePatientChat;
+window.sendPatientMessage = sendPatientMessage;
+window.handlePatientChatKeyPress = handlePatientChatKeyPress;
+window.togglePatientEmojiPicker = togglePatientEmojiPicker;
+window.insertPatientEmoji = insertPatientEmoji;
+
+function togglePatientEmojiPicker() {
+    const picker = document.getElementById('patientEmojiPicker');
+    picker.style.display = picker.style.display === 'none' ? 'grid' : 'none';
+}
+
+function insertPatientEmoji(emoji) {
+    const input = document.getElementById('patientChatInput');
+    if (input) {
+        input.value += emoji;
+        input.focus();
+    }
+    document.getElementById('patientEmojiPicker').style.display = 'none';
+}

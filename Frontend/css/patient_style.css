@@ -53,6 +53,71 @@ body {
     border-radius: 10px;
 }
 
+/* Call Entry Sidebar - Real-time */
+.call-entry-sidebar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 15px;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    border-radius: 12px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    animation: pulse-call 2s infinite;
+}
+
+@keyframes pulse-call {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+    50% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+}
+
+.call-entry-icon {
+    font-size: 24px;
+    animation: ring 1s infinite;
+    color: white;
+}
+
+@keyframes ring {
+    0%, 100% { transform: rotate(0); }
+    20% { transform: rotate(15deg); }
+    40% { transform: rotate(-15deg); }
+    60% { transform: rotate(10deg); }
+    80% { transform: rotate(-10deg); }
+}
+
+.call-entry-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.call-entry-title {
+    color: white;
+    font-weight: bold;
+    font-size: 13px;
+}
+
+.call-entry-doctor {
+    color: rgba(255,255,255,0.8);
+    font-size: 11px;
+}
+
+.call-entry-btn {
+    background: white;
+    color: #059669;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 12px;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.call-entry-btn:hover {
+    transform: scale(1.05);
+}
+
 .logo img {
  
     max-width: 160px;
@@ -840,68 +905,183 @@ body {
 
 .psychologues-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 25px;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 24px;
+    padding: 10px 0;
 }
 
 .psy-card {
     background: #ffffff;
-    border: 1px solid #e6ebf0;
-    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
     overflow: hidden;
-    box-shadow: 0 18px 50px rgba(9, 19, 70, 0.07);
-    transition: all 0.3s;
+    box-shadow: 0 4px 20px rgba(9, 19, 70, 0.06);
+    transition: all 0.3s ease;
     cursor: pointer;
+    display: flex;
+    flex-direction: column;
 }
 
 .psy-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 25px 60px rgba(9, 19, 70, 0.10);
+    transform: translateY(-6px);
+    box-shadow: 0 12px 40px rgba(9, 19, 70, 0.12);
+    border-color: #091346;
 }
 
-.psy-image {
+.psy-card-header {
+    padding: 24px 24px 16px;
+    display: flex;
+    justify-content: center;
+    background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+}
+
+.psy-avatar-container {
     position: relative;
-    height: 300px;
-    background: #f6f8fb;
+    width: 90px;
+    height: 90px;
 }
 
-.psy-image img {
+.psy-avatar-img {
     width: 100%;
     height: 100%;
+    border-radius: 50%;
     object-fit: cover;
-    opacity: 0.98;
+    border: 3px solid #ffffff;
+    box-shadow: 0 4px 15px rgba(9, 19, 70, 0.1);
 }
 
-.psy-badges {
-    position: absolute;
-    top: 15px;
-    right: 15px;
+.psy-avatar-default {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #e8f4f8 0%, #d1e4ec 100%);
+    border: 3px solid #ffffff;
+    box-shadow: 0 4px 15px rgba(9, 19, 70, 0.1);
     display: flex;
-    flex-direction: column;
-    gap: 8px;
+    align-items: center;
+    justify-content: center;
+    color: #6b7a8f;
 }
 
-.badge-time, .badge-reviews {
-    background: #091346;
-    color: white;
-    padding: 5px 12px;
-    border-radius: 15px;
-    font-size: 12px;
+.psy-avatar-default svg {
+    width: 45px;
+    height: 45px;
+}
+
+.online-indicator {
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    width: 18px;
+    height: 18px;
+    background: #10b981;
+    border: 3px solid #ffffff;
+    border-radius: 50%;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
+}
+
+.psy-card-body {
+    padding: 0 24px 16px;
+    text-align: center;
+    flex: 1;
+}
+
+.psy-name {
+    color: #1f2937;
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0 0 6px 0;
+    line-height: 1.3;
+}
+
+.psy-specialite {
+    color: #6b7280;
+    font-size: 14px;
+    margin: 0 0 12px 0;
+    font-weight: 500;
+}
+
+.psy-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-top: 1px solid #f3f4f6;
+}
+
+.psy-rating {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: #f59e0b;
+    font-size: 14px;
     font-weight: 600;
 }
 
-.psy-info {
-    padding: 20px;
+.rating-value {
+    color: #6b7280;
+    font-size: 13px;
+    font-weight: 500;
+    margin-left: 4px;
 }
 
-.psy-info h3 {
-    color: var(--primary-dark);
-    margin-bottom: 8px;
+.psy-price {
+    color: #091346;
+    font-size: 15px;
+    font-weight: 700;
+    background: #f0f1f5;
+    padding: 4px 12px;
+    border-radius: 20px;
 }
 
-.availability {
-    color: #5c6b7d;
+.psy-card-footer {
+    padding: 16px 24px 20px;
+}
+
+.psy-view-btn {
+    width: 100%;
+    padding: 12px 20px;
+    background: #091346;
+    color: #ffffff;
+    border: none;
+    border-radius: 10px;
     font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.psy-view-btn:hover {
+    background: #0d1f5c;
+    transform: translateY(-1px);
+}
+
+@media (max-width: 640px) {
+    .psychologues-grid {
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 16px;
+    }
+    
+    .psy-card-header {
+        padding: 20px 20px 12px;
+    }
+    
+    .psy-avatar-container {
+        width: 70px;
+        height: 70px;
+    }
+    
+    .psy-card-body {
+        padding: 0 16px 12px;
+    }
+    
+    .psy-name {
+        font-size: 16px;
+    }
+    
+    .psy-card-footer {
+        padding: 12px 16px 16px;
+    }
 }
 /* ========== PSYCHOLOGUE DETAIL SIDE PANEL ========== */
 .psy-detail-panel {
@@ -1234,6 +1414,79 @@ body {
     font-weight: 700;
     color: var(--primary-dark);
     margin-bottom: 14px;
+}
+
+.detail-value {
+    color: #4b5563;
+    font-size: 15px;
+    line-height: 1.6;
+}
+
+.detail-text {
+    color: #6b7280;
+    font-size: 14px;
+    line-height: 1.7;
+}
+
+.detail-specialite {
+    font-size: 14px;
+    color: #6b7280;
+    font-weight: 500;
+    margin-top: 4px;
+    display: block;
+}
+
+.detail-rating {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.detail-rating .stars {
+    font-size: 16px;
+    color: #f59e0b;
+}
+
+.detail-rating .star.filled {
+    color: #f59e0b;
+}
+
+.detail-rating .star {
+    color: #d1d5db;
+}
+
+.detail-rating .rating-value {
+    font-size: 14px;
+    color: #6b7280;
+    font-weight: 600;
+}
+
+.detail-stats {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 24px;
+    padding: 16px;
+    background: #f8fafc;
+    border-radius: 12px;
+}
+
+.detail-stats .stat-item {
+    flex: 1;
+    text-align: center;
+}
+
+.detail-stats .stat-label {
+    display: block;
+    font-size: 12px;
+    color: #6b7280;
+    margin-bottom: 4px;
+}
+
+.detail-stats .stat-number {
+    font-size: 24px;
+    font-weight: 700;
+    color: #091346;
 }
 
 .tags-list {
@@ -2237,6 +2490,10 @@ body {
 
 .message-content {
     max-width: 65%;
+    display: inline-block;
+    vertical-align: top;
+    word-wrap: break-word;
+    white-space: normal;
 }
 
 .message-bubble {
@@ -2244,6 +2501,8 @@ body {
     border-radius: 18px;
     margin-bottom: 4px;
     word-wrap: break-word;
+    white-space: normal;
+    line-height: 1.5;
 }
 
 .received-bubble {
@@ -2333,6 +2592,61 @@ body {
 .emoji-btn:hover svg,
 .attachment-btn:hover svg {
     fill: var(--primary-green);
+}
+
+.emoji-picker {
+    position: absolute;
+    bottom: 70px;
+    right: 0;
+    background: #FFFFFF;
+    border-radius: 16px;
+    padding: 10px;
+    display: none;
+    width: 270px;
+    box-shadow: 0 8px 30px rgba(9,19,70,0.15);
+    z-index: 100;
+    border: 2px solid var(--primary-dark, #091346);
+}
+
+.emoji-picker.show {
+    display: block;
+}
+
+.emoji-picker-header {
+    display: flex;
+    align-items: center;
+    padding: 6px 8px 10px;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 8px;
+}
+
+.emoji-picker-header span {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--primary-dark, #091346);
+}
+
+.emoji-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 4px;
+}
+
+.emoji-item {
+    font-size: 22px;
+    cursor: pointer;
+    padding: 6px;
+    transition: all 0.15s ease;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 1;
+}
+
+.emoji-item:hover {
+    background: var(--primary-beige);
+    transform: scale(1.15);
 }
 
 .message-input {
