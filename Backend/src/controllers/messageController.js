@@ -5,6 +5,20 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
+async function createMessageRecord(senderId, receiverId, content) {
+  return prisma.message.create({
+    data: {
+      senderId,
+      receiverId,
+      content
+    },
+    include: {
+      sender: { select: { id: true, fullname: true } },
+      receiver: { select: { id: true, fullname: true } }
+    }
+  });
+}
+
 // ============================================
 // SEND MESSAGE
 // ============================================
@@ -29,18 +43,14 @@ exports.sendMessage = async (req, res) => {
       return res.status(400).json({ error: 'Cannot send message to yourself' });
     }
 
-    // Create message
-    const message = await prisma.message.create({
-      data: {
-        senderId,
-        receiverId,
-        content
-      },
-      include: {
-        sender: { select: { id: true, fullname: true } },
-        receiver: { select: { id: true, fullname: true } }
-      }
-    });
+    const message = await createMessageRecord(senderId, receiverId, content);
+
+    if (global.io) {
+      const senderRoom = `user:${senderId}`;
+      const receiverRoom = `user:${receiverId}`;
+      global.io.to(senderRoom).emit('message:new', { message, conversationPartnerId: receiverId });
+      global.io.to(receiverRoom).emit('message:new', { message, conversationPartnerId: senderId });
+    }
 
     res.status(201).json({
       message: 'Message sent successfully',
@@ -225,3 +235,5 @@ exports.getUnreadCount = async (req, res) => {
 process.on('beforeExit', async () => {
   await prisma.$disconnect();
 });
+
+module.exports.createMessageRecord = createMessageRecord;

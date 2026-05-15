@@ -6,6 +6,10 @@ let conversations = [];
 let currentChat = null;
 let conversationsSignature = '';
 let currentMessagesSignature = '';
+let currentMessages = [];
+let currentMessageIds = new Set();
+let patientMessagingSocket = null;
+let patientMessagingSocketBound = false;
 
 document.addEventListener('DOMContentLoaded', init);
 
@@ -35,6 +39,9 @@ async function init() {
 
     // Load conversations
     await loadConversations();
+        updateUnreadBadgeFromState();
+
+    connectMessagingRealtime();
 
     // Open pre-selected conversation if exists
     if (preSelectedId) {
@@ -97,6 +104,8 @@ function openChatById(userId) {
 async function openChat(conv) {
     currentChat = conv;
     currentMessagesSignature = '';
+    currentMessages = [];
+    currentMessageIds = new Set();
     const userId = conv.partner?.id;
     const userName = conv.partner?.fullname || 'Utilisateur';
     const avatarHtml = renderAvatarMarkup(conv.partner, 40, '18px');
@@ -129,6 +138,7 @@ async function openChat(conv) {
     try {
         const messages = await messageAPI.getWithUser(userId) || [];
         renderMessages(messages, userId);
+        markConversationRead(userId);
     } catch (e) {
         console.error(e);
         document.getElementById('chatMessages').innerHTML = '<div class="empty-state" style="padding: 40px;">Erreur de chargement</div>';
@@ -146,6 +156,8 @@ function renderMessages(messages, partnerId) {
     }
 
     currentMessagesSignature = nextSignature;
+    currentMessages = messages.slice();
+    currentMessageIds = new Set(messages.map(m => m.id));
     
     if (!messages.length) {
         container.innerHTML = '<div class="empty-state">Commencez la conversation !</div>';
@@ -174,9 +186,13 @@ async function sendMsg() {
     input.value = '';
     
     try {
-        await messageAPI.send(currentChat.partner?.id, content);
-        await loadCurrentThread();
-        await loadConversations();
+        const socket = connectMessagingRealtime();
+        if (socket) {
+            await sendMessageRealtime(currentChat.partner?.id, content);
+        } else {
+            await messageAPI.send(currentChat.partner?.id, content);
+            await loadConversations();
+        }
     } catch (e) {
         console.error(e);
         showToast('Erreur: ' + e.message, 'error');
@@ -210,6 +226,132 @@ async function loadCurrentThread() {
     if (!currentChat?.partner?.id) return;
     const messages = await messageAPI.getWithUser(currentChat.partner.id) || [];
     renderMessages(messages, currentChat.partner.id);
+}
+
+function connectMessagingRealtime() {
+    if (!patientMessagingSocket && typeof connectMessagingSocket === 'function') {
+        patientMessagingSocket = connectMessagingSocket();
+    }
+
+    if (patientMessagingSocket && !patientMessagingSocketBound) {
+        patientMessagingSocketBound = true;
+        patientMessagingSocket.on('message:new', handleRealtimeMessage);
+    }
+
+    return patientMessagingSocket;
+}
+
+function sendMessageRealtime(receiverId, content) {
+    return new Promise((resolve, reject) => {
+        const socket = connectMessagingRealtime();
+        if (!socket) {
+            reject(new Error('Messaging socket unavailable'));
+            return;
+        }
+
+        const clientMessageId = `msg_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+        socket.emit('message:send', { receiverId, content, clientMessageId }, (response) => {
+            if (response?.error) {
+                reject(new Error(response.error));
+                return;
+            }
+            resolve(response?.message || null);
+        });
+    });
+}
+
+function handleRealtimeMessage(payload) {
+    const message = payload?.message || payload;
+    if (!message?.id) return;
+
+    const currentUserId = getCurrentUser()?.id;
+    const partnerId = message.senderId === currentUserId ? message.receiverId : message.senderId;
+    if (!partnerId) return;
+
+    upsertConversationFromMessage(message, partnerId);
+
+    if (currentChat?.partner?.id === partnerId) {
+        appendMessageToThread(message);
+        markConversationRead(partnerId);
+    }
+}
+
+function appendMessageToThread(message) {
+    const container = document.getElementById('chatMessages');
+    const currentUserId = getCurrentUser()?.id;
+    if (!container || !message?.id || currentMessageIds.has(message.id)) return;
+
+    currentMessages.push(message);
+    currentMessageIds.add(message.id);
+    currentMessagesSignature = currentMessages.map(m => `${m.id}:${m.createdAt}`).join('|');
+
+    const isMe = message.senderId === currentUserId;
+    const wrapper = document.createElement('div');
+    wrapper.className = `msg ${isMe ? 'sent' : 'received'}`;
+    wrapper.innerHTML = `
+        <div class="msg-bubble">${escapeHtml(message.content || '')}</div>
+        <div class="msg-time">${formatTime(message.createdAt)}</div>
+    `;
+
+    container.appendChild(wrapper);
+    container.scrollTop = container.scrollHeight;
+}
+
+function upsertConversationFromMessage(message, partnerId) {
+    const currentUserId = getCurrentUser()?.id;
+    const partner = message.senderId === currentUserId ? message.receiver : message.sender;
+    if (!partner) return;
+
+    const existing = conversations.find(conv => conv.partner?.id === partnerId);
+    const nextConversation = {
+        partner: {
+            id: partner.id,
+            fullname: partner.fullname,
+            userType: partner.userType || existing?.partner?.userType,
+            profile: partner.profile || existing?.partner?.profile || null
+        },
+        lastMessage: message.content,
+        lastMessageTime: message.createdAt,
+        unreadCount: message.senderId === currentUserId ? 0 : (currentChat?.partner?.id === partnerId ? 0 : (existing?.unreadCount || 0) + 1)
+    };
+
+    conversations = [nextConversation, ...conversations.filter(conv => conv.partner?.id !== partnerId)];
+    renderOrMoveConversationItem(nextConversation, currentChat?.partner?.id === partnerId);
+}
+
+function renderOrMoveConversationItem(conversation, isActive = false) {
+    const listEl = document.querySelector('.conversations-list');
+    if (!listEl || !conversation?.partner?.id) return;
+
+    const temp = document.createElement('div');
+    temp.innerHTML = renderConversationItem(conversation).trim();
+    const item = temp.firstElementChild;
+    if (!item) return;
+
+    if (isActive) item.classList.add('active');
+
+    const existing = listEl.querySelector(`.conversation-item[data-id="${conversation.partner.id}"]`);
+    if (existing) {
+        existing.replaceWith(item);
+    } else {
+        listEl.prepend(item);
+    }
+}
+
+function markConversationRead(partnerId) {
+    const conversation = conversations.find(conv => conv.partner?.id === partnerId);
+    if (!conversation) return;
+
+    conversation.unreadCount = 0;
+    renderOrMoveConversationItem(conversation, true);
+    updateUnreadBadgeFromState();
+}
+
+function updateUnreadBadgeFromState() {
+    const badge = document.querySelector('.nav-item[href="patient_messagerie.html"] .badge');
+    if (!badge) return;
+    const count = conversations.reduce((total, conv) => total + (conv.unreadCount || 0), 0);
+    badge.textContent = String(count);
 }
 
 function renderConversationItem(c) {

@@ -4,10 +4,13 @@
 
 let conversations = [];
 let currentChat = null;
-let messagingRefreshInterval = null;
 let conversationsSignature = '';
 let currentMessagesSignature = '';
 let isChatOpen = false;
+let currentMessages = [];
+let currentMessageIds = new Set();
+let psychologueMessagingSocket = null;
+let psychologueMessagingSocketBound = false;
 
 document.addEventListener('DOMContentLoaded', init);
 
@@ -35,8 +38,8 @@ async function init() {
     // Update badge
     await updateUnreadBadge();
 
-    // Keep messaging synchronized with other interfaces (e.g. video call chat)
-    startMessagingSync();
+    // Connect realtime messaging once; history still loads through the existing API.
+    connectMessagingRealtime();
 
     highlightCurrentSidebarLink();
 }
@@ -93,6 +96,8 @@ async function openChat(conv) {
     currentChat = conv;
     isChatOpen = true;
     currentMessagesSignature = '';
+    currentMessages = [];
+    currentMessageIds = new Set();
     const userId = conv.partner?.id;
     const userName = conv.partner?.fullname || 'Patient';
 
@@ -122,6 +127,7 @@ async function openChat(conv) {
     try {
         const messages = await messageAPI.getWithUser(userId) || [];
         renderMessages(messages, userId);
+        markConversationRead(userId);
     } catch (e) {
         console.error(e);
         document.getElementById('chatMessages').innerHTML = '<div style="text-align: center; color: var(--text-light); padding: 40px;">Erreur de chargement</div>';
@@ -139,6 +145,8 @@ function renderMessages(messages, partnerId) {
     }
 
     currentMessagesSignature = nextSignature;
+    currentMessages = messages.slice();
+    currentMessageIds = new Set(messages.map(m => m.id));
 
     if (!messages.length) {
         container.innerHTML = '<div style="text-align: center; color: var(--text-light); padding: 40px;">Commencez la conversation !</div>';
@@ -167,60 +175,167 @@ async function sendMsg() {
     input.value = '';
 
     try {
+        const socket = connectMessagingRealtime();
+        if (socket) {
+            await sendMessageRealtime(currentChat.partner?.id, content);
+        } else {
             await messageAPI.send(currentChat.partner?.id, content);
-            await loadCurrentThread();
-            await refreshConversationListIfNeeded();
+            await loadConversations(true);
+        }
     } catch (e) {
         console.error(e);
         showToast('Erreur: ' + e.message, 'error');
     }
 }
 
-function startMessagingSync() {
-    stopMessagingSync();
-    messagingRefreshInterval = setInterval(() => {
-        if (document.hidden) return;
-        refreshMessagingData();
-    }, 12000);
-}
-
-function stopMessagingSync() {
-    if (messagingRefreshInterval) {
-        clearInterval(messagingRefreshInterval);
-        messagingRefreshInterval = null;
+function connectMessagingRealtime() {
+    if (!psychologueMessagingSocket && typeof connectMessagingSocket === 'function') {
+        psychologueMessagingSocket = connectMessagingSocket();
     }
+
+    if (psychologueMessagingSocket && !psychologueMessagingSocketBound) {
+        psychologueMessagingSocketBound = true;
+        psychologueMessagingSocket.on('message:new', handleRealtimeMessage);
+    }
+
+    return psychologueMessagingSocket;
 }
 
-async function refreshMessagingData() {
-    try {
-        const activePartnerId = currentChat?.partner?.id;
-
-        const changed = await loadConversations(true);
-        if (changed !== false) {
-            await updateUnreadBadge();
+function sendMessageRealtime(receiverId, content) {
+    return new Promise((resolve, reject) => {
+        const socket = connectMessagingRealtime();
+        if (!socket) {
+            reject(new Error('Messaging socket unavailable'));
+            return;
         }
 
-        if (!activePartnerId) return;
-
-        if (isChatOpen) {
-            await loadCurrentThread();
-        }
-    } catch (e) {
-        console.error('Messaging sync error:', e);
-    }
+        const clientMessageId = `msg_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+        socket.emit('message:send', { receiverId, content, clientMessageId }, (response) => {
+            if (response?.error) {
+                reject(new Error(response.error));
+                return;
+            }
+            resolve(response?.message || null);
+        });
+    });
 }
 
-async function loadCurrentThread() {
+function handleRealtimeMessage(payload) {
+    const message = payload?.message || payload;
+    if (!message?.id) return;
+
+    const currentUserId = getCurrentUser()?.id;
+    const partnerId = message.senderId === currentUserId ? message.receiverId : message.senderId;
+
+    if (!partnerId) return;
+
+    upsertConversationFromMessage(message, partnerId);
+
     const activePartnerId = currentChat?.partner?.id;
-    if (!activePartnerId) return;
+    if (activePartnerId === partnerId) {
+        appendMessageToThread(message);
+        markConversationRead(partnerId);
+        return;
+    }
 
-    const messages = await messageAPI.getWithUser(activePartnerId) || [];
-    renderMessages(messages, activePartnerId);
+    if (message.receiverId === currentUserId) {
+        incrementUnreadBadge();
+    }
 }
 
-async function refreshConversationListIfNeeded() {
-    await loadConversations(true);
-    await updateUnreadBadge();
+function appendMessageToThread(message) {
+    const container = document.getElementById('chatMessages');
+    const currentUserId = getCurrentUser()?.id;
+    if (!container || !message?.id || currentMessageIds.has(message.id)) return;
+
+    currentMessages.push(message);
+    currentMessageIds.add(message.id);
+    currentMessagesSignature = currentMessages.map(m => `${m.id}:${m.createdAt}`).join('|');
+
+    const isMe = message.senderId === currentUserId;
+    const wrapper = document.createElement('div');
+    wrapper.className = `msg ${isMe ? 'sent' : 'received'}`;
+    wrapper.innerHTML = `
+        <div class="msg-bubble">${escapeHtml(message.content || '')}</div>
+        <div class="msg-time">${formatTime(message.createdAt)}</div>
+    `;
+
+    const isNearBottom = (container.scrollHeight - container.scrollTop - container.clientHeight) < 80;
+    container.appendChild(wrapper);
+    if (isNearBottom || isMe) {
+        container.scrollTop = container.scrollHeight;
+    }
+}
+
+function upsertConversationFromMessage(message, partnerId) {
+    const currentUserId = getCurrentUser()?.id;
+    const partner = message.senderId === currentUserId ? message.receiver : message.sender;
+    if (!partner) return;
+
+    const existing = conversations.find(conv => conv.partner?.id === partnerId);
+    const nextConversation = {
+        partner: {
+            id: partner.id,
+            fullname: partner.fullname,
+            userType: partner.userType || existing?.partner?.userType,
+            profile: partner.profile || existing?.partner?.profile || null
+        },
+        lastMessage: message.content,
+        lastMessageTime: message.createdAt,
+        unreadCount: message.senderId === currentUserId ? 0 : (currentChat?.partner?.id === partnerId ? 0 : (existing?.unreadCount || 0) + 1)
+    };
+
+    conversations = [
+        nextConversation,
+        ...conversations.filter(conv => conv.partner?.id !== partnerId)
+    ];
+
+    renderOrMoveConversationItem(nextConversation, currentChat?.partner?.id === partnerId);
+}
+
+function renderOrMoveConversationItem(conversation, isActive = false) {
+    const listEl = document.querySelector('.conversations-list');
+    if (!listEl || !conversation?.partner?.id) return;
+
+    const partnerId = conversation.partner.id;
+    const temp = document.createElement('div');
+    temp.innerHTML = renderConversationItem(conversation).trim();
+    const item = temp.firstElementChild;
+    if (!item) return;
+
+    if (isActive) {
+        item.classList.add('active');
+    }
+
+    const existing = listEl.querySelector(`.conversation-item[data-id="${partnerId}"]`);
+    if (existing) {
+        existing.replaceWith(item);
+    } else {
+        listEl.prepend(item);
+    }
+}
+
+function markConversationRead(partnerId) {
+    const conversation = conversations.find(conv => conv.partner?.id === partnerId);
+    if (!conversation || conversation.unreadCount === 0) return;
+
+    conversation.unreadCount = 0;
+    renderOrMoveConversationItem(conversation, true);
+    updateUnreadBadgeFromState();
+}
+
+function incrementUnreadBadge() {
+    const badge = document.querySelector('.nav-item[href="psychologue_messagerie.html"] .badge');
+    if (!badge) return;
+    const current = parseInt(badge.textContent || '0', 10) || 0;
+    badge.textContent = String(current + 1);
+}
+
+function updateUnreadBadgeFromState() {
+    const badge = document.querySelector('.nav-item[href="psychologue_messagerie.html"] .badge');
+    if (!badge) return;
+    const count = conversations.reduce((total, conv) => total + (conv.unreadCount || 0), 0);
+    badge.textContent = String(count);
 }
 
 function renderConversationItem(c) {
@@ -293,9 +408,6 @@ function highlightCurrentSidebarLink() {
 }
 
 document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) {
-        refreshMessagingData();
-    }
 });
 
 // Expose functions globally
@@ -303,5 +415,3 @@ window.openChatById = openChatById;
 window.sendMsg = sendMsg;
 window.highlightCurrentSidebarLink = highlightCurrentSidebarLink;
 window.showToast = showToast;
-
-window.addEventListener('beforeunload', stopMessagingSync);

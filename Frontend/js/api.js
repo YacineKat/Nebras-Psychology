@@ -338,6 +338,54 @@ const messageAPI = {
 };
 
 // ============================================
+// MESSAGING SOCKET
+// ============================================
+const messagingSocketUrl = 'http://localhost:3000';
+let messagingSocket = null;
+
+function connectMessagingSocket() {
+  if (messagingSocket && messagingSocket.connected) {
+    return messagingSocket;
+  }
+
+  if (typeof io === 'undefined') {
+    return null;
+  }
+
+  const token = localStorage.getItem('nebras_token');
+  if (!token) {
+    return null;
+  }
+
+  if (!messagingSocket) {
+    messagingSocket = io(messagingSocketUrl, {
+      auth: { token },
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000
+    });
+  } else {
+    messagingSocket.auth = { token };
+    if (!messagingSocket.connected) {
+      messagingSocket.connect();
+    }
+  }
+
+  return messagingSocket;
+}
+
+function disconnectMessagingSocket() {
+  if (!messagingSocket) return;
+  messagingSocket.disconnect();
+  messagingSocket = null;
+}
+
+function getMessagingSocket() {
+  return messagingSocket;
+}
+
+// ============================================
 // UTILITY FUNCTIONS
 // ============================================
 function isLoggedIn() {
@@ -391,6 +439,9 @@ window.authAPI = authAPI;
 window.doctorAPI = doctorAPI;
 window.appointmentAPI = appointmentAPI;
 window.messageAPI = messageAPI;
+window.connectMessagingSocket = connectMessagingSocket;
+window.disconnectMessagingSocket = disconnectMessagingSocket;
+window.getMessagingSocket = getMessagingSocket;
 window.isLoggedIn = isLoggedIn;
 window.getCurrentUser = getCurrentUser;
 window.getUserType = getUserType;

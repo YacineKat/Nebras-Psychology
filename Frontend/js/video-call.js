@@ -9,8 +9,10 @@ let sessionAppointmentId = null;
 let chatPartnerId = null;
 let callStartTime = null;
 let callTimerInterval = null;
-let callChatRefreshInterval = null;
 let lastRenderedChatSignature = null;
+let renderedCallMessageIds = new Set();
+let callMessagingSocket = null;
+let callMessagingSocketBound = false;
 
 // Media state
 let localStream = null;
@@ -624,14 +626,19 @@ async function sendChatMessage() {
     if (!content || !chatPartnerId) return;
 
     try {
-        await messageAPI.send(chatPartnerId, content);
+        const socket = connectCallChatRealtime();
+        if (socket) {
+            await sendCallChatRealtimeMessage(chatPartnerId, content);
+        } else {
+            await messageAPI.send(chatPartnerId, content);
+            await loadCallChatHistory(true);
+        }
     } catch (error) {
         console.error('Failed to send call message:', error);
         return;
     }
     
     input.value = '';
-    loadCallChatHistory();
 }
 
 function handleChatKeyPress(event) {
@@ -661,6 +668,63 @@ function displayChatMessage(msg) {
     container.scrollTop = container.scrollHeight;
 }
 
+function connectCallChatRealtime() {
+    if (!callMessagingSocket && typeof connectMessagingSocket === 'function') {
+        callMessagingSocket = connectMessagingSocket();
+    }
+
+    if (callMessagingSocket && !callMessagingSocketBound) {
+        callMessagingSocketBound = true;
+        callMessagingSocket.on('message:new', handleCallRealtimeMessage);
+    }
+
+    return callMessagingSocket;
+}
+
+function handleCallRealtimeMessage(payload) {
+    const message = payload?.message || payload;
+    if (!message?.id || !chatPartnerId) return;
+
+    const currentUserId = currentUser?.id;
+    const partnerId = message.senderId === currentUserId ? message.receiverId : message.senderId;
+    if (partnerId !== chatPartnerId) return;
+
+    appendCallChatMessage(message);
+}
+
+function appendCallChatMessage(message) {
+    const container = document.getElementById('messagesContainer');
+    if (!container || !message?.id || renderedCallMessageIds.has(message.id)) return;
+
+    renderedCallMessageIds.add(message.id);
+    lastRenderedChatSignature = Array.from(renderedCallMessageIds).join('|');
+
+    const isNearBottom = (container.scrollHeight - container.scrollTop - container.clientHeight) < 80;
+    displayChatMessage(message);
+    if (isNearBottom) {
+        container.scrollTop = container.scrollHeight;
+    }
+}
+
+function sendCallChatRealtimeMessage(receiverId, content) {
+    return new Promise((resolve, reject) => {
+        const socket = connectCallChatRealtime();
+        if (!socket) {
+            reject(new Error('Messaging socket unavailable'));
+            return;
+        }
+
+        const clientMessageId = `msg_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+        socket.emit('message:send', { receiverId, content, clientMessageId }, (response) => {
+            if (response?.error) {
+                reject(new Error(response.error));
+                return;
+            }
+            resolve(response?.message || null);
+        });
+    });
+}
+
 async function initializeCallChat() {
     try {
         const appointment = await appointmentAPI.getById(sessionAppointmentId);
@@ -668,23 +732,9 @@ async function initializeCallChat() {
 
         chatPartnerId = isDoctor ? appointment.patientId : appointment.doctorId;
         await loadCallChatHistory(true);
-        startCallChatSync();
+        connectCallChatRealtime();
     } catch (error) {
         console.error('Failed to initialize call chat:', error);
-    }
-}
-
-function startCallChatSync() {
-    stopCallChatSync();
-    callChatRefreshInterval = setInterval(() => {
-        loadCallChatHistory();
-    }, 3000);
-}
-
-function stopCallChatSync() {
-    if (callChatRefreshInterval) {
-        clearInterval(callChatRefreshInterval);
-        callChatRefreshInterval = null;
     }
 }
 
@@ -709,6 +759,7 @@ function renderCallChatMessages(messages, forceScroll = false) {
     }
 
     lastRenderedChatSignature = signature;
+    renderedCallMessageIds = new Set(messages.map(m => m.id));
 
     if (!messages.length) {
         container.innerHTML = '<div class="no-messages" style="text-align: center; padding: 20px; color: #9CA3AF;">Aucun message</div>';
@@ -784,8 +835,6 @@ async function endCall() {
         flippedVideoStream = null;
         
         // Stop media
-        stopCallChatSync();
-
         if (localStream) {
             localStream.getTracks().forEach(track => track.stop());
             localStream = null;

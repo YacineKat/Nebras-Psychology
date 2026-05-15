@@ -6,6 +6,7 @@ const express = require('express');
 const cors = require('cors');
 const http = require('http');
 const { Server } = require('socket.io');
+const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
 // Import Routes
@@ -14,11 +15,27 @@ const doctorRoutes = require('./routes/doctorRoutes');
 const appointmentRoutes = require('./routes/appointmentRoutes');
 const messageRoutes = require('./routes/messageRoutes');
 const therapyGroupRoutes = require('./routes/therapyGroupRoutes');
+const { createMessageRecord } = require('./controllers/messageController');
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: { origin: '*', methods: ['GET', 'POST'] }
+});
+
+io.use((socket, next) => {
+  try {
+    const token = socket.handshake.auth?.token || socket.handshake.headers?.authorization?.split(' ')[1];
+    if (!token) {
+      return next(new Error('No token provided'));
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    socket.user = { id: decoded.id, userType: decoded.userType };
+    next();
+  } catch (error) {
+    next(new Error('Unauthorized'));
+  }
 });
 
 // Make io available globally
@@ -65,6 +82,43 @@ app.use('/api', therapyGroupRoutes);
 
 io.on('connection', (socket) => {
     console.log(`Client connected: ${socket.id}`);
+
+  if (socket.user?.id) {
+    socket.join(`user:${socket.user.id}`);
+  }
+
+  socket.on('message:send', async (payload = {}, callback = () => {}) => {
+    try {
+      const senderId = socket.user?.id;
+      const { receiverId, content } = payload;
+
+      if (!senderId || !receiverId || !content) {
+        return callback({ error: 'Please provide receiver and message content' });
+      }
+
+      if (senderId === receiverId) {
+        return callback({ error: 'Cannot send message to yourself' });
+      }
+
+      const message = await createMessageRecord(senderId, receiverId, content);
+      const messagePayload = {
+        message,
+        conversationPartnerId: receiverId,
+        clientMessageId: payload.clientMessageId || null
+      };
+
+      io.to(`user:${senderId}`).emit('message:new', messagePayload);
+      io.to(`user:${receiverId}`).emit('message:new', {
+        ...messagePayload,
+        conversationPartnerId: senderId
+      });
+
+      callback({ success: true, message });
+    } catch (error) {
+      console.error('Socket message send error:', error);
+      callback({ error: 'Failed to send message' });
+    }
+  });
     
     // Join a room to receive session notifications for a specific patient
     socket.on('join-patient-room', (patientId) => {
