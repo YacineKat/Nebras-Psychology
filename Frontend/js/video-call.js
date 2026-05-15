@@ -27,6 +27,25 @@ let flipDrawFn = null;
 let visibilityHandler = null;
 let isEndingCall = false;
 
+const AVATAR_COLORS = ['#44AA99', '#091346', '#EF4444', '#F59E0B', '#6366F1', '#EC4899', '#14B8A6', '#F97316'];
+
+function getAvatarColor(name) {
+    if (!name) return AVATAR_COLORS[0];
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+        hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
+
+function setAvatarInitial(elementId, name) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+    const initial = name ? name.charAt(0).toUpperCase() : '?';
+    el.textContent = initial;
+    el.style.background = getAvatarColor(name);
+}
+
 async function buildFlippedTrack(rawVideoTrack) {
     return new Promise((resolve) => {
         const trackSettings = rawVideoTrack.getSettings();
@@ -144,9 +163,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     
     // Update UI with user info
-    const userInitial = currentUser.fullname ? currentUser.fullname.charAt(0).toUpperCase() : 'U';
-    document.getElementById('localName').textContent = currentUser.fullname || 'Vous';
-    document.getElementById('localVideoPlaceholder').textContent = userInitial;
+    const userName = currentUser.fullname || 'Vous';
+    document.getElementById('localName').textContent = userName;
+    setAvatarInitial('localAvatarCircle', currentUser.fullname);
     document.getElementById('callTitle').textContent = isDoctor ? 'Appel vidéo avec patient' : 'Appel vidéo avec psychologue';
     
     // Initialize connections
@@ -354,6 +373,29 @@ function createPeerConnection() {
     // Handle incoming tracks — add to the shared stream, never reassign srcObject
     peerConnection.ontrack = (event) => {
         remoteStream.addTrack(event.track);
+
+        if (event.track.kind === 'video') {
+            const remoteVideo = document.getElementById('remoteVideo');
+            const remoteAvatar = document.getElementById('remoteAvatar');
+
+            event.track.onmute = () => {
+                if (remoteVideo) remoteVideo.style.display = 'none';
+                if (remoteAvatar) remoteAvatar.style.display = 'flex';
+            };
+
+            event.track.onunmute = () => {
+                if (remoteVideo) {
+                    remoteVideo.style.display = 'block';
+                    remoteVideo.play().catch(() => {});
+                }
+                if (remoteAvatar) remoteAvatar.style.display = 'none';
+            };
+
+            if (event.track.muted) {
+                if (remoteVideo) remoteVideo.style.display = 'none';
+                if (remoteAvatar) remoteAvatar.style.display = 'flex';
+            }
+        }
     };
     
     // Handle ICE candidates - send to specific participant
@@ -371,6 +413,8 @@ function createPeerConnection() {
     peerConnection.onconnectionstatechange = () => {
         console.log('Connection state:', peerConnection.connectionState);
         if (peerConnection.connectionState === 'connected') {
+            setAvatarInitial('remoteAvatarCircle', otherParticipantName);
+            
             const remoteVideo = document.getElementById('remoteVideo');
             if (remoteVideo) {
                 remoteVideo.style.display = 'block';
@@ -480,6 +524,9 @@ function handleParticipantLeft() {
         remoteVideo.style.display = 'none';
         remoteVideo.srcObject = null;
     }
+    
+    const remoteAvatar = document.getElementById('remoteAvatar');
+    if (remoteAvatar) remoteAvatar.style.display = 'none';
     
     const placeholder = document.getElementById('remotePlaceholder');
     if (placeholder) {

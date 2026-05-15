@@ -103,7 +103,10 @@
                         </svg>
                         <p style="margin-top:15px; font-size:16px;" id="remotePlaceholderText">En attente de l'autre participant...</p>
                     </div>
-                    <video id="remoteVideo" autoplay playsinline style="display:none; width:100%; height:100%; object-fit:cover; transform:none !important;"></video>
+                    <video id="remoteVideo" autoplay playsinline style="display:none; width:100%; height:100%; object-fit:contain; transform:none !important;"></video>
+                    <div id="remoteAvatar" class="video-avatar">
+                        <div class="avatar-circle" id="remoteAvatarCircle">P</div>
+                    </div>
                     <div id="speakerBadge" class="speaker-badge" style="display:none;">
                         <div class="speaking-indicator"></div>
                         <span id="currentSpeakerName">Participant</span>
@@ -112,7 +115,9 @@
 
                 <div id="thumbnailGrid" class="thumbnail-section">
                     <div id="localVideoContainer" class="thumbnail-video active">
-                        <div id="localVideoPlaceholder" class="video-avatar" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#F3F4F6; font-size:32px; color:#6B7280;">P</div>
+                        <div id="localVideoPlaceholder" class="video-avatar" style="display:flex;">
+                            <div class="avatar-circle" id="localAvatarCircle">P</div>
+                        </div>
                         <video id="localVideo" autoplay muted playsinline style="display:none;"></video>
                         <div class="thumbnail-info">
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
