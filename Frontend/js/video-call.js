@@ -31,6 +31,8 @@ let flipDrawFn = null;
 // Visibility handling
 let visibilityHandler = null;
 let isEndingCall = false;
+let doctorIdForRating = null;
+let doctorNameForRating = null;
 
 const AVATAR_COLORS = ['#44AA99', '#091346', '#EF4444', '#F59E0B', '#6366F1', '#EC4899', '#14B8A6', '#F97316'];
 
@@ -204,6 +206,22 @@ async function initializeSession() {
         
         // Handle tab visibility for canvas flip pipeline
         setupVisibilityHandler();
+        
+        // Store doctor info for post-call rating (patient only)
+        if (!isDoctor && sessionAppointmentId) {
+            try {
+                const apt = await appointmentAPI.getById(sessionAppointmentId);
+                if (apt && apt.appointment) {
+                    doctorIdForRating = apt.appointment.doctorId;
+                    doctorNameForRating = apt.appointment.doctor?.fullname || 'Psychologue';
+                } else if (apt && apt.doctorId) {
+                    doctorIdForRating = apt.doctorId;
+                    doctorNameForRating = apt.doctor?.fullname || 'Psychologue';
+                }
+            } catch (e) {
+                console.log('Could not load appointment details for rating');
+            }
+        }
         
     } catch (error) {
         console.error('Init error:', error);
@@ -857,15 +875,185 @@ async function endCall() {
         
         stopCallTimer();
         
-        // Redirect to dashboard
-        window.location.href = isDoctor ? 'psychologue_dashboard.html' : 'patient_dashboard.html';
+        // For patient: show rating modal before redirect
+        if (!isDoctor && doctorIdForRating && sessionAppointmentId) {
+            showRatingModal();
+            return;
+        }
+        
+        // Doctor: redirect immediately
+        window.location.href = 'psychologue_dashboard.html';
         
     } catch (error) {
         console.error('Error ending call:', error);
-        // Still redirect even if API fails
         window.location.href = isDoctor ? 'psychologue_dashboard.html' : 'patient_dashboard.html';
     }
 }
+
+// ============================================
+// POST-CALL RATING MODAL
+// ============================================
+
+let ratingModalEl = null;
+let selectedRating = 0;
+
+function createRatingModal() {
+    if (document.getElementById('postCallRatingModal')) return;
+    
+    const modal = document.createElement('div');
+    modal.id = 'postCallRatingModal';
+    modal.style.cssText = `
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.6); z-index: 999999;
+        display: flex; align-items: center; justify-content: center;
+        backdrop-filter: blur(4px);
+    `;
+    
+    modal.innerHTML = `
+        <div style="background: white; border-radius: 20px; padding: 32px; width: 420px; max-width: 90%; text-align: center; animation: fadeInUp 0.3s ease; box-shadow: 0 25px 60px rgba(0,0,0,0.2);">
+            <div style="width: 64px; height: 64px; background: linear-gradient(135deg, #44AA99 0%, #3d9a8b 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                </svg>
+            </div>
+            <h3 style="margin: 0 0 4px; color: #091346; font-size: 20px;">Évaluer la consultation</h3>
+            <p style="margin: 0 0 20px; color: #64748b; font-size: 14px;" id="ratingDoctorName">Notez votre séance avec le psychologue</p>
+            
+            <div style="display: flex; justify-content: center; gap: 6px; margin-bottom: 20px;" id="ratingStars">
+                ${[1,2,3,4,5].map(i => `
+                    <button type="button" data-star="${i}" style="background: none; border: none; cursor: pointer; padding: 4px; font-size: 36px; line-height: 1; color: #d1d5db; transition: color 0.15s, transform 0.15s;" onmouseenter="highlightStars(${i})" onmouseleave="resetStars()" onclick="selectStar(${i})">★</button>
+                `).join('')}
+            </div>
+            
+            <textarea id="ratingComment" placeholder="Partagez votre expérience (optionnel)" style="width: 100%; padding: 12px; border: 1.5px solid #e2e8f0; border-radius: 12px; font-size: 14px; font-family: inherit; resize: none; height: 80px; box-sizing: border-box; margin-bottom: 16px; transition: border-color 0.2s;" onfocus="this.style.borderColor='#44AA99'" onblur="this.style.borderColor='#e2e8f0'"></textarea>
+            
+            <button onclick="submitRating()" id="submitRatingBtn" style="width: 100%; padding: 14px; background: linear-gradient(135deg, #44AA99 0%, #3d9a8b 100%); color: white; border: none; border-radius: 12px; font-weight: 700; font-size: 15px; cursor: pointer; transition: all 0.3s; opacity: 0.5;" disabled>Envoyer la note</button>
+            
+            <button onclick="skipRating()" style="background: none; border: none; color: #94a3b8; font-size: 13px; cursor: pointer; margin-top: 12px; padding: 8px; text-decoration: underline; text-underline-offset: 3px;">Passer</button>
+            
+            <p style="font-size: 11px; color: #cbd5e1; margin: 12px 0 0;">Votre avis nous aide à améliorer nos services</p>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    ratingModalEl = modal;
+}
+
+function showRatingModal() {
+    createRatingModal();
+    selectedRating = 0;
+    const nameEl = document.getElementById('ratingDoctorName');
+    if (nameEl && doctorNameForRating) {
+        nameEl.textContent = `Notez votre séance avec ${doctorNameForRating}`;
+    }
+    ratingModalEl.style.display = 'flex';
+}
+
+function highlightStars(count) {
+    for (let i = 1; i <= 5; i++) {
+        const btn = document.querySelector(`[data-star="${i}"]`);
+        if (btn) {
+            btn.style.color = i <= count ? '#f59e0b' : '#d1d5db';
+            btn.style.transform = i <= count ? 'scale(1.15)' : 'scale(1)';
+        }
+    }
+}
+
+function resetStars() {
+    for (let i = 1; i <= 5; i++) {
+        const btn = document.querySelector(`[data-star="${i}"]`);
+        if (btn) {
+            btn.style.color = i <= selectedRating ? '#f59e0b' : '#d1d5db';
+            btn.style.transform = i <= selectedRating ? 'scale(1.15)' : 'scale(1)';
+        }
+    }
+}
+
+function selectStar(count) {
+    selectedRating = count;
+    const submitBtn = document.getElementById('submitRatingBtn');
+    if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.style.opacity = '1';
+    }
+    resetStars();
+}
+
+async function submitRating() {
+    if (selectedRating < 1 || !doctorIdForRating || !sessionAppointmentId) return;
+    
+    const submitBtn = document.getElementById('submitRatingBtn');
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Envoi en cours...';
+    }
+    
+    try {
+        const comment = document.getElementById('ratingComment')?.value?.trim() || '';
+        
+        await reviewAPI.create({
+            doctorId: doctorIdForRating,
+            appointmentId: sessionAppointmentId,
+            rating: selectedRating,
+            comment: comment || undefined
+        });
+        
+        clearRatingSession();
+        if (ratingModalEl) ratingModalEl.style.display = 'none';
+        window.location.href = 'patient_dashboard.html';
+    } catch (error) {
+        console.error('Rating error:', error);
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Envoyer la note';
+        }
+        // If already rated (409), still proceed
+        if (error.message && error.message.includes('déjà')) {
+            clearRatingSession();
+            if (ratingModalEl) ratingModalEl.style.display = 'none';
+            window.location.href = 'patient_dashboard.html';
+            return;
+        }
+        showToast('Erreur lors de l\'envoi', 'error');
+    }
+}
+
+function showToast(message, type) {
+    const existing = document.querySelector('.vc-toast');
+    if (existing) existing.remove();
+    const toast = document.createElement('div');
+    toast.className = 'vc-toast';
+    toast.style.cssText = 'position:fixed;bottom:30px;left:50%;transform:translateX(-50%);padding:14px 28px;border-radius:12px;color:#fff;font-weight:600;font-size:14px;z-index:999999;box-shadow:0 8px 30px rgba(0,0,0,0.15);background:' + (type === 'error' ? '#ef4444' : '#44AA99') + ';';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity 0.3s'; setTimeout(() => toast.remove(), 300); }, 3000);
+}
+
+function clearRatingSession() {
+    sessionStorage.removeItem('pendingRating');
+    sessionAppointmentId = null;
+    doctorIdForRating = null;
+    doctorNameForRating = null;
+}
+
+function skipRating() {
+    clearRatingSession();
+    if (ratingModalEl) ratingModalEl.style.display = 'none';
+    window.location.href = 'patient_dashboard.html';
+}
+
+// Save pending rating on tab close (patient only)
+window.addEventListener('beforeunload', function() {
+    if (!isDoctor && sessionAppointmentId && doctorIdForRating) {
+        try {
+            sessionStorage.setItem('pendingRating', JSON.stringify({
+                appointmentId: sessionAppointmentId,
+                doctorId: doctorIdForRating,
+                doctorName: doctorNameForRating
+            }));
+        } catch (e) {}
+    }
+});
 
 function showError(message) {
     alert(message);
@@ -877,4 +1065,9 @@ window.toggleVideo = toggleVideo;
 window.endCall = endCall;
 window.toggleChat = toggleChat;
 window.sendChatMessage = sendChatMessage;
+window.highlightStars = highlightStars;
+window.resetStars = resetStars;
+window.selectStar = selectStar;
+window.submitRating = submitRating;
+window.skipRating = skipRating;
 window.handleChatKeyPress = handleChatKeyPress;

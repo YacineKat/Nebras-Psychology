@@ -8,6 +8,15 @@ let selectedDoctor = null;
 let urgentActif = false;
 let doctorCache = new Map();
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+const BOOKING_TIME_GROUPS = [
+    { key: 'morning', label: 'Matin', startHour: 8, endHour: 11 },
+    { key: 'afternoon', label: 'Après-midi', startHour: 12, endHour: 17 },
+    { key: 'evening', label: 'Soir', startHour: 18, endHour: 20 }
+];
+
+let bookingAvailability = null;
+let bookingAvailabilityRequestId = 0;
+let bookingSelectedTime = '';
 
 // Toast notification system
 function showToast(message, type = 'success') {
@@ -214,6 +223,216 @@ function getNextAvailableSlot(slots) {
     return null;
 }
 
+function getSlotHour(time) {
+    if (!time) return null;
+    const [hour] = String(time).split(':');
+    const parsed = Number.parseInt(hour, 10);
+    return Number.isNaN(parsed) ? null : parsed;
+}
+
+function getSlotPeriod(time) {
+    const hour = getSlotHour(time);
+    if (hour === null) return 'other';
+    if (hour < 12) return 'morning';
+    if (hour < 18) return 'afternoon';
+    return 'evening';
+}
+
+function formatBookingSlotRange(slot) {
+    if (!slot) return '';
+    if (slot.endTime && slot.endTime !== slot.startTime) {
+        return `${slot.startTime} - ${slot.endTime}`;
+    }
+    return slot.startTime || '';
+}
+
+function updateBookingSelectedLabel() {
+    const label = document.getElementById('bookingSelectedTimeLabel');
+    if (!label) return;
+
+    label.textContent = bookingSelectedTime
+        ? `Créneau sélectionné : ${bookingSelectedTime}`
+        : 'Sélectionnez un créneau disponible';
+}
+
+function setBookingSelection(time) {
+    bookingSelectedTime = time || '';
+
+    const hiddenInput = document.getElementById('bookingTime');
+    if (hiddenInput) {
+        hiddenInput.value = bookingSelectedTime;
+    }
+
+    document.querySelectorAll('.booking-slot-btn').forEach(button => {
+        button.classList.toggle('selected', button.dataset.time === bookingSelectedTime);
+    });
+
+    updateBookingSelectedLabel();
+}
+
+function renderBookingAvailability(availability, dateValue) {
+    const loadingEl = document.getElementById('bookingSlotsLoading');
+    const container = document.getElementById('bookingSlotsContainer');
+    const summaryEl = document.getElementById('bookingAvailabilitySummary');
+
+    if (loadingEl) loadingEl.style.display = 'none';
+    if (!container) return;
+
+    bookingAvailability = availability || null;
+
+    const slots = availability?.slots || [];
+    const availableSlots = slots.filter(slot => slot.selectable);
+    const blockedSlots = slots.filter(slot => slot.status === 'blocked');
+    const bookedSlots = slots.filter(slot => slot.status === 'booked');
+
+    if (summaryEl) {
+        if (!slots.length) {
+            summaryEl.textContent = dateValue
+                ? `Aucun créneau défini pour le ${new Date(`${dateValue}T00:00:00`).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}`
+                : 'Sélectionnez une date pour afficher les disponibilités';
+        } else {
+            summaryEl.textContent = `${availableSlots.length} disponible(s), ${blockedSlots.length} bloqué(s), ${bookedSlots.length} réservé(s)`;
+        }
+    }
+
+    if (!slots.length) {
+        container.innerHTML = `
+            <div class="booking-empty-state">
+                <strong>Aucun créneau publié</strong>
+                <span>Le psychologue n'a pas encore défini d'horaires pour cette date.</span>
+            </div>
+        `;
+        setBookingSelection('');
+        return;
+    }
+
+    const groupedSlots = BOOKING_TIME_GROUPS.map(group => ({
+        ...group,
+        slots: slots.filter(slot => getSlotPeriod(slot.startTime) === group.key)
+    })).filter(group => group.slots.length > 0);
+
+    const otherSlots = slots.filter(slot => !BOOKING_TIME_GROUPS.some(group => getSlotPeriod(slot.startTime) === group.key));
+    if (otherSlots.length) {
+        groupedSlots.push({
+            key: 'other',
+            label: 'Autres créneaux',
+            slots: otherSlots
+        });
+    }
+
+    container.innerHTML = groupedSlots.map(group => {
+        const groupAvailable = group.slots.filter(s => s.selectable).length;
+        const groupSlots = group.slots.map(slot => {
+            const isAvailable = slot.selectable;
+            const stateLabel = isAvailable ? 'Disponible' : (slot.status === 'blocked' ? 'Bloqué' : 'Réservé');
+            const disabledAttr = isAvailable ? '' : 'disabled';
+            const stateClass = isAvailable ? 'available' : slot.status;
+
+            if (isAvailable) {
+                return `
+                    <button type="button"
+                        class="booking-slot-btn ${stateClass}"
+                        data-time="${slot.startTime}"
+                        ${disabledAttr}
+                        onclick="selectBookingTime('${slot.startTime}')">
+                        <span class="booking-slot-copy">
+                            <span class="booking-slot-time">${slot.startTime}</span>
+                            <span class="booking-slot-range">${formatBookingSlotRange(slot)}</span>
+                        </span>
+                        <span class="booking-slot-indicator"></span>
+                    </button>
+                `;
+            }
+
+            return `
+                <button type="button"
+                    class="booking-slot-btn ${stateClass}"
+                    data-time="${slot.startTime}"
+                    ${disabledAttr}
+                    onclick="selectBookingTime('${slot.startTime}')">
+                    <span class="booking-slot-copy">
+                        <span class="booking-slot-time">${slot.startTime}</span>
+                    </span>
+                    <span class="booking-slot-state">${stateLabel}</span>
+                </button>
+            `;
+        }).join('');
+
+        return `
+            <section class="booking-slot-group">
+                <div class="booking-slot-group-header">
+                    <h4>${group.label}</h4>
+                    ${groupAvailable > 0 ? `<span class="booking-slot-group-count">${groupAvailable} disponible${groupAvailable > 1 ? 's' : ''}</span>` : ''}
+                </div>
+                <div class="booking-slot-grid">
+                    ${groupSlots}
+                </div>
+            </section>
+        `;
+    }).join('');
+
+    const firstAvailable = availableSlots[0];
+    if (firstAvailable && !availableSlots.some(slot => slot.startTime === bookingSelectedTime)) {
+        setBookingSelection(firstAvailable.startTime);
+    } else {
+        updateBookingSelectedLabel();
+    }
+
+    if (!availableSlots.length && summaryEl) {
+        summaryEl.textContent = 'Aucun créneau disponible pour cette date';
+    }
+}
+
+function selectBookingTime(time) {
+    if (!bookingAvailability?.slots?.some(slot => slot.startTime === time && slot.selectable)) {
+        return;
+    }
+
+    setBookingSelection(time);
+}
+
+async function refreshBookingAvailability() {
+    if (!selectedDoctor) return;
+
+    const dateInput = document.getElementById('bookingDate');
+    const loadingEl = document.getElementById('bookingSlotsLoading');
+    const container = document.getElementById('bookingSlotsContainer');
+
+    const date = dateInput?.value;
+    if (!date) {
+        renderBookingAvailability(null, null);
+        return;
+    }
+
+    const currentRequestId = ++bookingAvailabilityRequestId;
+
+    if (loadingEl) loadingEl.style.display = 'block';
+    if (container) {
+        container.innerHTML = '';
+    }
+
+    try {
+        const availability = await doctorAPI.getAvailability(selectedDoctor.id, date);
+        if (currentRequestId !== bookingAvailabilityRequestId) return;
+
+        renderBookingAvailability(availability, date);
+    } catch (error) {
+        if (currentRequestId !== bookingAvailabilityRequestId) return;
+
+        console.error('Error loading booking availability:', error);
+        if (loadingEl) loadingEl.style.display = 'none';
+        if (container) {
+            container.innerHTML = `
+                <div class="booking-empty-state error">
+                    <strong>Impossible de charger les créneaux</strong>
+                    <span>Réessayez dans quelques instants.</span>
+                </div>
+            `;
+        }
+        setBookingSelection('');
+    }
+}
+
 async function viewDoctor(doctorId) {
     try {
         // Check cache first
@@ -338,27 +557,34 @@ function openBookingModal() {
     
     const today = new Date();
     const minDate = today.toISOString().split('T')[0];
-    document.getElementById('bookingDate').min = minDate;
-    document.getElementById('bookingDate').value = minDate;
-    
-    // Populate time slots - show all standard times (user can choose freely)
-    const timeSelect = document.getElementById('bookingTime');
-    const standardTimes = ['08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30', '20:00'];
-    
-    timeSelect.innerHTML = '<option value="">Sélectionner une heure</option>';
-    standardTimes.forEach(time => {
-        const option = document.createElement('option');
-        option.value = time;
-        option.textContent = time;
-        timeSelect.appendChild(option);
-    });
+    const dateInput = document.getElementById('bookingDate');
+    if (dateInput) {
+        dateInput.min = minDate;
+        dateInput.value = minDate;
+    }
+
+    bookingAvailability = null;
+    bookingSelectedTime = '';
+    bookingAvailabilityRequestId += 1;
+    setBookingSelection('');
+
+    const loadingEl = document.getElementById('bookingSlotsLoading');
+    const container = document.getElementById('bookingSlotsContainer');
+    if (loadingEl) loadingEl.style.display = 'block';
+    if (container) container.innerHTML = '';
     
     document.getElementById('bookingModal').classList.add('active');
     document.body.style.overflow = 'hidden';
+
+    refreshBookingAvailability();
 }
 
 function closeBookingModal() {
     document.getElementById('bookingModal').classList.remove('active');
+    bookingAvailability = null;
+    bookingSelectedTime = '';
+    bookingAvailabilityRequestId += 1;
+    setBookingSelection('');
     document.body.style.overflow = 'auto';
 }
 
@@ -612,9 +838,16 @@ window.filterPsychologues = filterPsychologues;
 window.openUrgentPayment = openUrgentPayment;
 window.closeUrgentModal = closeUrgentModal;
 window.activateUrgent = activateUrgent;
+window.selectBookingTime = selectBookingTime;
 window.switchTab = switchTab;
 window.highlightCurrentSidebarLink = highlightCurrentSidebarLink;
 window.showToast = showToast;
+
+document.getElementById('bookingDate')?.addEventListener('change', () => {
+    if (document.getElementById('bookingModal')?.classList.contains('active')) {
+        refreshBookingAvailability();
+    }
+});
 
 document.getElementById('searchInput')?.addEventListener('keyup', filterPsychologues);
 

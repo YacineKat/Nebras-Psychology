@@ -210,44 +210,45 @@ function logout() {
 
     <!-- Booking Modal -->
     <div id="bookingModal" class="urgent-modal">
-        <div class="urgent-modal-content" style="max-width: 450px;">
+        <div class="urgent-modal-content booking-modal-content">
             <div class="urgent-modal-header">
                 <h2><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#091346" stroke-width="2"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10z"/></svg> Prendre rendez-vous</h2>
                 <button class="close-modal" onclick="closeBookingModal()">&times;</button>
             </div>
             <div class="urgent-modal-body">
-                <p style="margin-bottom: 20px; color: #666;">avec <strong id="bookingDoctorName"></strong></p>
+                <p class="booking-doctor-name">avec <strong id="bookingDoctorName"></strong></p>
                 
-                <div class="form-group" style="margin-bottom: 15px;">
-                    <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #333;">Date</label>
-                    <input type="date" id="bookingDate" class="input" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px;">
+                <div class="form-group">
+                    <label>Date</label>
+                    <input type="date" id="bookingDate" class="booking-form-input">
                 </div>
                 
-                <div class="form-group" style="margin-bottom: 15px;">
-                    <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #333;">Heure</label>
-                    <select id="bookingTime" class="input" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px;">
-                        <option value="">Sélectionner une heure</option>
-                        <option value="09:00">09:00</option>
-                        <option value="10:00">10:00</option>
-                        <option value="11:00">11:00</option>
-                        <option value="14:00">14:00</option>
-                        <option value="15:00">15:00</option>
-                        <option value="16:00">16:00</option>
-                        <option value="17:00">17:00</option>
-                        <option value="18:00">18:00</option>
-                    </select>
+                <div class="booking-summary-panel">
+                    <div id="bookingAvailabilitySummary" class="booking-availability-summary">Sélectionnez une date pour voir les créneaux</div>
+                    <div class="booking-slot-legend">
+                        <span class="legend-item available">Disponible</span>
+                        <span class="legend-item booked">Réservé</span>
+                        <span class="legend-item blocked">Bloqué</span>
+                    </div>
                 </div>
+
+                <div id="bookingSlotsLoading" class="booking-slots-loading">Chargement des disponibilités...</div>
+                <div id="bookingSlotsContainer" class="booking-slots-container"></div>
+
+                <input type="hidden" id="bookingTime" value="">
+                <p id="bookingSelectedTimeLabel" class="booking-selected-time">Sélectionnez un créneau disponible</p>
+                <p class="booking-help-text">Les créneaux réservés, bloqués ou indisponibles restent visibles mais ne peuvent pas être sélectionnés.</p>
                 
-                <div class="form-group" style="margin-bottom: 20px;">
-                    <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #333;">Type de consultation</label>
-                    <select id="bookingMedia" class="input" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px;">
+                <div class="form-group">
+                    <label>Type de consultation</label>
+                    <select id="bookingMedia" class="booking-form-input">
                         <option value="video">Vidéo</option>
                         <option value="phone">Téléphone</option>
                         <option value="chat">Chat</option>
                     </select>
                 </div>
                 
-                <button class="action-btn primary confirm-btn" onclick="confirmBooking()" style="width: 100%; padding: 14px; font-size: 16px;">
+                <button class="booking-confirm-btn" onclick="confirmBooking()">
                     Confirmer le rendez-vous
                 </button>
             </div>

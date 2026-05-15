@@ -2,8 +2,8 @@
 // DOCTOR CONTROLLER - Get & Manage Doctors
 // ============================================
 
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../prisma');
+const { buildAvailabilityForDate, normalizeDateOnly } = require('../utils/availabilityService');
 
 // ============================================
 // GET ALL DOCTORS (with filters)
@@ -186,6 +186,9 @@ exports.getDoctorById = async (req, res) => {
       where: { doctorId: id, status: { in: ['completed', 'confirmed'] } },
       _count: true
     });
+    const reviewCount = await prisma.review.count({
+      where: { doctorId: id }
+    });
 
     res.json({
       id: doctor.id,
@@ -200,6 +203,7 @@ exports.getDoctorById = async (req, res) => {
       avatar: doctor.profile?.avatar || null,
       isAvailable: doctor.profile?.isAvailable,
       rating: Number(doctor.profile?.rating) || 0,
+      reviewsCount: reviewCount,
       patientsCount: uniquePatients.length,
       sessionsCompleted: completedAppointments,
       availableSlots: doctor.timeSlots
@@ -208,6 +212,118 @@ exports.getDoctorById = async (req, res) => {
   } catch (error) {
     console.error('GetDoctorById error:', error);
     res.status(500).json({ error: 'Failed to get doctor' });
+  }
+};
+
+// ============================================
+// GET DOCTOR AVAILABILITY FOR A SPECIFIC DATE
+// ============================================
+exports.getDoctorAvailability = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { date } = req.query;
+
+    if (!date) {
+      return res.status(400).json({ error: 'Please provide a date' });
+    }
+
+    const targetDate = normalizeDateOnly(date);
+    if (!targetDate) {
+      return res.status(400).json({ error: 'Invalid date format' });
+    }
+
+    const doctor = await prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        fullname: true,
+        userType: true,
+        profile: {
+          select: {
+            isAvailable: true,
+            specialite: true
+          }
+        }
+      }
+    });
+
+    if (!doctor || (doctor.userType !== 'psychologue' && doctor.userType !== 'counselor')) {
+      return res.status(404).json({ error: 'Doctor not found' });
+    }
+
+    if (!doctor.profile?.isAvailable) {
+      return res.json({
+        doctorId: doctor.id,
+        doctorName: doctor.fullname,
+        date: date,
+        isDoctorAvailable: false,
+        slots: [],
+        availableSlots: [],
+        blockedSlots: [],
+        bookedSlots: [],
+        summary: {
+          total: 0,
+          available: 0,
+          blocked: 0,
+          booked: 0
+        }
+      });
+    }
+
+    const dayStart = new Date(targetDate);
+    dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(dayStart);
+    dayEnd.setDate(dayEnd.getDate() + 1);
+
+    const [slots, appointments] = await Promise.all([
+      prisma.timeSlot.findMany({
+        where: {
+          doctorId: id,
+          OR: [
+            { specificDate: { gte: dayStart, lt: dayEnd } },
+            { specificDate: null, dayOfWeek: targetDate.getDay() }
+          ]
+        },
+        orderBy: [
+          { specificDate: 'asc' },
+          { startTime: 'asc' }
+        ]
+      }),
+      prisma.appointment.findMany({
+        where: {
+          doctorId: id,
+          appointmentDate: {
+            gte: dayStart,
+            lt: dayEnd
+          },
+          status: { in: ['pending', 'confirmed', 'completed'] }
+        },
+        select: {
+          appointmentDate: true,
+          appointmentTime: true,
+          status: true
+        }
+      })
+    ]);
+
+    const availability = buildAvailabilityForDate({
+      slots,
+      appointments,
+      date: targetDate
+    });
+
+    return res.json({
+      doctorId: doctor.id,
+      doctorName: doctor.fullname,
+      specialty: doctor.profile?.specialite || 'Psychologie',
+      date: availability.date,
+      dayOfWeek: availability.dayOfWeek,
+      isDoctorAvailable: true,
+      ...availability
+    });
+  } catch (error) {
+    console.error('GetDoctorAvailability error:', error);
+    res.status(500).json({ error: 'Failed to get doctor availability' });
   }
 };
 
@@ -641,7 +757,7 @@ exports.getSchedule = async (req, res) => {
     const appointments = await prisma.appointment.findMany({
       where: {
         doctorId,
-        status: { in: ['confirmed', 'pending', 'completed'] }
+        status: { in: ['confirmed', 'completed'] }
       },
       include: {
         patient: { include: { profile: true } }
@@ -1265,7 +1381,3 @@ exports.saveVipForm = async (req, res) => {
     res.status(500).json({ error: 'Failed to save VIP form' });
   }
 };
-
-process.on('beforeExit', async () => {
-  await prisma.$disconnect();
-});

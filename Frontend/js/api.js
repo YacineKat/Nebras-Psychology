@@ -91,6 +91,11 @@ const doctorAPI = {
     return fetchAPI(`/doctors/${id}`);
   },
 
+  getAvailability: async (doctorId, date) => {
+    const queryString = date ? `?date=${encodeURIComponent(date)}` : '';
+    return fetchAPI(`/doctors/${doctorId}/availability${queryString}`);
+  },
+
   getMyProfile: async () => {
     return fetchAPI('/doctors/profile/me');
   },
@@ -432,6 +437,22 @@ function formatTime(timeString) {
   return timeString;
 }
 
+// ============================================
+// REVIEWS / RATINGS API
+// ============================================
+const reviewAPI = {
+  create: async (data) => {
+    return fetchAPI('/reviews', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  },
+
+  getDoctorReviews: async (doctorId) => {
+    return fetchAPI(`/reviews/doctor/${doctorId}`);
+  }
+};
+
 const daysOfWeek = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
 
 // Make all APIs available globally
@@ -439,6 +460,7 @@ window.authAPI = authAPI;
 window.doctorAPI = doctorAPI;
 window.appointmentAPI = appointmentAPI;
 window.messageAPI = messageAPI;
+window.reviewAPI = reviewAPI;
 window.connectMessagingSocket = connectMessagingSocket;
 window.disconnectMessagingSocket = disconnectMessagingSocket;
 window.getMessagingSocket = getMessagingSocket;

@@ -185,7 +185,9 @@ async function loadAllData() {
             }
         });
         
-        allAppointments = Array.from(appointmentsMap.values());
+        allAppointments = Array.from(appointmentsMap.values()).filter(apt =>
+            apt.status === 'confirmed' || apt.status === 'completed'
+        );
         console.log('All appointments:', allAppointments);
 
         // Filter appointments for this week (current week view)
@@ -618,6 +620,12 @@ function openSlotModal(dayOfWeek, startTime, specificDate) {
     document.getElementById('blockOptions').style.display = 'none';
     document.getElementById('blockEntireDay').checked = false;
 
+    document.getElementById('enableBlockRange').checked = false;
+    document.getElementById('blockRangeContent').style.display = 'none';
+    document.getElementById('blockRangeStart').value = '';
+    document.getElementById('blockRangeEnd').value = '';
+    setRangeAction('available');
+
     document.getElementById('slotModal').style.display = 'flex';
 }
 
@@ -682,6 +690,102 @@ async function saveSlot(isBlock) {
         await loadAllData();
     } catch (error) {
         showToast('Erreur: ' + (error.message || 'Impossible de sauvegarder'), 'error');
+    }
+}
+
+let currentRangeAction = 'available';
+
+function toggleTimeRange() {
+    const enabled = document.getElementById('enableBlockRange').checked;
+    const content = document.getElementById('blockRangeContent');
+    const startTime = document.getElementById('slotStartTime').value;
+    content.style.display = enabled ? 'block' : 'none';
+    if (enabled && startTime) {
+        document.getElementById('blockRangeStart').value = startTime;
+        const idx = TIME_SLOTS.indexOf(startTime);
+        if (idx !== -1 && idx < TIME_SLOTS.length - 1) {
+            document.getElementById('blockRangeEnd').value = TIME_SLOTS[idx + 1];
+        }
+    }
+}
+
+function setRangeAction(action) {
+    currentRangeAction = action;
+    const availableBtn = document.getElementById('rangeActionAvailableBtn');
+    const blockedBtn = document.getElementById('rangeActionBlockedBtn');
+    const applyBtn = document.getElementById('applyRangeBtn');
+
+    if (action === 'available') {
+        availableBtn.style.background = 'var(--primary-green)';
+        availableBtn.style.color = 'white';
+        blockedBtn.style.background = 'white';
+        blockedBtn.style.color = '#94a3b8';
+        applyBtn.style.background = 'var(--primary-green)';
+        applyBtn.textContent = 'Rendre disponible cette plage';
+    } else {
+        availableBtn.style.background = 'white';
+        availableBtn.style.color = '#94a3b8';
+        blockedBtn.style.background = '#dc2626';
+        blockedBtn.style.color = 'white';
+        applyBtn.style.background = '#dc2626';
+        applyBtn.textContent = 'Bloquer cette plage';
+    }
+}
+
+async function applyTimeRange() {
+    if (!selectedCell) return;
+
+    const specificDate = document.getElementById('slotSpecificDate').value;
+    const recurrence = document.getElementById('slotRecurrence').value;
+    const rangeStart = document.getElementById('blockRangeStart').value;
+    const rangeEnd = document.getElementById('blockRangeEnd').value;
+
+    if (!rangeStart || !rangeEnd) {
+        showToast('Veuillez sélectionner une heure de début et de fin', 'error');
+        return;
+    }
+
+    if (rangeStart >= rangeEnd) {
+        showToast('L\'heure de fin doit être après l\'heure de début', 'error');
+        return;
+    }
+
+    const timesInRange = TIME_SLOTS.filter(time => time >= rangeStart && time <= rangeEnd && time.endsWith(':00'));
+
+    if (timesInRange.length === 0) {
+        showToast('Aucun créneau valide dans cette plage horaire', 'error');
+        return;
+    }
+
+    try {
+        if (currentRangeAction === 'blocked') {
+            for (const time of timesInRange) {
+                await doctorAPI.blockTimeSlot({
+                    dayOfWeek: selectedCell.dayOfWeek,
+                    startTime: time,
+                    endTime: getEndTime(time),
+                    specificDate,
+                    recurrence
+                });
+            }
+            showToast(`${timesInRange.length} créneau(x) bloqué(s) de ${rangeStart} à ${rangeEnd}`, 'success');
+        } else {
+            for (const time of timesInRange) {
+                await doctorAPI.addTimeSlot({
+                    dayOfWeek: selectedCell.dayOfWeek,
+                    startTime: time,
+                    endTime: getEndTime(time),
+                    specificDate,
+                    recurrence
+                });
+            }
+            showToast(`${timesInRange.length} créneau(x) disponible(s) de ${rangeStart} à ${rangeEnd}`, 'success');
+        }
+        closeSlotModal();
+        await loadAllData();
+    } catch (error) {
+        const actionLabel = currentRangeAction === 'blocked' ? 'bloquer' : 'ajouter';
+        showToast('Erreur: ' + (error.message || `Impossible de ${actionLabel} la plage`), 'error');
     }
 }
 
@@ -873,6 +977,9 @@ window.goToToday = goToToday;
 window.openSlotModal = openSlotModal;
 window.closeSlotModal = closeSlotModal;
 window.saveSlot = saveSlot;
+window.toggleTimeRange = toggleTimeRange;
+window.setRangeAction = setRangeAction;
+window.applyTimeRange = applyTimeRange;
 window.deleteSlot = deleteSlot;
 window.confirmDeleteSlot = confirmDeleteSlot;
 window.confirmUnavailable = confirmUnavailable;

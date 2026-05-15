@@ -2,11 +2,9 @@
 // AUTH CONTROLLER - Register & Login
 // ============================================
 
-const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-
-const prisma = new PrismaClient();
+const prisma = require('../prisma');
 
 // ============================================
 // REGISTER NEW USER
@@ -297,7 +295,4 @@ exports.changePassword = async (req, res) => {
   }
 };
 
-// Close Prisma connection on process exit
-process.on('beforeExit', async () => {
-  await prisma.$disconnect();
-});
+// 

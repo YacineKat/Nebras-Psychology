@@ -39,6 +39,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadUserProfile();
     highlightCurrentSidebarLink();
     await handleJoinCallRequest();
+    checkPendingRating();
     
     if (typeof initPatientCallListener === 'function') {
         setTimeout(initPatientCallListener, 500);
@@ -892,4 +893,47 @@ function insertPatientEmoji(emoji) {
         input.focus();
     }
     document.getElementById('patientEmojiPicker').style.display = 'none';
+}
+
+// ============================================
+// PENDING RATING ON TAB CLOSE
+// ============================================
+function checkPendingRating() {
+    let pending = null;
+    try {
+        const raw = sessionStorage.getItem('pendingRating');
+        if (raw) pending = JSON.parse(raw);
+    } catch (e) {}
+
+    if (!pending || !pending.appointmentId || !pending.doctorId) return;
+
+    sessionStorage.removeItem('pendingRating');
+
+    const modal = document.createElement('div');
+    modal.id = 'pendingRatingModal';
+    modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:999999;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);';
+
+    let selected = 0;
+
+    modal.innerHTML = `
+        <div style="background:white;border-radius:20px;padding:32px;width:420px;max-width:90%;text-align:center;animation:fadeInUp 0.3s ease;box-shadow:0 25px 60px rgba(0,0,0,0.2);">
+            <div style="width:64px;height:64px;background:linear-gradient(135deg,#44AA99 0%,#3d9a8b 100%);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                </svg>
+            </div>
+            <h3 style="margin:0 0 4px;color:#091346;font-size:20px;">Évaluer la consultation</h3>
+            <p style="margin:0 0 20px;color:#64748b;font-size:14px;">Notez votre séance avec ${pending.doctorName || 'le psychologue'}</p>
+            <div style="display:flex;justify-content:center;gap:6px;margin-bottom:20px;" id="pendingRatingStars">
+                ${[1,2,3,4,5].map(i => `
+                    <button type="button" data-ps="${i}" style="background:none;border:none;cursor:pointer;padding:4px;font-size:36px;line-height:1;color:#d1d5db;transition:color 0.15s,transform 0.15s;" onmouseenter="document.querySelectorAll('[data-ps]').forEach(b=>b.style.color=b.dataset.ps<=${i}?'#f59e0b':'#d1d5db');document.querySelectorAll('[data-ps]').forEach(b=>b.style.transform=b.dataset.ps<=${i}?'scale(1.15)':'scale(1)')" onmouseleave="document.querySelectorAll('[data-ps]').forEach(b=>b.style.color=b.dataset.ps<=selected?'#f59e0b':'#d1d5db');document.querySelectorAll('[data-ps]').forEach(b=>b.style.transform=b.dataset.ps<=selected?'scale(1.15)':'scale(1)')" onclick="selected=${i};document.querySelectorAll('[data-ps]').forEach(b=>b.style.color=b.dataset.ps<=${i}?'#f59e0b':'#d1d5db');document.querySelectorAll('[data-ps]').forEach(b=>b.style.transform=b.dataset.ps<=${i}?'scale(1.15)':'scale(1)');document.getElementById('pendingSubmitBtn').disabled=false;document.getElementById('pendingSubmitBtn').style.opacity='1'">★</button>
+                `).join('')}
+            </div>
+            <textarea id="pendingComment" placeholder="Partagez votre expérience (optionnel)" style="width:100%;padding:12px;border:1.5px solid #e2e8f0;border-radius:12px;font-size:14px;font-family:inherit;resize:none;height:80px;box-sizing:border-box;margin-bottom:16px;"></textarea>
+            <button id="pendingSubmitBtn" onclick="(async()=>{const btn=document.getElementById('pendingSubmitBtn');if(!btn)return;btn.disabled=true;btn.textContent='Envoi...';try{await reviewAPI.create({doctorId:'${pending.doctorId}',appointmentId:'${pending.appointmentId}',rating:selected,comment:document.getElementById('pendingComment')?.value?.trim()||undefined});document.getElementById('pendingRatingModal')?.remove();}catch(e){btn.disabled=false;btn.textContent='Envoyer la note';if(e.message&&e.message.includes('déjà')){document.getElementById('pendingRatingModal')?.remove();return}showToast('Erreur','error')}})()" style="width:100%;padding:14px;background:linear-gradient(135deg,#44AA99 0%,#3d9a8b 100%);color:white;border:none;border-radius:12px;font-weight:700;font-size:15px;cursor:pointer;opacity:0.5;" disabled>Envoyer la note</button>
+            <button onclick="document.getElementById('pendingRatingModal')?.remove()" style="background:none;border:none;color:#94a3b8;font-size:13px;cursor:pointer;margin-top:12px;padding:8px;text-decoration:underline;text-underline-offset:3px;">Passer</button>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
 }

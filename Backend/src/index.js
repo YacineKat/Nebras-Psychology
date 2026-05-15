@@ -15,6 +15,7 @@ const doctorRoutes = require('./routes/doctorRoutes');
 const appointmentRoutes = require('./routes/appointmentRoutes');
 const messageRoutes = require('./routes/messageRoutes');
 const therapyGroupRoutes = require('./routes/therapyGroupRoutes');
+const reviewRoutes = require('./routes/reviewRoutes');
 const { createMessageRecord } = require('./controllers/messageController');
 
 const app = express();
@@ -75,6 +76,7 @@ app.use('/api/doctors', doctorRoutes);
 app.use('/api/appointments', appointmentRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api', therapyGroupRoutes);
+app.use('/api/reviews', reviewRoutes);
 
 // ============================================
 // SOCKET.IO - Real-time Session Events

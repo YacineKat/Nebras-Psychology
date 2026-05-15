@@ -2,8 +2,7 @@
 // MESSAGE CONTROLLER - Send & Get Messages
 // ============================================
 
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../prisma');
 
 async function createMessageRecord(senderId, receiverId, content) {
   return prisma.message.create({
@@ -231,9 +230,5 @@ exports.getUnreadCount = async (req, res) => {
     res.status(500).json({ error: 'Failed to get unread count' });
   }
 };
-
-process.on('beforeExit', async () => {
-  await prisma.$disconnect();
-});
 
 module.exports.createMessageRecord = createMessageRecord;

@@ -35,6 +35,8 @@ model User {
   profile        Profile?
   appointmentsAsPatient Appointment[] @relation("PatientAppointments")
   appointmentsAsDoctor   Appointment[] @relation("DoctorAppointments")
+  reviewsAsPatient   Review[] @relation("PatientReviews")
+  reviewsAsDoctor    Review[] @relation("DoctorReviews")
   timeSlots      TimeSlot[]
   sentMessages      Message[] @relation("SentMessages")
   receivedMessages  Message[] @relation("ReceivedMessages")
@@ -98,6 +100,9 @@ model Appointment {
   videoSessionActive    Boolean  @default(false)
   videoSessionStartedAt DateTime?
   videoSessionEndedAt   DateTime?
+
+  // Review / rating
+  review Review?
 }
 
 // ============== URGENT REQUESTS TABLE ==============
@@ -134,6 +139,23 @@ model TimeSlot {
   isBlocked    Boolean   @default(false) // If true, this time is blocked/unavailable
 
   @@unique([doctorId, dayOfWeek, startTime, specificDate])
+}
+
+// ============== REVIEWS / RATINGS TABLE ==============
+model Review {
+  id            String   @id @default(uuid())
+  patientId     String
+  patient       User     @relation("PatientReviews", fields: [patientId], references: [id])
+  doctorId      String
+  doctor        User     @relation("DoctorReviews", fields: [doctorId], references: [id])
+  appointmentId String   @unique
+  appointment   Appointment @relation(fields: [appointmentId], references: [id])
+  rating        Int      // 1-5 stars
+  comment       String?
+  createdAt     DateTime @default(now())
+
+  @@unique([patientId, doctorId, appointmentId])
+  @@index([doctorId])
 }
 
 // ============== MESSAGES TABLE ==============

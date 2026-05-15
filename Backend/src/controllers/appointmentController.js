@@ -2,8 +2,8 @@
 // APPOINTMENT CONTROLLER - Book & Manage Appointments
 // ============================================
 
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../prisma');
+const { buildAvailabilityForDate, normalizeDateOnly } = require('../utils/availabilityService');
 
 // ============================================
 // CREATE APPOINTMENT (Patient books)
@@ -33,64 +33,115 @@ exports.createAppointment = async (req, res) => {
       return res.status(400).json({ error: 'Doctor is not available' });
     }
 
-    // Parse date to get day of week
-    const appointmentDate = new Date(date);
-    const dayOfWeek = appointmentDate.getDay();
+    const appointmentDate = normalizeDateOnly(date);
+    if (!appointmentDate) {
+      return res.status(400).json({ error: 'Invalid date format' });
+    }
 
-    // Find existing available time slot or create a temporary one
-    let slot = await prisma.timeSlot.findFirst({
-      where: {
-        doctorId,
-        dayOfWeek,
-        startTime: time,
-        isBooked: false
-      }
+    const dayOfWeek = appointmentDate.getDay();
+    const dayStart = new Date(appointmentDate);
+    dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(dayStart);
+    dayEnd.setDate(dayEnd.getDate() + 1);
+
+    const [doctorTimeSlots, doctorAppointments] = await Promise.all([
+      prisma.timeSlot.findMany({
+        where: {
+          doctorId,
+          OR: [
+            { specificDate: { gte: dayStart, lt: dayEnd } },
+            { specificDate: null, dayOfWeek }
+          ]
+        },
+        orderBy: [
+          { specificDate: 'asc' },
+          { startTime: 'asc' }
+        ]
+      }),
+      prisma.appointment.findMany({
+        where: {
+          doctorId,
+          appointmentDate: {
+            gte: dayStart,
+            lt: dayEnd
+          },
+          status: { in: ['pending', 'confirmed', 'completed'] }
+        },
+        select: {
+          appointmentDate: true,
+          appointmentTime: true,
+          status: true
+        }
+      })
+    ]);
+
+    const availability = buildAvailabilityForDate({
+      slots: doctorTimeSlots,
+      appointments: doctorAppointments,
+      date: appointmentDate
     });
 
-    // If no existing slot, create a temporary one for this appointment
-    if (!slot) {
-      slot = await prisma.timeSlot.create({
-        data: {
+    const requestedSlot = availability.slots.find(slot => slot.startTime === time);
+
+    if (!requestedSlot || !requestedSlot.selectable) {
+      return res.status(400).json({ error: 'Selected time is not available' });
+    }
+
+    const transactionResult = await prisma.$transaction(async tx => {
+      const specificSlot = await tx.timeSlot.findFirst({
+        where: {
           doctorId,
           dayOfWeek,
           startTime: time,
-          endTime: time, // Will be calculated on completion
-          specificDate: appointmentDate,
-          isBooked: true, // Mark as booked immediately
-          isBlocked: false
+          specificDate: { gte: dayStart, lt: dayEnd }
         }
       });
-    } else {
-      // Mark existing slot as booked
-      slot = await prisma.timeSlot.update({
-        where: { id: slot.id },
-        data: { isBooked: true }
-      });
-    }
 
-    // Create appointment
-    const appointment = await prisma.appointment.create({
-      data: {
-        patientId,
-        doctorId,
-        appointmentDate,
-        appointmentTime: time,
-        mediaType: mediaType || 'video',
-        status: 'pending'
-      },
-      include: {
-        doctor: { include: { profile: true } },
-        patient: { include: { profile: true } }
+      if (specificSlot) {
+        if (specificSlot.isBooked || specificSlot.isBlocked) {
+          throw new Error('Selected time is not available');
+        }
+      } else {
+        const recurringSlot = await tx.timeSlot.findFirst({
+          where: {
+            doctorId,
+            dayOfWeek,
+            startTime: time,
+            specificDate: null
+          }
+        });
+
+        if (!recurringSlot || recurringSlot.isBooked || recurringSlot.isBlocked) {
+          throw new Error('Selected time is not available');
+        }
       }
+
+      return tx.appointment.create({
+        data: {
+          patientId,
+          doctorId,
+          appointmentDate,
+          appointmentTime: time,
+          mediaType: mediaType || 'video',
+          status: 'pending'
+        },
+        include: {
+          doctor: { include: { profile: true } },
+          patient: { include: { profile: true } }
+        }
+      });
     });
 
     res.status(201).json({
       message: 'Appointment booked successfully!',
-      appointment
+      appointment: transactionResult
     });
 
   } catch (error) {
     console.error('CreateAppointment error:', error);
+    if (error.message === 'Selected time is not available') {
+      return res.status(400).json({ error: error.message });
+    }
     res.status(500).json({ error: 'Failed to book appointment' });
   }
 };
@@ -970,7 +1021,3 @@ exports.getCallStatus = async (req, res) => {
     res.status(500).json({ error: 'Failed to get call status' });
   }
 };
-
-process.on('beforeExit', async () => {
-  await prisma.$disconnect();
-});

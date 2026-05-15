@@ -245,6 +245,39 @@ function nextWeek() { showToast('Navigation semaine suivante', 'info'); }
                     En cochant cette option, tous les créneaux de cette journée seront bloqués.
                 </p>
             </div>
+
+            <div id="blockRangeWrapper" style="margin-bottom: 15px;">
+                <label style="display: flex; align-items: center; gap: 6px; font-weight: 600; font-size: 13px; color: #475569; cursor: pointer;">
+                    <input type="checkbox" id="enableBlockRange" onchange="toggleTimeRange()" style="margin: 0;">
+                    Appliquer une plage horaire
+                </label>
+                <div id="blockRangeContent" style="display: none; margin-top: 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px;">
+                    <div style="display: flex; gap: 0; margin-bottom: 12px; border: 1.5px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+                        <button type="button" id="rangeActionAvailableBtn" onclick="setRangeAction('available')" style="flex: 1; padding: 8px 12px; border: none; font-weight: 600; font-size: 13px; cursor: pointer; background: var(--primary-green); color: white;">
+                            ✅ Disponible
+                        </button>
+                        <button type="button" id="rangeActionBlockedBtn" onclick="setRangeAction('blocked')" style="flex: 1; padding: 8px 12px; border: none; font-weight: 600; font-size: 13px; cursor: pointer; background: white; color: #94a3b8;">
+                            🚫 Indisponible
+                        </button>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+                        <div>
+                            <label style="display: block; margin-bottom: 4px; font-weight: 600; font-size: 12px; color: #333;">Début</label>
+                            <input type="time" id="blockRangeStart" step="1800" style="width: 100%; padding: 8px; border: 1.5px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 4px; font-weight: 600; font-size: 12px; color: #333;">Fin</label>
+                            <input type="time" id="blockRangeEnd" step="1800" style="width: 100%; padding: 8px; border: 1.5px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
+                        </div>
+                    </div>
+                    <button onclick="applyTimeRange()" id="applyRangeBtn" style="width: 100%; padding: 10px; background: var(--primary-green); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px;">
+                        Rendre disponible cette plage
+                    </button>
+                    <p style="font-size: 11px; color: #64748b; margin: 8px 0 0;">
+                        Tous les créneaux intermédiaires (pas à pas de 1h) seront automatiquement générés.
+                    </p>
+                </div>
+            </div>
             
             <div style="display: flex; gap: 10px;">
                 <button onclick="saveSlot(false)" id="btnAddSlot" style="flex: 1; background: var(--primary-green); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer;">
