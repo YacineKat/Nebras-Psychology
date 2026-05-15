@@ -19,6 +19,13 @@ let flippedVideoTrack = null;
 let flippedVideoStream = null;
 let flipAnimFrame = null;
 let flipVideoEl = null;
+let flipCanvas = null;
+let flipCtx = null;
+let flipDrawFn = null;
+
+// Visibility handling
+let visibilityHandler = null;
+let isEndingCall = false;
 
 async function buildFlippedTrack(rawVideoTrack) {
     return new Promise((resolve) => {
@@ -45,10 +52,10 @@ async function buildFlippedTrack(rawVideoTrack) {
             }
 
             offVideo.play().then(() => {
-                let animId = null;
+                const animRef = { current: null };
                 let resolved = false;
 
-                function draw() {
+                const draw = () => {
                     if (offVideo.readyState >= 2 && offVideo.videoWidth > 0) {
                         if (canvas.width !== offVideo.videoWidth) {
                             canvas.width = offVideo.videoWidth;
@@ -66,17 +73,41 @@ async function buildFlippedTrack(rawVideoTrack) {
                             resolve({
                                 flippedTrack: flippedStream.getVideoTracks()[0],
                                 flippedStream,
-                                animId: { current: animId },
-                                offVideo
+                                animId: animRef,
+                                offVideo,
+                                canvas,
+                                ctx,
+                                drawFn: draw
                             });
                         }
                     }
-                    animId = requestAnimationFrame(draw);
-                }
+                    animRef.current = requestAnimationFrame(draw);
+                };
                 draw();
             });
         };
     });
+}
+
+function setupVisibilityHandler() {
+    if (visibilityHandler) return;
+    visibilityHandler = () => {
+        if (document.hidden) {
+            if (flipAnimFrame?.current) {
+                cancelAnimationFrame(flipAnimFrame.current);
+                flipAnimFrame.current = null;
+            }
+        } else {
+            if (flipVideoEl && flipDrawFn && flipAnimFrame && !flipAnimFrame.current) {
+                flipVideoEl.play().then(() => {
+                    if (!document.hidden && flipAnimFrame && !flipAnimFrame.current) {
+                        flipDrawFn();
+                    }
+                }).catch(() => {});
+            }
+        }
+    };
+    document.addEventListener('visibilitychange', visibilityHandler);
 }
 
 // P2P Connection
@@ -144,6 +175,9 @@ async function initializeSession() {
         // Start call timer
         startCallTimer();
         
+        // Handle tab visibility for canvas flip pipeline
+        setupVisibilityHandler();
+        
     } catch (error) {
         console.error('Init error:', error);
         showError('Erreur lors de l\'initialisation');
@@ -161,6 +195,9 @@ async function initializeMedia() {
         flippedVideoStream = flipResult.flippedStream;
         flipAnimFrame = flipResult.animId;
         flipVideoEl = flipResult.offVideo;
+        flipCanvas = flipResult.canvas;
+        flipCtx = flipResult.ctx;
+        flipDrawFn = flipResult.drawFn;
         
         // Attach original stream to local video element for preview
         const videoEl = document.getElementById('localVideo');
@@ -607,7 +644,16 @@ function stopCallTimer() {
 
 // End call
 async function endCall() {
+    if (isEndingCall) return;
+    isEndingCall = true;
+    
     try {
+        // Remove visibility handler
+        if (visibilityHandler) {
+            document.removeEventListener('visibilitychange', visibilityHandler);
+            visibilityHandler = null;
+        }
+        
         // Stop canvas flip pipeline
         cancelAnimationFrame(flipAnimFrame?.current);
         flipAnimFrame = null;
@@ -618,6 +664,11 @@ async function endCall() {
             }
             flipVideoEl = null;
         }
+        flipCanvas = null;
+        flipCtx = null;
+        flipDrawFn = null;
+        flippedVideoTrack = null;
+        flippedVideoStream = null;
         
         // Stop media
         if (localStream) {

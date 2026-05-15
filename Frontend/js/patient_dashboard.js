@@ -562,6 +562,13 @@ let patientFlippedVideoTrack = null;
 let patientFlippedStream = null;
 let patientFlipAnimFrame = null;
 let patientFlipVideoEl = null;
+let patientFlipCanvas = null;
+let patientFlipCtx = null;
+let patientFlipDrawFn = null;
+
+// Visibility handling
+let patientVisibilityHandler = null;
+let patientIsLeaving = false;
 
 async function buildFlippedTrack(rawVideoTrack) {
     return new Promise((resolve) => {
@@ -588,10 +595,10 @@ async function buildFlippedTrack(rawVideoTrack) {
             }
 
             offVideo.play().then(() => {
-                let animId = null;
+                const animRef = { current: null };
                 let resolved = false;
 
-                function draw() {
+                const draw = () => {
                     if (offVideo.readyState >= 2 && offVideo.videoWidth > 0) {
                         if (canvas.width !== offVideo.videoWidth) {
                             canvas.width = offVideo.videoWidth;
@@ -609,18 +616,42 @@ async function buildFlippedTrack(rawVideoTrack) {
                             resolve({
                                 flippedTrack: flippedStream.getVideoTracks()[0],
                                 flippedStream,
-                                animId: { current: animId },
-                                offVideo
+                                animId: animRef,
+                                offVideo,
+                                canvas,
+                                ctx,
+                                drawFn: draw
                             });
                         }
                     }
-                    animId = requestAnimationFrame(draw);
-                }
+                    animRef.current = requestAnimationFrame(draw);
+                };
                 draw();
             });
         };
     });
 }
+function setupPatientVisibilityHandler() {
+    if (patientVisibilityHandler) return;
+    patientVisibilityHandler = () => {
+        if (document.hidden) {
+            if (patientFlipAnimFrame?.current) {
+                cancelAnimationFrame(patientFlipAnimFrame.current);
+                patientFlipAnimFrame.current = null;
+            }
+        } else {
+            if (patientFlipVideoEl && patientFlipDrawFn && patientFlipAnimFrame && !patientFlipAnimFrame.current) {
+                patientFlipVideoEl.play().then(() => {
+                    if (!document.hidden && patientFlipAnimFrame && !patientFlipAnimFrame.current) {
+                        patientFlipDrawFn();
+                    }
+                }).catch(() => {});
+            }
+        }
+    };
+    document.addEventListener('visibilitychange', patientVisibilityHandler);
+}
+
 let patientIsMuted = true;
 let patientIsVideoOff = true;
 
@@ -635,6 +666,9 @@ async function initPatientCall(appointment) {
         patientFlippedStream = flipResult.flippedStream;
         patientFlipAnimFrame = flipResult.animId;
         patientFlipVideoEl = flipResult.offVideo;
+        patientFlipCanvas = flipResult.canvas;
+        patientFlipCtx = flipResult.ctx;
+        patientFlipDrawFn = flipResult.drawFn;
         
         // Attach original stream to local video element for preview
         const videoEl = document.getElementById('patientLocalVideo');
@@ -658,6 +692,8 @@ async function initPatientCall(appointment) {
         
         window.patientFlippedStream = patientFlippedStream;
         window.patientFlippedVideoTrack = patientFlippedVideoTrack;
+        
+        setupPatientVisibilityHandler();
     } catch (err) {
         console.error('Error accessing media devices:', err);
     }
@@ -722,6 +758,14 @@ function togglePatientVideo() {
 }
 
 function leavePatientSession() {
+    if (patientIsLeaving) return;
+    patientIsLeaving = true;
+    
+    if (patientVisibilityHandler) {
+        document.removeEventListener('visibilitychange', patientVisibilityHandler);
+        patientVisibilityHandler = null;
+    }
+    
     cancelAnimationFrame(patientFlipAnimFrame?.current);
     patientFlipAnimFrame = null;
     if (patientFlipVideoEl) {
@@ -731,6 +775,12 @@ function leavePatientSession() {
         }
         patientFlipVideoEl = null;
     }
+    patientFlipCanvas = null;
+    patientFlipCtx = null;
+    patientFlipDrawFn = null;
+    patientFlippedVideoTrack = null;
+    patientFlippedStream = null;
+    
     if (patientStream) {
         patientStream.getTracks().forEach(track => track.stop());
         patientStream = null;

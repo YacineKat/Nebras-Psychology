@@ -435,6 +435,9 @@ async function initGroupCall(roomId, group) {
         flippedVideoStream = flipResult.flippedStream;
         flipAnimFrame = flipResult.animId;
         flipVideoEl = flipResult.offVideo;
+        flipCanvas = flipResult.canvas;
+        flipCtx = flipResult.ctx;
+        flipDrawFn = flipResult.drawFn;
         
         // Start with camera and microphone OFF
         localVideoTrack.enabled = false;
@@ -554,6 +557,9 @@ async function initGroupCall(roomId, group) {
         }
     });
     
+    // Handle tab visibility for canvas flip pipeline
+    setupGroupVisibilityHandler();
+    
     // Start call timer
     const durationMinutes = group?.duration || 90;
     startCallTimer(durationMinutes);
@@ -564,6 +570,13 @@ let flippedVideoTrack = null;
 let flippedVideoStream = null;
 let flipAnimFrame = null;
 let flipVideoEl = null;
+let flipCanvas = null;
+let flipCtx = null;
+let flipDrawFn = null;
+
+// Visibility handling
+let groupVisibilityHandler = null;
+let isEndingGroupSession = false;
 
 async function buildFlippedTrack(rawVideoTrack) {
     return new Promise((resolve) => {
@@ -590,10 +603,10 @@ async function buildFlippedTrack(rawVideoTrack) {
             }
 
             offVideo.play().then(() => {
-                let animId = null;
+                const animRef = { current: null };
                 let resolved = false;
 
-                function draw() {
+                const draw = () => {
                     if (offVideo.readyState >= 2 && offVideo.videoWidth > 0) {
                         if (canvas.width !== offVideo.videoWidth) {
                             canvas.width = offVideo.videoWidth;
@@ -611,18 +624,42 @@ async function buildFlippedTrack(rawVideoTrack) {
                             resolve({
                                 flippedTrack: flippedStream.getVideoTracks()[0],
                                 flippedStream,
-                                animId: { current: animId },
-                                offVideo
+                                animId: animRef,
+                                offVideo,
+                                canvas,
+                                ctx,
+                                drawFn: draw
                             });
                         }
                     }
-                    animId = requestAnimationFrame(draw);
-                }
+                    animRef.current = requestAnimationFrame(draw);
+                };
                 draw();
             });
         };
     });
 }
+function setupGroupVisibilityHandler() {
+    if (groupVisibilityHandler) return;
+    groupVisibilityHandler = () => {
+        if (document.hidden) {
+            if (flipAnimFrame?.current) {
+                cancelAnimationFrame(flipAnimFrame.current);
+                flipAnimFrame.current = null;
+            }
+        } else {
+            if (flipVideoEl && flipDrawFn && flipAnimFrame && !flipAnimFrame.current) {
+                flipVideoEl.play().then(() => {
+                    if (!document.hidden && flipAnimFrame && !flipAnimFrame.current) {
+                        flipDrawFn();
+                    }
+                }).catch(() => {});
+            }
+        }
+    };
+    document.addEventListener('visibilitychange', groupVisibilityHandler);
+}
+
 let isMuted = false;
 let isVideoOff = false;
 let isScreenSharing = false;
@@ -1006,6 +1043,14 @@ function endGroupSession(wasAutoEnded = false) {
 }
 
 function finishEndingSession() {
+    if (isEndingGroupSession) return;
+    isEndingGroupSession = true;
+    
+    if (groupVisibilityHandler) {
+        document.removeEventListener('visibilitychange', groupVisibilityHandler);
+        groupVisibilityHandler = null;
+    }
+    
     // Stop canvas flip pipeline
     cancelAnimationFrame(flipAnimFrame?.current);
     flipAnimFrame = null;
@@ -1016,6 +1061,11 @@ function finishEndingSession() {
         }
         flipVideoEl = null;
     }
+    flipCanvas = null;
+    flipCtx = null;
+    flipDrawFn = null;
+    flippedVideoTrack = null;
+    flippedVideoStream = null;
     
     // Stop local stream
     if (localStream) {
