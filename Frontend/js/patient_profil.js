@@ -18,19 +18,111 @@ function updateSidebarWithUserData() {
     // Update all elements with class user-name (including sidebar)
     const userNameElements = document.querySelectorAll('.user-name');
     userNameElements.forEach(el => {
-        el.textContent = user.fullname || user.email || '';
+        el.textContent = getUserDisplayName(user);
     });
     
     // Update profile header if exists
     const profileNameEl = document.getElementById('profileName');
     if (profileNameEl) {
-        profileNameEl.textContent = user.fullname || 'Mon Profil';
+        profileNameEl.textContent = getUserDisplayName(user);
     }
     
     // Update email in security tab
     const profileEmailEl = document.getElementById('profileEmail');
     if (profileEmailEl) {
         profileEmailEl.textContent = user.email || '';
+    }
+}
+
+function getUserDisplayName(user) {
+    return user?.fullname || user?.email || '';
+}
+
+function getUserInitial(user) {
+    const displayName = getUserDisplayName(user);
+    return displayName ? displayName.charAt(0).toUpperCase() : '?';
+}
+
+function createInitialAvatarDataUrl(user) {
+    const initial = getUserInitial(user);
+    const svg = `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="Avatar ${initial}">
+            <defs>
+                <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#E9EEF5"/>
+                    <stop offset="100%" stop-color="#D7E0EB"/>
+                </linearGradient>
+            </defs>
+            <rect width="120" height="120" rx="60" fill="url(#bg)"/>
+            <text x="50%" y="54%" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="44" font-weight="700" fill="#64748B">${initial}</text>
+        </svg>
+    `.trim();
+    return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+}
+
+function renderPatientProfileFromUser(profileUser) {
+    const profile = profileUser || getCurrentUser();
+    if (!profile) return;
+
+    const p = profile.profile || {};
+
+    let firstName = '';
+    let lastName = '';
+    if (profile.fullname) {
+        const nameParts = profile.fullname.split(' ');
+        firstName = nameParts[0] || '';
+        lastName = nameParts.slice(1).join(' ') || '';
+    }
+
+    const firstNameEl = document.getElementById('firstName');
+    if (firstNameEl) firstNameEl.value = firstName;
+
+    const lastNameEl = document.getElementById('lastName');
+    if (lastNameEl) lastNameEl.value = lastName;
+
+    const birthDateEl = document.getElementById('birthDate');
+    if (birthDateEl && p.birthDate) {
+        const date = new Date(p.birthDate);
+        birthDateEl.value = date.toISOString().split('T')[0];
+    }
+
+    const genderEl = document.getElementById('gender');
+    if (genderEl) genderEl.value = p.gender || '';
+
+    const phoneEl = document.getElementById('phone');
+    if (phoneEl) phoneEl.value = p.phone || '';
+
+    const emailElApi = document.getElementById('profileEmail');
+    if (emailElApi) emailElApi.textContent = profile.email || '';
+
+    const avatarImg = document.getElementById('profileAvatarImg');
+    if (avatarImg) {
+        avatarImg.src = p.avatar || createInitialAvatarDataUrl(profile);
+    }
+
+    updateSidebarAvatar(p.avatar);
+
+    const languageEl = document.getElementById('prefLanguage');
+    if (languageEl) languageEl.value = p.language || '';
+
+    const prefGenderEl = document.getElementById('prefGender');
+    if (prefGenderEl) prefGenderEl.value = p.prefGender || '';
+
+    const prefTypeEl = document.getElementById('prefType');
+    if (prefTypeEl) prefTypeEl.value = p.prefType || '';
+
+    document.querySelectorAll('#consultationTags .tag').forEach(tag => {
+        tag.classList.remove('selected');
+    });
+
+    if (p.motifs) {
+        const selectedMotifs = p.motifs.split(',');
+        document.querySelectorAll('#consultationTags .tag').forEach(tag => {
+            const tagText = tag.textContent.trim();
+            if (selectedMotifs.includes(tagText)) {
+                tag.classList.add('selected');
+            }
+        });
     }
 }
 
@@ -53,100 +145,26 @@ async function loadProfileData() {
 
     // Update sidebar immediately from localStorage BEFORE loading
     updateSidebarWithUserData();
+    renderPatientProfileFromUser(user);
 
-    // Show loading state
     const formContainer = document.getElementById('tabProfil');
     const besoinsContainer = document.getElementById('tabBesoins');
-    if (formContainer) {
-        formContainer.style.opacity = '0.5';
-        formContainer.style.pointerEvents = 'none';
-    }
-    if (besoinsContainer) {
-        besoinsContainer.style.opacity = '0.5';
-        besoinsContainer.style.pointerEvents = 'none';
-    }
 
-    // Fetch full profile data from API
     try {
-        const result = await authAPI.getMe();
-        
-        const profile = result.user;
-        const p = profile?.profile || {};
-
-        // Split fullname
-        let firstName = '';
-        let lastName = '';
-        if (profile?.fullname) {
-            const nameParts = profile.fullname.split(' ');
-            firstName = nameParts[0] || '';
-            lastName = nameParts.slice(1).join(' ') || '';
-        }
-
-        // Personal info
-        const firstNameEl = document.getElementById('firstName');
-        if (firstNameEl) firstNameEl.value = firstName;
-        
-        const lastNameEl = document.getElementById('lastName');
-        if (lastNameEl) lastNameEl.value = lastName;
-        
-        const birthDateEl = document.getElementById('birthDate');
-        if (birthDateEl && p.birthDate) {
-            const date = new Date(p.birthDate);
-            birthDateEl.value = date.toISOString().split('T')[0];
-        }
-        
-        const genderEl = document.getElementById('gender');
-        if (genderEl && p.gender) genderEl.value = p.gender;
-        
-        const phoneEl = document.getElementById('phone');
-        if (phoneEl && p.phone) phoneEl.value = p.phone;
-
-        const emailElApi = document.getElementById('profileEmail');
-        if (emailElApi && profile?.email) emailElApi.textContent = profile.email;
-
-        // Load avatar
-        const avatarImg = document.getElementById('profileAvatarImg');
-        if (avatarImg && p.avatar) {
-            avatarImg.src = p.avatar;
-        }
-
-        // Update sidebar avatar
-        updateSidebarAvatar(p.avatar);
-
-        // Load therapeutic preferences
-        const languageEl = document.getElementById('prefLanguage');
-        if (languageEl && p.language) languageEl.value = p.language;
-
-        const prefGenderEl = document.getElementById('prefGender');
-        if (prefGenderEl && p.prefGender) prefGenderEl.value = p.prefGender;
-
-        const prefTypeEl = document.getElementById('prefType');
-        if (prefTypeEl && p.prefType) prefTypeEl.value = p.prefType;
-
-        // Load selected motifs (tags)
-        if (p.motifs) {
-            const selectedMotifs = p.motifs.split(',');
-            document.querySelectorAll('#consultationTags .tag').forEach(tag => {
-                const tagText = tag.textContent.trim();
-                if (selectedMotifs.includes(tagText)) {
-                    tag.classList.add('selected');
-                }
-            });
-        }
-
-        // Restore form visibility
-        if (formContainer) {
-            formContainer.style.opacity = '1';
-            formContainer.style.pointerEvents = 'auto';
-        }
-        if (besoinsContainer) {
-            besoinsContainer.style.opacity = '1';
-            besoinsContainer.style.pointerEvents = 'auto';
+        const needsRefresh = !user.profile || user.profile.avatar === undefined || user.fullname === undefined;
+        if (needsRefresh) {
+            const result = await authAPI.getMe();
+            if (result?.user) {
+                localStorage.setItem('nebras_user', JSON.stringify(result.user));
+                updateSidebarWithUserData();
+                renderPatientProfileFromUser(result.user);
+            }
         }
 
     } catch (error) {
         console.error('Error loading profile:', error);
-        
+        showToast('⚠️ Erreur lors du chargement du profil', 'error');
+    } finally {
         if (formContainer) {
             formContainer.style.opacity = '1';
             formContainer.style.pointerEvents = 'auto';
@@ -155,8 +173,6 @@ async function loadProfileData() {
             besoinsContainer.style.opacity = '1';
             besoinsContainer.style.pointerEvents = 'auto';
         }
-        
-        showToast('⚠️ Erreur lors du chargement du profil', 'error');
     }
 }
 
@@ -193,20 +209,16 @@ async function updateProfile() {
     }
 
     try {
-        await authAPI.updateProfile(updateData);
+        const result = await authAPI.updateProfile(updateData);
 
-        // Update localStorage
-        const user = getCurrentUser();
-        user.fullname = fullname;
-        localStorage.setItem('nebras_user', JSON.stringify(user));
+        const user = result?.user || getCurrentUser();
+        if (user) {
+            user.fullname = fullname;
+            user.profile = { ...(user.profile || {}), ...updateData };
+            localStorage.setItem('nebras_user', JSON.stringify(user));
+        }
 
         // Update ALL user name displays including sidebar
-        updateSidebarWithUserData();
-
-        // Refresh user data from API to ensure consistency
-        const result = await authAPI.getMe();
-        const freshUser = result.user;
-        localStorage.setItem('nebras_user', JSON.stringify(freshUser));
         updateSidebarWithUserData();
 
         showToast('✅ Profil mis à jour avec succès !', 'success');
@@ -223,6 +235,7 @@ async function updateProfile() {
 
 function updateSidebarAvatar(avatarUrl) {
     const avatars = document.querySelectorAll('.user-avatar');
+    const user = getCurrentUser();
     avatars.forEach(avatar => {
         if (avatarUrl) {
             avatar.style.backgroundImage = `url(${avatarUrl})`;
@@ -230,8 +243,7 @@ function updateSidebarAvatar(avatarUrl) {
             avatar.style.backgroundPosition = 'center';
             avatar.textContent = '';
         } else {
-            const user = getCurrentUser();
-            const initial = (user?.fullname || user?.email || 'U').charAt(0).toUpperCase();
+            const initial = getUserInitial(user);
             avatar.textContent = initial;
             avatar.style.backgroundImage = '';
         }
@@ -263,15 +275,17 @@ async function handleAvatarChange(event) {
     }
 
     try {
-        await authAPI.updateProfile({ avatar: avatarDataUrl });
+        const result = await authAPI.updateProfile({ avatar: avatarDataUrl });
 
-        const user = getCurrentUser();
-        if (user.profile) {
-            user.profile.avatar = avatarDataUrl;
-        } else {
-            user.profile = { avatar: avatarDataUrl };
+        const user = result?.user || getCurrentUser();
+        if (user) {
+            if (user.profile) {
+                user.profile.avatar = avatarDataUrl;
+            } else {
+                user.profile = { avatar: avatarDataUrl };
+            }
+            localStorage.setItem('nebras_user', JSON.stringify(user));
         }
-        localStorage.setItem('nebras_user', JSON.stringify(user));
 
         updateSidebarAvatar(avatarDataUrl);
 

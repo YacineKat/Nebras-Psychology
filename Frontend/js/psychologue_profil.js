@@ -16,12 +16,12 @@ function updateSidebarWithUserData() {
     if (!user) return;
     
     document.querySelectorAll('.user-name').forEach(el => {
-        el.textContent = user.fullname || user.email || 'Mon Profil';
+        el.textContent = getUserDisplayName(user);
     });
     
     const profileNameEl = document.getElementById('psyProfileName');
     if (profileNameEl) {
-        profileNameEl.textContent = user.fullname || 'Mon Profil';
+        profileNameEl.textContent = getUserDisplayName(user);
     }
     
     const profileEmailEl = document.getElementById('psyEmail');
@@ -32,6 +32,7 @@ function updateSidebarWithUserData() {
 
 function updateSidebarAvatar(avatarUrl) {
     const avatars = document.querySelectorAll('.user-avatar');
+    const user = getCurrentUser();
     avatars.forEach(avatar => {
         if (avatarUrl) {
             avatar.style.backgroundImage = `url(${avatarUrl})`;
@@ -39,8 +40,7 @@ function updateSidebarAvatar(avatarUrl) {
             avatar.style.backgroundPosition = 'center';
             avatar.textContent = '';
         } else {
-            const user = getCurrentUser();
-            const initial = (user?.fullname || user?.email || 'M').charAt(0).toUpperCase();
+            const initial = getUserInitial(user);
             avatar.textContent = initial;
             avatar.style.backgroundImage = '';
         }
@@ -49,10 +49,11 @@ function updateSidebarAvatar(avatarUrl) {
 
 async function updateSidebarBadges(cache = {}) {
     try {
-        // Load sequentially to avoid connection pool exhaustion
-        const dashboardResult = cache.dashboard || await doctorAPI.getDashboard({ view: 'summary' }).catch(() => null);
-        const unreadMessages = cache.unread || await messageAPI.getUnreadCount().catch(() => null);
-        const vipResult = cache.vip || await doctorAPI.getVipStatus().catch(() => null);
+        const [dashboardResult, unreadMessages, vipResult] = await Promise.all([
+            cache.dashboard || doctorAPI.getDashboard({ view: 'summary' }).catch(() => null),
+            cache.unread || messageAPI.getUnreadCount().catch(() => null),
+            cache.vip || doctorAPI.getVipStatus().catch(() => null)
+        ]);
         
         const navItems = document.querySelectorAll('.nav-item');
         navItems.forEach(item => {
@@ -87,7 +88,7 @@ function updateProfileHeaderAvatar(avatarUrl) {
     const avatarImg = document.getElementById('profileAvatarImg');
     const initialsEl = document.getElementById('profileAvatarInitials');
     const user = getCurrentUser();
-    const initial = (user?.fullname || user?.email || 'M').charAt(0).toUpperCase();
+    const initial = getUserInitial(user);
 
     if (avatarUrl) {
         if (avatarImg) {
@@ -109,6 +110,15 @@ function updateProfileHeaderAvatar(avatarUrl) {
 let statsLoaded = false;
 let statsLoading = false;
 let cachedMotifs = getCurrentUser()?.profile?.motifs || null;
+
+function getUserDisplayName(user) {
+    return user?.fullname || user?.email || '';
+}
+
+function getUserInitial(user) {
+    const displayName = getUserDisplayName(user);
+    return displayName ? displayName.charAt(0).toUpperCase() : '?';
+}
 
 async function loadStatsIfNeeded() {
     if (statsLoaded || statsLoading) return;
@@ -141,64 +151,87 @@ async function loadProfileData() {
 
     updateSidebarWithUserData();
 
+    const cachedUser = getCurrentUser();
+    if (cachedUser) {
+        const p = cachedUser.profile || {};
+        cachedMotifs = p.motifs || cachedMotifs;
+        const nameEl = document.getElementById('psyProfileName');
+        if (nameEl) nameEl.textContent = getUserDisplayName(cachedUser);
+        const specialiteEl = document.getElementById('psySpecialiteDisplay');
+        if (specialiteEl) specialiteEl.textContent = p.specialite || '';
+        const fullnameInput = document.getElementById('psyFullname');
+        if (fullnameInput) fullnameInput.value = cachedUser.fullname || '';
+        const emailInput = document.getElementById('psyEmailInput');
+        if (emailInput) emailInput.value = cachedUser.email || '';
+        const phoneInput = document.getElementById('psyPhone');
+        if (phoneInput) phoneInput.value = p.phone || '';
+        const adresseInput = document.getElementById('psyAdresse');
+        if (adresseInput) adresseInput.value = p.adresse || '';
+        const genderInput = document.getElementById('psyGender');
+        if (genderInput) genderInput.value = p.gender || '';
+        if (p.birthDate) {
+            const date = new Date(p.birthDate);
+            const birthDateInput = document.getElementById('psyBirthDate');
+            if (birthDateInput) birthDateInput.value = date.toISOString().split('T')[0];
+        }
+        const specialiteInput = document.getElementById('psySpecialiteSelect');
+        if (specialiteInput) specialiteInput.value = p.specialite || '';
+        const agrementInput = document.getElementById('psyAgrement');
+        if (agrementInput) agrementInput.value = p.agrement || '';
+        const diplomesInput = document.getElementById('psyDiplomes');
+        if (diplomesInput) diplomesInput.value = p.diplomes || '';
+        const bioInput = document.getElementById('psyBioText');
+        if (bioInput) bioInput.value = p.bio || '';
+        const emailEl = document.getElementById('psyEmail');
+        if (emailEl) emailEl.textContent = cachedUser.email || '';
+        if (p.avatar) {
+            updateProfileHeaderAvatar(p.avatar);
+            updateSidebarAvatar(p.avatar);
+        }
+    }
+
     const formContainer = document.getElementById('tabProfil');
     if (formContainer) {
         formContainer.style.opacity = '0.5';
         formContainer.style.pointerEvents = 'none';
     }
 
-    let dashboardResult = null;
-
     try {
-        // Load profile first, then fetch secondary data
-        const profileResult = await authAPI.getMe();
-        dashboardResult = await doctorAPI.getDashboard({ view: 'summary' }).catch(() => null);
+        const [profileResult, dashboardResult] = await Promise.all([
+            authAPI.getMe(),
+            doctorAPI.getDashboard({ view: 'summary' }).catch(() => null)
+        ]);
 
-        const profile = profileResult.user;
+        const profile = profileResult?.user;
         const p = profile?.profile || {};
         cachedMotifs = p.motifs || cachedMotifs;
 
-        const nameEl = document.getElementById('psyProfileName');
-        if (nameEl) nameEl.textContent = profile.fullname || 'Mon Profil';
+        if (profile) {
+            localStorage.setItem('nebras_user', JSON.stringify(profile));
+            updateSidebarWithUserData();
 
-        const specialiteEl = document.getElementById('psySpecialiteDisplay');
-        if (specialiteEl) specialiteEl.textContent = p.specialite || 'Psychologue';
+            const nameEl = document.getElementById('psyProfileName');
+            if (nameEl) nameEl.textContent = getUserDisplayName(profile);
 
-        document.getElementById('psyFullname').value = profile.fullname || '';
+            const specialiteEl = document.getElementById('psySpecialiteDisplay');
+            if (specialiteEl) specialiteEl.textContent = p.specialite || '';
 
-        if (dashboardResult?.stats) {
-            document.getElementById('statsPatients').textContent = dashboardResult.stats.activePatients || 0;
-            document.getElementById('statsSessions').textContent = dashboardResult.stats.pendingRequestsCount || 0;
-            document.getElementById('statsRating').textContent = p.rating ? Number(p.rating).toFixed(1) : '0.0';
+            const fullnameInput = document.getElementById('psyFullname');
+            if (fullnameInput) fullnameInput.value = profile.fullname || '';
+
+            if (dashboardResult?.stats) {
+                const patientsEl = document.getElementById('statsPatients');
+                const sessionsEl = document.getElementById('statsSessions');
+                const ratingEl = document.getElementById('statsRating');
+                if (patientsEl) patientsEl.textContent = dashboardResult.stats.activePatients || 0;
+                if (sessionsEl) sessionsEl.textContent = dashboardResult.stats.pendingRequestsCount || 0;
+                if (ratingEl) ratingEl.textContent = p.rating ? Number(p.rating).toFixed(1) : '0.0';
+            }
         }
 
         if (document.getElementById('tabStatistiques')?.classList.contains('active')) {
             loadStatsIfNeeded();
         }
-
-        document.getElementById('psyEmailInput').value = profile.email || '';
-        document.getElementById('psyPhone').value = p.phone || '';
-        document.getElementById('psyAdresse').value = p.adresse || '';
-
-        if (p.gender) {
-            document.getElementById('psyGender').value = p.gender;
-        }
-
-        if (p.birthDate) {
-            const date = new Date(p.birthDate);
-            document.getElementById('psyBirthDate').value = date.toISOString().split('T')[0];
-        }
-
-        if (p.specialite) {
-            document.getElementById('psySpecialiteSelect').value = p.specialite;
-        }
-
-        document.getElementById('psyAgrement').value = p.agrement || '';
-        document.getElementById('psyDiplomes').value = p.diplomes || '';
-        document.getElementById('psyBioText').value = p.bio || '';
-
-        const emailEl = document.getElementById('psyEmail');
-        if (emailEl) emailEl.textContent = profile.email || '-';
 
         const onlineToggle = document.getElementById('onlineToggle');
         const toggleStatusText = document.getElementById('toggleStatusText');
@@ -223,7 +256,7 @@ async function loadProfileData() {
             formContainer.style.pointerEvents = 'auto';
         }
         // Update sidebar badges after profile loads
-        setTimeout(() => updateSidebarBadges({ dashboard: dashboardResult }), 100);
+        setTimeout(() => updateSidebarBadges(), 100);
     }
 }
 
@@ -349,16 +382,22 @@ async function updatePsychologueProfile() {
     }
 
     try {
-        await authAPI.updateProfile(profileData);
+        const result = await authAPI.updateProfile(profileData);
 
-        const user = getCurrentUser();
-        user.fullname = profileData.fullname;
-        localStorage.setItem('nebras_user', JSON.stringify(user));
+        const user = result?.user || getCurrentUser();
+        if (user) {
+            user.fullname = profileData.fullname;
+            user.profile = { ...(user.profile || {}), ...profileData };
+            localStorage.setItem('nebras_user', JSON.stringify(user));
+        }
         
         updateSidebarWithUserData();
-        
+
         const nameEl = document.getElementById('psyProfileName');
         if (nameEl) nameEl.textContent = profileData.fullname;
+
+        const specialiteEl = document.getElementById('psySpecialiteDisplay');
+        if (specialiteEl) specialiteEl.textContent = profileData.specialite || '';
 
         showToast('✅ Profil mis à jour avec succès !', 'success');
     } catch (error) {
@@ -372,8 +411,6 @@ async function updatePsychologueProfile() {
 }
 
 async function toggleOnlineStatus() {
-    const onlineToggle = document.getElementById('onlineToggle');
-    const toggleStatusText = document.getElementById('toggleStatusText');
     const isAvailable = onlineToggle?.checked;
 
     try {
