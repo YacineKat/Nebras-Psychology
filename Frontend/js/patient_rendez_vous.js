@@ -26,6 +26,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadAppointments();
     setupFilters();
     highlightCurrentSidebarLink();
+
+    setInterval(() => {
+        renderAppointments();
+        updateBadge();
+    }, 60000);
 });
 
 function setupFilters() {
@@ -74,6 +79,34 @@ async function loadAppointments() {
     }
 }
 
+function getAppointmentScheduledDateTime(apt) {
+    if (!apt?.appointmentDate) return null;
+
+    const baseDate = new Date(apt.appointmentDate);
+    if (Number.isNaN(baseDate.getTime())) return null;
+
+    if (!apt.appointmentTime) return baseDate;
+
+    const [hours, minutes] = apt.appointmentTime.split(':').map(Number);
+    if (Number.isNaN(hours) || Number.isNaN(minutes)) return baseDate;
+
+    const scheduledDateTime = new Date(baseDate);
+    scheduledDateTime.setHours(hours, minutes, 0, 0);
+    return scheduledDateTime;
+}
+
+function isAppointmentInHistory(apt, now = new Date()) {
+    if (apt.status === 'completed' || apt.status === 'cancelled') return true;
+
+    const scheduledDateTime = getAppointmentScheduledDateTime(apt);
+    if (!scheduledDateTime) return false;
+
+    const historyThreshold = new Date(scheduledDateTime);
+    historyThreshold.setHours(historyThreshold.getHours() + 1);
+
+    return now >= historyThreshold;
+}
+
 function populateDoctorFilter() {
     const doctorFilter = document.getElementById('filterDoctor');
     if (!doctorFilter) return;
@@ -93,13 +126,11 @@ function renderAppointments() {
     const now = new Date();
     
     let upcomingAppointments = appointments.filter(apt => {
-        const aptDate = new Date(apt.appointmentDate);
-        return aptDate >= now && apt.status !== 'cancelled';
+        return !isAppointmentInHistory(apt, now);
     });
     
     let pastAppointments = appointments.filter(apt => {
-        const aptDate = new Date(apt.appointmentDate);
-        return aptDate < now || apt.status === 'cancelled' || apt.status === 'completed';
+        return isAppointmentInHistory(apt, now);
     });
 
     // Apply upcoming filters
@@ -229,7 +260,7 @@ function formatDate(dateStr) {
 }
 
 function updateBadge() {
-    const pendingCount = appointments.filter(apt => apt.status === 'pending').length;
+    const pendingCount = appointments.filter(apt => apt.status === 'pending' && !isAppointmentInHistory(apt)).length;
     const badge = document.querySelector('.nav-item[href="patient_rendez_vous.html"] .badge');
     if (badge) {
         badge.textContent = pendingCount;

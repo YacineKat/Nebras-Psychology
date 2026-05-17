@@ -41,6 +41,7 @@ let participantStates = {};
 let sessionEndTime = null;
 let isScreenSharing = false;
 let originalVideoTrack = null;
+let screenShareStream = null;
 let doctorGroupDetails = null;
 
 // Avatar images
@@ -51,45 +52,6 @@ let groupCallDuration = 90; // minutes, used to start countdown on first partici
 
 // Pre-fetched participant avatars for group calls: { [userId]: avatarUrl }
 let participantAvatars = {};
-
-function primeParticipantAvatars(groupData) {
-    if (!groupData) return;
-
-    const doctor = groupData.doctor || groupData.psychologue;
-    if (doctor?.id && doctor.avatar) {
-        participantAvatars[doctor.id] = doctor.avatar;
-    }
-
-    const participants = groupData.participants || [];
-    participants.forEach((participant) => {
-        if (participant?.userId && participant.avatar) {
-            participantAvatars[participant.userId] = participant.avatar;
-        }
-    });
-}
-
-const AVATAR_COLORS = ['#44AA99', '#091346', '#EF4444', '#F59E0B', '#6366F1', '#EC4899', '#14B8A6', '#F97316'];
-
-function getAvatarColor(name) {
-    if (!name) return AVATAR_COLORS[0];
-    let hash = 0;
-    for (let i = 0; i < name.length; i++) {
-        hash = name.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
-}
-
-function setAvatarInitial(elementId, name, imageUrl) {
-    const el = document.getElementById(elementId);
-    if (!el) return;
-    if (imageUrl) {
-        el.innerHTML = `<img src="${encodeURI(imageUrl)}" alt="${name || ''}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;">`;
-        el.style.background = 'transparent';
-    } else {
-        el.textContent = name ? name.charAt(0).toUpperCase() : '?';
-        el.style.background = getAvatarColor(name);
-    }
-}
 
 // P2P Connection
 let peerConnection = null;
@@ -180,38 +142,43 @@ async function initializeSession() {
             return;
         }
 
-        // Media first, so localStream is ready when PC is created
-        await initializeMedia();
+        // Start media and signaling work in parallel to reduce join latency.
+        const mediaPromise = initializeMedia();
+        const connectPromise = connectToVideoServer();
+        const appointmentPromise = sessionAppointmentId
+            ? appointmentAPI.getById(sessionAppointmentId).then((resp) => {
+                if (!resp) return null;
+                const data = resp.appointment || resp;
 
-        // Fetch appointment data BEFORE signaling to populate remoteAvatarUrl
-        // (avoids race where onconnectionstatechange fires before avatar URL is available)
-        let appointmentData = null;
-        if (sessionAppointmentId) {
-            try {
-                const resp = await appointmentAPI.getById(sessionAppointmentId);
-                if (resp) {
-                    appointmentData = resp.appointment || resp;
-                    if (isDoctor) {
-                        remoteAvatarUrl = appointmentData.patient?.profile?.avatar || null;
-                        remoteAvatarUrl = remoteAvatarUrl || appointmentData.patient?.avatar || null;
-                        chatPartnerId = appointmentData.patientId;
-                    } else {
-                        remoteAvatarUrl = appointmentData.doctor?.profile?.avatar || null;
-                        remoteAvatarUrl = remoteAvatarUrl || appointmentData.doctor?.avatar || null;
-                        chatPartnerId = appointmentData.doctorId;
-                        doctorIdForRating = appointmentData.doctorId;
-                        doctorNameForRating = appointmentData.doctor?.fullname || 'Psychologue';
-                    }
+                if (isDoctor) {
+                    chatPartnerId = data.patientId;
+                    remoteAvatarUrl = data.patient?.profile?.avatar || data.patient?.avatar || null;
+                } else {
+                    chatPartnerId = data.doctorId;
+                    doctorIdForRating = data.doctorId;
+                    doctorNameForRating = data.doctor?.fullname || 'Psychologue';
+                    remoteAvatarUrl = data.doctor?.profile?.avatar || data.doctor?.avatar || null;
                 }
-            } catch (e) {
-                console.log('Could not load appointment details:', e);
-            }
-        }
 
-        // Then start signaling + chat in parallel
+                const remoteName = isDoctor ? data.patient?.fullname : data.doctor?.fullname;
+                setRemoteParticipantDisplay(remoteName, remoteAvatarUrl);
+
+                return data;
+            }).catch((e) => {
+                console.log('Could not load appointment details:', e);
+                return null;
+            })
+            : Promise.resolve(null);
+
+        appointmentPromise.then((appointmentData) => {
+            void initializeCallChat(appointmentData).catch((error) => {
+                console.log('Call chat init error:', error);
+            });
+        });
+
         await Promise.all([
-            connectToVideoServer(),
-            initializeCallChat(appointmentData)
+            mediaPromise,
+            connectPromise
         ]);
 
         // Timer starts on ICE connected (both participants at the same time)
@@ -235,42 +202,26 @@ async function initializeGroupCall() {
     doctorIdForRating = doctorId;
     doctorNameForRating = sessionStorage.getItem('groupCallDoctorName') || 'Psychologue';
 
-    // Hide static 1-on-1 elements for group calls
+    // Remove static 1-on-1 elements for group calls
     const remotePlaceholder = document.getElementById('remotePlaceholder');
     if (remotePlaceholder) remotePlaceholder.style.display = 'none';
     const remoteContainer = document.getElementById('remoteVideoContainer');
     if (remoteContainer) remoteContainer.style.display = 'none';
+    const grid = document.getElementById('participantGrid');
+    if (grid) void grid.offsetHeight;
 
     // Pre-fetch known participant avatars before joining
     participantAvatars = {};
     if (currentUser?.id && currentUser?.profile?.avatar) {
         participantAvatars[currentUser.id] = currentUser.profile.avatar;
     }
-    if (groupId) {
-        try {
-            const token = localStorage.getItem('nebras_token');
-            const resp = await fetch(window.API_URL + '/my-groups', {
-                headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' }
-            });
-            if (resp.ok) {
-                const data = await resp.json();
-                const group = (data.groups || []).find((item) => item.id === groupId);
-                primeParticipantAvatars(group);
-                if (group?.doctor?.id) {
-                    doctorIdForRating = group.doctor.id;
-                }
-                if (group?.doctor?.name) {
-                    doctorNameForRating = group.doctor.name;
-                }
-            }
-        } catch (e) {
-            console.log('[Avatar] Pre-fetch group avatars error:', e.message);
-        }
-    }
 
     try {
+        const connectPromise = connectGroupToVideoServer();
         await initializeMedia();
-        await connectGroupToVideoServer();
+        attachLocalTracksToActivePeerConnections();
+        hydrateGroupParticipantMetadata();
+        await connectPromise;
     } catch (error) {
         console.error('Group call init error:', error);
         showError('Erreur lors de l\'initialisation de l\'appel de groupe');
@@ -290,11 +241,13 @@ async function initializeDoctorGroupCall() {
     const screenShareBtn = document.getElementById('screenShareBtn');
     if (screenShareBtn) screenShareBtn.style.display = 'flex';
 
-    // Hide 1-on-1 specific elements
+    // Remove 1-on-1 specific elements
     const remotePlaceholder = document.getElementById('remotePlaceholder');
     if (remotePlaceholder) remotePlaceholder.style.display = 'none';
     const remoteContainer = document.getElementById('remoteVideoContainer');
     if (remoteContainer) remoteContainer.style.display = 'none';
+    const grid = document.getElementById('participantGrid');
+    if (grid) void grid.offsetHeight;
 
     // Get duration for countdown timer (starts when first patient joins)
     groupCallDuration = parseInt(sessionStorage.getItem('groupCallDuration') || '90', 10);
@@ -307,26 +260,21 @@ async function initializeDoctorGroupCall() {
         participantAvatars[currentUser.id] = currentUser.profile.avatar;
     }
 
-    // Load group details from API for edit modal + prefetch member avatars
-    if (groupId) {
-        try {
-            const token = localStorage.getItem('nebras_token');
-            const resp = await fetch(window.API_URL + '/psychologue/groups/' + groupId, {
-                headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' }
-            });
-            if (resp.ok) {
-                const data = await resp.json();
-                doctorGroupDetails = data.group || data;
-                primeParticipantAvatars(doctorGroupDetails);
-            }
-        } catch (e) {
-            console.log('Could not load group details for doctor');
-        }
-    }
-
     try {
+        const connectPromise = doctorConnectGroupToVideoServer();
         await initializeMedia();
-        await doctorConnectGroupToVideoServer();
+        attachLocalTracksToActivePeerConnections();
+        hydrateGroupParticipantMetadata();
+        const participantGrid = document.getElementById('participantGrid');
+        if (participantGrid) {
+            participantGrid.className = participantGrid.className
+                .split(' ')
+                .filter((className) => !className.startsWith('count-'))
+                .join(' ')
+                .trim();
+            participantGrid.classList.add('count-2');
+        }
+        await connectPromise;
         initDoctorMainSocket();
     } catch (error) {
         console.error('Doctor group call init error:', error);
@@ -342,7 +290,7 @@ async function initializeMedia() {
         const videoEl = document.getElementById('localVideo');
         if (videoEl) {
             videoEl.srcObject = localStream;
-            videoEl.style.transform = 'scaleX(-1)';
+            // Do not force a mirrored transform here — leave mirroring to explicit UI state
             videoEl.play().catch(e => console.log('Play error:', e));
         }
         
@@ -354,10 +302,47 @@ async function initializeMedia() {
         isVideoOff = true;
         updateMuteButton();
         updateVideoButton();
+        attachLocalTracksToActivePeerConnections();
         
     } catch (error) {
         console.error('Media error:', error);
         showError('Erreur d\'accès à la caméra/micro');
+    }
+}
+
+function attachLocalTracksToPeerConnection(pc) {
+    if (!pc || !localStream) return;
+
+    const senders = pc.getSenders();
+    localStream.getTracks().forEach((track) => {
+        const alreadyAttached = senders.some((sender) => sender.track === track);
+        if (!alreadyAttached) {
+            try {
+                pc.addTrack(track, localStream);
+            } catch (e) {
+                console.log('[P2P] addTrack error:', e);
+            }
+        }
+    });
+}
+
+function attachLocalTracksToActivePeerConnections() {
+    if (!localStream) return;
+
+    attachLocalTracksToPeerConnection(peerConnection);
+    Object.values(peerConnections).forEach((pc) => attachLocalTracksToPeerConnection(pc));
+
+    if (!isGroupCall && isDoctor && peerConnection && otherParticipantId && peerConnection.signalingState === 'stable' && !peerConnection.__offerInFlight) {
+        createAndSendOffer();
+    }
+
+    if (isGroupCall && isDoctor && videoSocket?.connected) {
+        Object.entries(peerConnections).forEach(([socketId, pc]) => {
+            const participant = otherParticipants[socketId];
+            if (participant?.shouldInitiate && pc && pc.signalingState === 'stable' && !pc.__groupOfferInFlight) {
+                createAndSendGroupOffer(socketId);
+            }
+        });
     }
 }
 
@@ -580,7 +565,7 @@ function connectGroupToVideoServer() {
         videoSocket.on('p2p-ice-candidate', ({ candidate, fromId }) => {
             const pc = peerConnections[fromId];
             if (pc && pc.connectionState !== 'closed' && pc.signalingState !== 'closed') {
-                pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(e => console.log('[GroupCall] ICE add error:', e));
+                addIceCandidateSafely(pc, candidate).catch(e => console.log('[GroupCall] ICE add error:', e));
             }
         });
 
@@ -725,7 +710,7 @@ function doctorConnectGroupToVideoServer() {
         videoSocket.on('p2p-ice-candidate', ({ candidate, fromId }) => {
             const pc = peerConnections[fromId];
             if (pc && pc.connectionState !== 'closed' && pc.signalingState !== 'closed') {
-                pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(e => console.log('[DoctorGroup] ICE error:', e));
+                addIceCandidateSafely(pc, candidate).catch(e => console.log('[DoctorGroup] ICE error:', e));
             }
         });
 
@@ -768,122 +753,12 @@ function doctorConnectGroupToVideoServer() {
     });
 }
 
-// ============================================
-// PATIENT GROUP CALL: Multi-participant tile management
-// ============================================
-
-function addGroupParticipantTile(participant) {
-    const grid = document.getElementById('participantGrid');
-    if (!grid) return null;
-    const existing = document.getElementById(`participant_${participant.id}`);
-    if (existing) return document.getElementById(`video_${participant.id}`);
-
-    const tile = document.createElement('div');
-    tile.id = `participant_${participant.id}`;
-    tile.className = 'participant-tile tile-enter';
-
-    const video = document.createElement('video');
-    video.id = `video_${participant.id}`;
-    video.autoplay = true;
-    video.playsinline = true;
-
-    const avatarEl = document.createElement('div');
-    avatarEl.id = `avatar_${participant.id}`;
-    avatarEl.className = 'tile-avatar';
-    avatarEl.style.display = 'flex';
-    // Use pre-fetched avatar from participantAvatars map
-    const avatarUrl = participant.avatarUrl || participantAvatars?.[participant?.userId] || null;
-    console.log('[Avatar] addGroupParticipantTile for', participant.name, 'avatarUrl:', avatarUrl ? avatarUrl.substring(0, 60) + '...' : 'null', 'userId:', participant.userId);
-    const circle = document.createElement('div');
-    circle.className = 'avatar-circle';
-    circle.style.background = avatarUrl ? 'transparent' : getAvatarColor(participant.name);
-    if (avatarUrl) {
-        circle.innerHTML = `<img src="${encodeURI(avatarUrl)}" alt="${participant.name || ''}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;">`;
-    } else {
-        circle.textContent = (participant.name || '?')[0].toUpperCase();
-    }
-    avatarEl.appendChild(circle);
-
-    const info = document.createElement('div');
-    info.className = 'tile-info';
-    info.textContent = participant.name || 'Participant';
-
-    const muteBadge = document.createElement('div');
-    muteBadge.id = `mute_${participant.id}`;
-    muteBadge.className = 'tile-badge badge-mute';
-    muteBadge.style.display = 'none';
-    muteBadge.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/></svg>`;
-
-    const videoOffBadge = document.createElement('div');
-    videoOffBadge.id = `videooff_${participant.id}`;
-    videoOffBadge.className = 'tile-badge badge-videooff';
-    videoOffBadge.style.display = 'flex';
-    videoOffBadge.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M1 1l22 22M21 21H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3m3-3h6l2 3h4a2 2 0 0 1 2 2v9.34"/></svg>`;
-
-    tile.appendChild(video);
-    tile.appendChild(avatarEl);
-    tile.appendChild(info);
-    tile.appendChild(muteBadge);
-    tile.appendChild(videoOffBadge);
-    grid.appendChild(tile);
-
-    setTimeout(() => tile.classList.remove('tile-enter'), 350);
-    updateGridLayout();
-
-    return video;
-}
-
-function removeGroupParticipantTile(socketId) {
-    const tile = document.getElementById(`participant_${socketId}`);
-    if (tile) {
-        tile.classList.add('tile-exit');
-        setTimeout(() => {
-            tile.remove();
-            updateGridLayout();
-        }, 250);
-    }
-}
-
-function updateGridLayout() {
-    const grid = document.getElementById('participantGrid');
-    if (!grid) return;
-    const participantTiles = grid.querySelectorAll('[id^="participant_"]');
-    const remoteCount = participantTiles.length;
-    const hasLocal = !!document.getElementById('localVideoContainer');
-    const total = remoteCount + (hasLocal ? 1 : 0);
-    grid.className = grid.className.split(' ').filter(c => !c.startsWith('count-')).join(' ').trim();
-    const count = Math.min(Math.max(total, 0), 16);
-    grid.classList.add(`count-${count}`);
-
-    // Update participant count display
-    const countText = document.getElementById('participantCountText');
-    if (countText) {
-        if (total > 1) {
-            countText.textContent = `${total} participants`;
-            countText.style.display = 'inline';
-        } else if (total === 1) {
-            countText.textContent = `1 participant`;
-            countText.style.display = 'inline';
-        } else {
-            countText.style.display = 'none';
-        }
-    }
-}
-
-function updateGroupParticipantTileVideo(socketId, isOff) {
-    const videoEl = document.getElementById(`video_${socketId}`);
-    const avatarEl = document.getElementById(`avatar_${socketId}`);
-    const videoOffBadge = document.getElementById(`videooff_${socketId}`);
-    if (videoEl) videoEl.style.display = isOff ? 'none' : 'block';
-    if (avatarEl) avatarEl.style.display = isOff ? 'flex' : 'none';
-    if (videoOffBadge) videoOffBadge.style.display = isOff ? 'flex' : 'none';
-}
-
 function setupGroupPeerConnection(participant, shouldInitiate = false) {
     if (peerConnections[participant.id]) {
         otherParticipants[participant.id] = {
             ...(otherParticipants[participant.id] || {}),
-            ...participant
+            ...participant,
+            shouldInitiate: (otherParticipants[participant.id]?.shouldInitiate || shouldInitiate)
         };
 
         const existingP = otherParticipants[participant.id];
@@ -894,6 +769,11 @@ function setupGroupPeerConnection(participant, shouldInitiate = false) {
                 circle.style.background = 'transparent';
                 circle.innerHTML = `<img src="${encodeURI(existingAvatar)}" alt="${participant.name || ''}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;">`;
             }
+        }
+
+        const existingName = document.querySelector(`#participant_${participant.id} .tile-info`);
+        if (existingName && participant.name) {
+            existingName.textContent = participant.name;
         }
 
         return;
@@ -909,23 +789,30 @@ function setupGroupPeerConnection(participant, shouldInitiate = false) {
 
     const pc = new RTCPeerConnection(config);
     peerConnections[participant.id] = pc;
-    otherParticipants[participant.id] = participant;
+    otherParticipants[participant.id] = { ...participant, shouldInitiate };
+
+    pc.onnegotiationneeded = async () => {
+        try {
+            if (pc.signalingState !== 'stable') return;
+            await createAndSendGroupOffer(participant.id);
+        } catch (err) {
+            console.error('[GroupCall] onnegotiationneeded error:', err);
+        }
+    };
 
     // Create tile for this participant
     const videoEl = addGroupParticipantTile(participant);
 
     // Add local tracks
-    if (localStream) {
-        localStream.getTracks().forEach(track => {
-            try { pc.addTrack(track, localStream); } catch (e) {}
-        });
-    }
+    attachLocalTracksToPeerConnection(pc);
 
     // Per-participant remote stream
     const remoteStream = new MediaStream();
     if (videoEl) {
         videoEl.srcObject = remoteStream;
     }
+
+    hydrateParticipantTile(participant, participant.avatarUrl || participantAvatars?.[participant?.userId] || null);
 
     pc.ontrack = (event) => {
         remoteStream.addTrack(event.track);
@@ -974,7 +861,7 @@ function setupGroupPeerConnection(participant, shouldInitiate = false) {
         }
     };
 
-    if (shouldInitiate && videoSocket) {
+    if (shouldInitiate && videoSocket && localStream) {
         createAndSendGroupOffer(participant.id);
     }
 }
@@ -987,6 +874,8 @@ function createGroupPeerConnection(participant) {
 function createAndSendGroupOffer(targetId) {
     const pc = peerConnections[targetId];
     if (!pc || pc.signalingState !== 'stable' || !videoSocket) return;
+    if (pc.__groupOfferInFlight) return;
+    pc.__groupOfferInFlight = true;
     console.log(`[GroupCall] Creating offer for ${targetId}`);
     pc.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: true })
         .then(offer => pc.setLocalDescription(offer))
@@ -1000,7 +889,12 @@ function createAndSendGroupOffer(targetId) {
                 console.log(`[GroupCall] Sent offer to ${targetId}`);
             }
         })
-        .catch(e => console.log('[GroupCall] Offer error:', e));
+        .catch(e => {
+            console.log('[GroupCall] Offer error:', e);
+        })
+        .finally(() => {
+            pc.__groupOfferInFlight = false;
+        });
 }
 
 function createAndSendGroupAnswer(targetId) {
@@ -1131,19 +1025,15 @@ function createPeerConnection() {
     peerConnection.onnegotiationneeded = async () => {
         try {
             if (peerConnection.signalingState !== 'stable') return;
-            if (isDoctor) {
-                await createAndSendOffer();
-            }
+            await createAndSendOffer();
         } catch (err) {
             console.error('onnegotiationneeded error:', err);
         }
     };
     
     // Attach local tracks (after handler set, so addTrack fires onnegotiationneeded)
+    attachLocalTracksToPeerConnection(peerConnection);
     if (localStream) {
-        localStream.getTracks().forEach(track => {
-            try { peerConnection.addTrack(track, localStream); } catch (e) { console.log('[P2P] addTrack error:', e); }
-        });
         console.log('[P2P] Local tracks attached to PC');
     }
     
@@ -1222,6 +1112,11 @@ async function createAndSendOffer() {
         console.log('Creating peer connection first');
         createPeerConnection();
     }
+
+    if (!localStream) {
+        console.log('Waiting for local media before creating offer');
+        return;
+    }
     
     if (!otherParticipantId) {
         console.log('Waiting for other participant to join...');
@@ -1232,6 +1127,9 @@ async function createAndSendOffer() {
         console.log('Cannot create offer in state:', peerConnection.signalingState);
         return;
     }
+
+    if (peerConnection.__offerInFlight) return;
+    peerConnection.__offerInFlight = true;
     
     try {
         const offer = await peerConnection.createOffer({
@@ -1250,6 +1148,8 @@ async function createAndSendOffer() {
         console.log('Sent P2P offer');
     } catch (error) {
         console.error('Error creating offer:', error);
+    } finally {
+        peerConnection.__offerInFlight = false;
     }
 }
 
@@ -1279,6 +1179,7 @@ async function createAndSendAnswer() {
 async function handleOffer(offer) {
     try {
         await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+        await flushPendingIceCandidates(peerConnection);
         console.log('Set remote description for offer');
     } catch (error) {
         console.error('Error handling offer:', error);
@@ -1288,6 +1189,7 @@ async function handleOffer(offer) {
 async function handleAnswer(answer) {
     try {
         await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+        await flushPendingIceCandidates(peerConnection);
         console.log('P2P connection established - set remote description for answer');
     } catch (error) {
         console.error('Error handling answer:', error);
@@ -1296,10 +1198,45 @@ async function handleAnswer(answer) {
 
 async function handleIceCandidate(candidate) {
     try {
-        await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+        await addIceCandidateSafely(peerConnection, candidate);
         console.log('Added ICE candidate');
     } catch (error) {
         console.error('Error adding ICE candidate:', error);
+    }
+}
+
+function queueIceCandidate(pc, candidate) {
+    if (!pc) return;
+    if (!pc.__pendingIceCandidates) pc.__pendingIceCandidates = [];
+    pc.__pendingIceCandidates.push(candidate);
+}
+
+async function flushPendingIceCandidates(pc) {
+    if (!pc || !pc.__pendingIceCandidates || !pc.__pendingIceCandidates.length) return;
+    const pending = pc.__pendingIceCandidates.splice(0, pc.__pendingIceCandidates.length);
+    for (const candidate of pending) {
+        try {
+            await pc.addIceCandidate(new RTCIceCandidate(candidate));
+        } catch (e) {
+            console.log('[P2P] flush ICE candidate error:', e);
+        }
+    }
+}
+
+async function addIceCandidateSafely(pc, candidate) {
+    if (!pc || !candidate) return;
+    if (!pc.remoteDescription) {
+        queueIceCandidate(pc, candidate);
+        return;
+    }
+
+    try {
+        await pc.addIceCandidate(new RTCIceCandidate(candidate));
+    } catch (error) {
+        if (pc.signalingState !== 'closed') {
+            queueIceCandidate(pc, candidate);
+        }
+        throw error;
     }
 }
 
@@ -1424,304 +1361,6 @@ function updateVideoButton() {
     }
 }
 
-// Chat functions
-// Group chat functions
-let groupChatMessages = [];
-
-function displayGroupChatMessage(msg) {
-    const container = document.getElementById('messagesContainer');
-    if (!container) return;
-    
-    const msgDiv = document.createElement('div');
-    msgDiv.className = `message ${msg.isSent ? 'sent' : 'received'}`;
-    const timeStr = new Date(msg.timestamp).toLocaleString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-    msgDiv.innerHTML = `
-    <span class="message-sender">${msg.isSent ? 'Vous' : escapeHtml(msg.fromName || 'Inconnu')}</span>
-        <div class="message-bubble">${escapeHtml(msg.text)}</div>
-        <div class="message-meta">
-            <span class="message-time">${timeStr}</span>
-        </div>
-    `;
-    container.appendChild(msgDiv);
-    container.scrollTop = container.scrollHeight;
-}
-
-function sendGroupChatMessage() {
-    const input = document.getElementById('chatInput');
-    const text = input?.value.trim();
-    if (!text || !videoSocket?.connected) return;
-    
-    const payload = {
-        roomId,
-        fromId: videoSocket.id,
-        fromName: currentUser?.fullname || (isDoctor ? 'Psychologue' : 'Patient'),
-        text,
-        timestamp: new Date().toISOString()
-    };
-    videoSocket.emit('chat-message', payload);
-    
-    // Display as sent message immediately
-    displayGroupChatMessage({
-        fromName: currentUser?.fullname || 'Vous',
-        text,
-        timestamp: payload.timestamp,
-        isSent: true
-    });
-    
-    input.value = '';
-}
-
-function toggleChat() {
-    const chatSection = document.getElementById('chatSection');
-    const btn = document.getElementById('chatToggleBtn');
-    if (chatSection.style.display === 'none') {
-        chatSection.style.display = 'flex';
-        if (btn) btn.classList.add('active');
-        if (!isGroupCall) {
-            loadCallChatHistory();
-        }
-    } else {
-        chatSection.style.display = 'none';
-        if (btn) btn.classList.remove('active');
-    }
-}
-
-async function sendChatMessage() {
-    const input = document.getElementById('chatInput');
-    const content = input?.value.trim();
-    if (!content) return;
-
-    // Group calls use the video socket's chat-message event
-    if (isGroupCall) {
-        sendGroupChatMessage();
-        return;
-    }
-    
-    if (!chatPartnerId) return;
-
-    try {
-        const socket = connectCallChatRealtime();
-        if (socket) {
-            await sendCallChatRealtimeMessage(chatPartnerId, content);
-        } else {
-            await messageAPI.send(chatPartnerId, content);
-            await loadCallChatHistory(true);
-        }
-    } catch (error) {
-        console.error('Failed to send call message:', error);
-        return;
-    }
-    
-    input.value = '';
-}
-
-function handleChatKeyPress(event) {
-    if (event.key === 'Enter') {
-        sendChatMessage();
-    }
-}
-
-function displayChatMessage(msg) {
-    const container = document.getElementById('messagesContainer');
-    if (!container) return;
-    
-    const currentUserId = currentUser?.id;
-    const senderId = msg.senderId || msg.fromId;
-    const messageText = msg.content || msg.text || '';
-    const timestamp = msg.createdAt || msg.timestamp;
-    const isSent = senderId === currentUserId;
-    const senderName = msg.fromName || (isSent ? 'Vous' : 'Participant');
-    
-    const msgDiv = document.createElement('div');
-    msgDiv.className = `message ${isSent ? 'sent' : 'received'}`;
-    const timeStr = new Date(timestamp).toLocaleString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-    msgDiv.innerHTML = `
-        <div class="message-bubble">${escapeHtml(messageText)}</div>
-        <div class="message-meta">
-            <span class="message-sender">${isSent ? 'Vous' : escapeHtml(senderName)}</span>
-            <span class="message-time">${timeStr}</span>
-        </div>
-    `;
-    
-    container.appendChild(msgDiv);
-    container.scrollTop = container.scrollHeight;
-}
-
-function connectCallChatRealtime() {
-    if (!callMessagingSocket && typeof connectMessagingSocket === 'function') {
-        callMessagingSocket = connectMessagingSocket();
-    }
-
-    if (callMessagingSocket && !callMessagingSocketBound) {
-        callMessagingSocketBound = true;
-        callMessagingSocket.on('message:new', handleCallRealtimeMessage);
-    }
-
-    return callMessagingSocket;
-}
-
-function handleCallRealtimeMessage(payload) {
-    const message = payload?.message || payload;
-    if (!message?.id || !chatPartnerId) return;
-
-    const currentUserId = currentUser?.id;
-    const partnerId = message.senderId === currentUserId ? message.receiverId : message.senderId;
-    if (partnerId !== chatPartnerId) return;
-
-    appendCallChatMessage(message);
-}
-
-function appendCallChatMessage(message) {
-    const container = document.getElementById('messagesContainer');
-    if (!container || !message?.id || renderedCallMessageIds.has(message.id)) return;
-
-    renderedCallMessageIds.add(message.id);
-    lastRenderedChatSignature = Array.from(renderedCallMessageIds).join('|');
-
-    const isNearBottom = (container.scrollHeight - container.scrollTop - container.clientHeight) < 80;
-    displayChatMessage(message);
-    if (isNearBottom) {
-        container.scrollTop = container.scrollHeight;
-    }
-}
-
-function sendCallChatRealtimeMessage(receiverId, content) {
-    return new Promise((resolve, reject) => {
-        const socket = connectCallChatRealtime();
-        if (!socket) {
-            reject(new Error('Messaging socket unavailable'));
-            return;
-        }
-
-        const clientMessageId = `msg_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-        socket.emit('message:send', { receiverId, content, clientMessageId }, (response) => {
-            if (response?.error) {
-                reject(new Error(response.error));
-                return;
-            }
-            resolve(response?.message || null);
-        });
-    });
-}
-
-async function initializeCallChat(appointmentData) {
-    try {
-        let appt = appointmentData;
-        if (!appt) {
-            const resp = await appointmentAPI.getById(sessionAppointmentId);
-            appt = resp ? (resp.appointment || resp) : null;
-        }
-        if (!appt) return;
-
-        chatPartnerId = isDoctor ? appt.patientId : appt.doctorId;
-
-        // Set remote avatar if not already set from the pre-fetched data
-        if (!remoteAvatarUrl) {
-            if (isDoctor) {
-                remoteAvatarUrl = appt.patient?.profile?.avatar || appt.patient?.avatar || null;
-            } else {
-                remoteAvatarUrl = appt.doctor?.profile?.avatar || appt.doctor?.avatar || null;
-            }
-        }
-
-        await loadCallChatHistory(true);
-        connectCallChatRealtime();
-    } catch (error) {
-        console.error('Failed to initialize call chat:', error);
-    }
-}
-
-async function loadCallChatHistory(forceScroll = false) {
-    if (!chatPartnerId) return;
-
-    try {
-        const messages = await messageAPI.getWithUser(chatPartnerId);
-        renderCallChatMessages(messages || [], forceScroll);
-    } catch (error) {
-        console.error('Failed to load call chat history:', error);
-    }
-}
-
-function renderCallChatMessages(messages, forceScroll = false) {
-    const container = document.getElementById('messagesContainer');
-    if (!container) return;
-
-    const signature = messages.map(m => `${m.id}:${m.createdAt}`).join('|');
-    if (!forceScroll && signature === lastRenderedChatSignature) {
-        return;
-    }
-
-    lastRenderedChatSignature = signature;
-    renderedCallMessageIds = new Set(messages.map(m => m.id));
-
-    if (!messages.length) {
-        container.innerHTML = '<div class="no-messages" style="text-align: center; padding: 20px; color: #9CA3AF;">Aucun message</div>';
-        return;
-    }
-
-    const isNearBottom = (container.scrollHeight - container.scrollTop - container.clientHeight) < 80;
-    container.innerHTML = '';
-    messages.forEach((msg) => displayChatMessage(msg));
-
-    if (forceScroll || isNearBottom) {
-        container.scrollTop = container.scrollHeight;
-    }
-}
-
-function escapeHtml(text) {
-    if (!text) return '';
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-// Timer
-function startCallTimer() {
-    callStartTime = Date.now();
-    callTimerInterval = setInterval(updateCallDuration, 1000);
-}
-
-function updateCallDuration() {
-    if (!callStartTime) return;
-    const elapsed = Math.floor((Date.now() - callStartTime) / 1000);
-    const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
-    const seconds = (elapsed % 60).toString().padStart(2, '0');
-    const durationEl = document.getElementById('callDuration');
-    if (durationEl) {
-        durationEl.textContent = `${minutes}:${seconds}`;
-    }
-}
-
-function stopCallTimer() {
-    if (callTimerInterval) {
-        clearInterval(callTimerInterval);
-        callTimerInterval = null;
-    }
-}
-
-// ============================================
-// DOCTOR GROUP CALL: Countdown timer
-// ============================================
-
-function startDoctorCallTimer(durationMinutes) {
-    if (!durationMinutes || durationMinutes <= 0) durationMinutes = 90;
-    sessionEndTime = Date.now() + durationMinutes * 60 * 1000;
-    updateDoctorCallDisplay();
-    callTimerInterval = setInterval(updateDoctorCallDisplay, 1000);
-}
-
-function updateDoctorCallDisplay() {
-    if (!sessionEndTime) return;
-    const remaining = Math.max(0, Math.floor((sessionEndTime - Date.now()) / 1000));
-    const minutes = Math.floor(remaining / 60).toString().padStart(2, '0');
-    const seconds = (remaining % 60).toString().padStart(2, '0');
-    const durationEl = document.getElementById('callDuration');
-    if (durationEl) {
-        durationEl.textContent = `${minutes}:${seconds}`;
-        if (remaining <= 300) durationEl.style.color = '#ef4444';
-    }
-}
-
 // ============================================
 // DOCTOR GROUP CALL: Screen sharing
 // ============================================
@@ -1736,41 +1375,83 @@ async function toggleScreenShare() {
 
 async function startScreenShare() {
     try {
+        console.debug('[vcc] startScreenShare: requesting display media');
         const displayStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+        console.debug('[vcc] startScreenShare: getDisplayMedia resolved', { displayStream });
         const screenTrack = displayStream.getVideoTracks()[0];
-        if (!screenTrack) return;
+        if (!screenTrack) {
+            console.debug('[vcc] startScreenShare: no screen track obtained, aborting');
+            return;
+        }
 
         originalVideoTrack = localStream?.getVideoTracks()[0] || null;
-        localStream.removeTrack(localStream.getVideoTracks()[0]);
-        localStream.addTrack(screenTrack);
+        console.debug('[vcc] startScreenShare: originalVideoTrack present?', !!originalVideoTrack);
         isScreenSharing = true;
+        screenShareStream = displayStream;
 
         // Replace video track in all peer connections
         const senderPromises = [];
         if (isGroupCall) {
+            console.debug('[vcc] startScreenShare: replacing tracks for group peers', Object.keys(peerConnections).length);
             Object.values(peerConnections).forEach(pc => {
-                const sender = pc.getSenders().find(s => s.track?.kind === 'video');
-                if (sender) senderPromises.push(sender.replaceTrack(screenTrack).catch(() => {}));
+                try {
+                    const sender = pc.getSenders().find(s => s.track?.kind === 'video');
+                    if (sender) {
+                        senderPromises.push(sender.replaceTrack(screenTrack).then(() => {
+                            console.debug('[vcc] replaceTrack OK (group)', { pcId: pc.__id });
+                        }).catch(err => {
+                            console.error('[vcc] replaceTrack ERROR (group)', { pcId: pc.__id, err });
+                        }));
+                    } else {
+                        console.debug('[vcc] startScreenShare: no video sender on pc', pc.__id);
+                    }
+                } catch (e) {
+                    console.error('[vcc] startScreenShare: error finding sender', e);
+                }
             });
         } else if (peerConnection) {
-            const sender = peerConnection.getSenders().find(s => s.track?.kind === 'video');
-            if (sender) senderPromises.push(sender.replaceTrack(screenTrack).catch(() => {}));
+            try {
+                const sender = peerConnection.getSenders().find(s => s.track?.kind === 'video');
+                if (sender) {
+                    senderPromises.push(sender.replaceTrack(screenTrack).then(() => {
+                        console.debug('[vcc] replaceTrack OK (p2p)');
+                    }).catch(err => {
+                        console.error('[vcc] replaceTrack ERROR (p2p)', err);
+                    }));
+                } else {
+                    console.debug('[vcc] startScreenShare: no video sender on peerConnection');
+                }
+            } catch (e) {
+                console.error('[vcc] startScreenShare: error finding sender on peerConnection', e);
+            }
         }
         await Promise.allSettled(senderPromises);
 
         // Update local video preview
         const localVideo = document.getElementById('localVideo');
-        if (localVideo) localVideo.srcObject = localStream;
+        if (localVideo) {
+            console.debug('[vcc] startScreenShare: setting local preview to displayStream');
+            try {
+                localVideo.srcObject = displayStream;
+                // keep preview transform unchanged — do not forcibly mirror
+                await localVideo.play().catch(err => console.debug('[vcc] localVideo.play() rejected', err));
+            } catch (e) {
+                console.error('[vcc] startScreenShare: error updating local preview', e);
+            }
+        }
 
         const screenShareBtn = document.getElementById('screenShareBtn');
         if (screenShareBtn) screenShareBtn.style.background = '#44AA99';
 
         screenTrack.onended = () => {
-            stopScreenShare();
+            console.debug('[vcc] screenTrack.onended fired');
+            if (isScreenSharing) {
+                stopScreenShare();
+            }
         };
     } catch (error) {
-        console.error('Screen share error:', error);
-        if (error.name !== 'NotAllowedError') {
+        console.error('[vcc] Screen share error:', error);
+        if (error && error.name !== 'NotAllowedError') {
             showToast('Erreur de partage d\'écran', 'error');
         }
     }
@@ -1780,47 +1461,79 @@ async function stopScreenShare() {
     if (!isScreenSharing) return;
 
     try {
+        console.debug('[vcc] stopScreenShare: stopping screenShareStream if present');
         // Stop screen share track
-        const currentVideoTrack = localStream?.getVideoTracks()[0];
-        if (currentVideoTrack && currentVideoTrack !== originalVideoTrack) {
-            currentVideoTrack.stop();
+        if (screenShareStream) {
+            screenShareStream.getTracks().forEach((track) => {
+                try { track.stop(); } catch (e) { console.debug('[vcc] stop track error', e); }
+            });
         }
 
         // Restore original camera track
-        if (localStream && originalVideoTrack) {
-            const oldTrack = localStream.getVideoTracks()[0];
-            if (oldTrack) localStream.removeTrack(oldTrack);
+        if (originalVideoTrack) {
+            console.debug('[vcc] stopScreenShare: restoring originalVideoTrack enabled state', { isVideoOff });
             originalVideoTrack.enabled = !isVideoOff;
-            localStream.addTrack(originalVideoTrack);
         }
 
         // Replace in all peer connections
         const restoreTrack = originalVideoTrack;
         const senderPromises = [];
         if (isGroupCall) {
+            console.debug('[vcc] stopScreenShare: replacing tracks on group peers', Object.keys(peerConnections).length);
             Object.values(peerConnections).forEach(pc => {
-                const sender = pc.getSenders().find(s => s.track?.kind === 'video');
-                if (sender && restoreTrack) senderPromises.push(sender.replaceTrack(restoreTrack).catch(() => {}));
+                try {
+                    const sender = pc.getSenders().find(s => s.track?.kind === 'video');
+                    if (sender && restoreTrack) {
+                        senderPromises.push(sender.replaceTrack(restoreTrack).then(() => {
+                            console.debug('[vcc] replaceTrack OK (restore, group)', { pcId: pc.__id });
+                        }).catch(err => {
+                            console.error('[vcc] replaceTrack ERROR (restore, group)', { pcId: pc.__id, err });
+                        }));
+                    } else {
+                        console.debug('[vcc] stopScreenShare: no video sender on pc or no restoreTrack', pc.__id);
+                    }
+                } catch (e) {
+                    console.error('[vcc] stopScreenShare: error finding sender', e);
+                }
             });
         } else if (peerConnection) {
-            const sender = peerConnection.getSenders().find(s => s.track?.kind === 'video');
-            if (sender && restoreTrack) senderPromises.push(sender.replaceTrack(restoreTrack).catch(() => {}));
+            try {
+                const sender = peerConnection.getSenders().find(s => s.track?.kind === 'video');
+                if (sender && restoreTrack) {
+                    senderPromises.push(sender.replaceTrack(restoreTrack).then(() => {
+                        console.debug('[vcc] replaceTrack OK (restore, p2p)');
+                    }).catch(err => {
+                        console.error('[vcc] replaceTrack ERROR (restore, p2p)', err);
+                    }));
+                } else {
+                    console.debug('[vcc] stopScreenShare: no video sender on peerConnection or no restoreTrack');
+                }
+            } catch (e) {
+                console.error('[vcc] stopScreenShare: error finding sender on peerConnection', e);
+            }
         }
         await Promise.allSettled(senderPromises);
 
         isScreenSharing = false;
         originalVideoTrack = null;
+        screenShareStream = null;
 
         const localVideo = document.getElementById('localVideo');
         if (localVideo) {
-            localVideo.srcObject = localStream;
-            localVideo.style.transform = 'scaleX(-1)';
+            console.debug('[vcc] stopScreenShare: restoring local preview to localStream', { hasLocalStream: !!localStream });
+            try {
+                localVideo.srcObject = localStream;
+                // keep preview transform unchanged — do not forcibly mirror
+                await localVideo.play().catch(err => console.debug('[vcc] localVideo.play() rejected during restore', err));
+            } catch (e) {
+                console.error('[vcc] stopScreenShare: error restoring local preview', e);
+            }
         }
 
         const screenShareBtn = document.getElementById('screenShareBtn');
         if (screenShareBtn) screenShareBtn.style.background = '';
     } catch (error) {
-        console.error('Stop screen share error:', error);
+        console.error('[vcc] Stop screen share error:', error);
     }
 }
 

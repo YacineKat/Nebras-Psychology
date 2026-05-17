@@ -400,37 +400,127 @@ async function handleAvatarChange(event) {
         return;
     }
 
-    if (file.size > 2 * 1024 * 1024) {
-        showToast('❌ L\'image ne doit pas dépasser 2MB', 'error');
+    let avatarDataUrl;
+
+    try {
+        avatarDataUrl = await prepareAvatarImageForUpload(file);
+    } catch (error) {
+        showToast(error.message || '❌ Impossible de traiter l\'image', 'error');
         return;
     }
 
-    const reader = new FileReader();
-    reader.onload = async function(e) {
-        const base64Image = e.target.result;
+    updateProfileHeaderAvatar(avatarDataUrl);
 
-        updateProfileHeaderAvatar(base64Image);
+    try {
+        await authAPI.updateProfile({ avatar: avatarDataUrl });
 
-        try {
-            const result = await authAPI.updateProfile({ avatar: base64Image });
-
-            const user = getCurrentUser();
-            if (user.profile) {
-                user.profile.avatar = base64Image;
-            } else {
-                user.profile = { avatar: base64Image };
-            }
-            localStorage.setItem('nebras_user', JSON.stringify(user));
-
-            updateSidebarAvatar(base64Image);
-
-            showToast('✅ Photo de profil mise à jour !', 'success');
-        } catch (error) {
-            console.error('Avatar upload error:', error);
-            showToast('❌ Erreur lors de la mise à jour: ' + (error.message || 'Erreur serveur'), 'error');
+        const user = getCurrentUser();
+        if (user.profile) {
+            user.profile.avatar = avatarDataUrl;
+        } else {
+            user.profile = { avatar: avatarDataUrl };
         }
-    };
-    reader.readAsDataURL(file);
+        localStorage.setItem('nebras_user', JSON.stringify(user));
+
+        updateSidebarAvatar(avatarDataUrl);
+
+        showToast('✅ Photo de profil mise à jour !', 'success');
+    } catch (error) {
+        console.error('Avatar upload error:', error);
+        showToast('❌ Erreur lors de la mise à jour: ' + (error.message || 'Erreur serveur'), 'error');
+    }
+}
+
+const MAX_AVATAR_SIZE_BYTES = 2 * 1024 * 1024;
+const MAX_AVATAR_DIMENSION = 1200;
+const MAX_AVATAR_QUALITY = 0.9;
+const MIN_AVATAR_QUALITY = 0.7;
+
+function readFileAsDataUrl(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (event) => resolve(event.target.result);
+        reader.onerror = () => reject(new Error('❌ Impossible de lire l\'image'));
+        reader.readAsDataURL(file);
+    });
+}
+
+function getDataUrlSizeBytes(dataUrl) {
+    const base64 = (dataUrl || '').split(',')[1] || '';
+    const padding = base64.endsWith('==') ? 2 : base64.endsWith('=') ? 1 : 0;
+    return Math.max(0, Math.floor((base64.length * 3) / 4) - padding);
+}
+
+function compressAvatarImage(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+
+        reader.onload = () => {
+            const image = new Image();
+
+            image.onload = () => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+
+                if (!ctx) {
+                    reject(new Error('❌ Impossible de traiter l\'image'));
+                    return;
+                }
+
+                let width = image.width;
+                let height = image.height;
+                const scale = Math.min(1, MAX_AVATAR_DIMENSION / width, MAX_AVATAR_DIMENSION / height);
+                width = Math.max(1, Math.round(width * scale));
+                height = Math.max(1, Math.round(height * scale));
+
+                let quality = MAX_AVATAR_QUALITY;
+                let currentWidth = width;
+                let currentHeight = height;
+
+                while (currentWidth >= 320 && currentHeight >= 320) {
+                    canvas.width = currentWidth;
+                    canvas.height = currentHeight;
+                    ctx.clearRect(0, 0, currentWidth, currentHeight);
+                    ctx.drawImage(image, 0, 0, currentWidth, currentHeight);
+
+                    let dataUrl = canvas.toDataURL('image/jpeg', quality);
+                    while (getDataUrlSizeBytes(dataUrl) > MAX_AVATAR_SIZE_BYTES && quality > MIN_AVATAR_QUALITY) {
+                        quality = Math.max(MIN_AVATAR_QUALITY, Number((quality - 0.1).toFixed(1)));
+                        dataUrl = canvas.toDataURL('image/jpeg', quality);
+                    }
+
+                    if (getDataUrlSizeBytes(dataUrl) <= MAX_AVATAR_SIZE_BYTES) {
+                        resolve(dataUrl);
+                        return;
+                    }
+
+                    currentWidth = Math.max(320, Math.round(currentWidth * 0.85));
+                    currentHeight = Math.max(320, Math.round(currentHeight * 0.85));
+                    quality = MAX_AVATAR_QUALITY;
+
+                    if (currentWidth === 320 && currentHeight === 320) {
+                        break;
+                    }
+                }
+
+                reject(new Error('❌ L\'image optimisée dépasse encore 2MB. Essayez une image plus légère.'));
+            };
+
+            image.onerror = () => reject(new Error('❌ Impossible de lire l\'image'));
+            image.src = reader.result;
+        };
+
+        reader.onerror = () => reject(new Error('❌ Impossible de lire l\'image'));
+        reader.readAsDataURL(file);
+    });
+}
+
+async function prepareAvatarImageForUpload(file) {
+    if (file.size <= MAX_AVATAR_SIZE_BYTES) {
+        return readFileAsDataUrl(file);
+    }
+
+    return compressAvatarImage(file);
 }
 
 function openPasswordModal() {
