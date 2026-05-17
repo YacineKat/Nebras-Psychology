@@ -6,6 +6,39 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const prisma = require('../prisma');
 
+function normalizeBirthDateInput(birthDateInput) {
+  if (birthDateInput === undefined || birthDateInput === null || birthDateInput === '') {
+    return null;
+  }
+
+  const input = String(birthDateInput).trim();
+  if (!input) return null;
+
+  const dateOnlyMatch = input.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (dateOnlyMatch) {
+    const year = parseInt(dateOnlyMatch[1], 10);
+    const month = parseInt(dateOnlyMatch[2], 10);
+    const day = parseInt(dateOnlyMatch[3], 10);
+    return new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+  }
+
+  const parsedDate = new Date(input);
+  if (Number.isNaN(parsedDate.getTime())) {
+    return null;
+  }
+
+  // Normalize any datetime input to date-only semantics (UTC midnight).
+  return new Date(Date.UTC(
+    parsedDate.getUTCFullYear(),
+    parsedDate.getUTCMonth(),
+    parsedDate.getUTCDate(),
+    0,
+    0,
+    0,
+    0
+  ));
+}
+
 // ============================================
 // REGISTER NEW USER
 // ============================================
@@ -182,11 +215,9 @@ exports.updateProfile = async (req, res) => {
     // Avatar (base64 or URL)
     if (avatar && avatar !== '') profileData.avatar = avatar;
     
-    if (birthDate && birthDate !== '') {
-      const parsedDate = new Date(birthDate);
-      if (!isNaN(parsedDate.getTime())) {
-        profileData.birthDate = parsedDate;
-      }
+    const normalizedBirthDate = normalizeBirthDateInput(birthDate);
+    if (normalizedBirthDate) {
+      profileData.birthDate = normalizedBirthDate;
     }
     
     if (gender && gender !== '') profileData.gender = gender;

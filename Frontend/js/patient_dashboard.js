@@ -3,6 +3,7 @@
 // ============================================
 
 let currentUser = null;
+let activeProfileSummaryField = null;
 
 function highlightCurrentSidebarLink() {
     const currentPage = window.location.pathname.split('/').pop().toLowerCase();
@@ -50,6 +51,8 @@ async function loadUserProfile() {
     try {
         const result = await authAPI.getMe();
         if (result.user) {
+            syncCurrentUserState(result.user);
+
             // fullname is in User table, not Profile
             const userFullname = result.user.fullname;
             if (userFullname) {
@@ -92,6 +95,8 @@ async function loadUserProfile() {
                 const consultType = document.getElementById('consultType');
                 if (consultType) consultType.value = profile.prefType;
             }
+
+            renderPatientProfileSummary(result.user);
         }
     } catch (error) {
         console.error('Error loading profile:', error);
@@ -179,6 +184,354 @@ const languesList = [
     "Portugais", "Chinois", "Allemand", "Italien", "Roumain",
     "Polonais", "Turc", "Langue des Signes (LSF)"
 ];
+
+const profileSummaryFields = [
+    { key: 'fullname', label: 'Nom complet', type: 'text' },
+    { key: 'age', label: 'Âge', type: 'number' },
+    { key: 'gender', label: 'Genre', type: 'select', options: [
+        { value: 'femme', label: 'Femme' },
+        { value: 'homme', label: 'Homme' }
+    ] },
+    { key: 'motifs', label: 'Motifs de consultation', type: 'textarea' },
+    { key: 'language', label: 'Langue préférée', type: 'select', options: languesList.map(langue => ({
+        value: langue.toLowerCase().replace(/ /g, '_'),
+        label: langue
+    })) },
+    { key: 'prefGender', label: 'Genre du psychologue', type: 'select', options: [
+        { value: 'femme', label: 'Femme' },
+        { value: 'homme', label: 'Homme' },
+        { value: 'aucun', label: 'Peu importe' }
+    ] },
+    { key: 'prefType', label: 'Type de consultation', type: 'select', options: [
+        { value: 'individuelle', label: 'Individuelle' },
+        { value: 'plusieurs', label: 'À plusieurs' },
+        { value: 'aucun', label: 'Peu importe' }
+    ] }
+];
+
+function escapeHTML(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function getAgeFromBirthDate(birthDate) {
+    if (!birthDate) return '';
+    const parsedDate = new Date(birthDate);
+    if (Number.isNaN(parsedDate.getTime())) return '';
+
+    const today = new Date();
+    let age = today.getFullYear() - parsedDate.getFullYear();
+    const monthDiff = today.getMonth() - parsedDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < parsedDate.getDate())) {
+        age -= 1;
+    }
+
+    return age > 0 ? age : '';
+}
+
+function getGenderLabel(value) {
+    if (value === 'femme') return 'Femme';
+    if (value === 'homme') return 'Homme';
+    return value || '';
+}
+
+function getLanguageLabel(value) {
+    if (!value) return '';
+    const normalizedValue = value.toLowerCase().replace(/ /g, '_');
+    const matchedLanguage = languesList.find(langue => langue.toLowerCase().replace(/ /g, '_') === normalizedValue);
+    return matchedLanguage || value;
+}
+
+function getPrefGenderLabel(value) {
+    if (value === 'femme') return 'Femme';
+    if (value === 'homme') return 'Homme';
+    if (value === 'aucun') return 'Peu importe';
+    return value || '';
+}
+
+function getPrefTypeLabel(value) {
+    if (value === 'individuelle') return 'Individuelle';
+    if (value === 'plusieurs') return 'À plusieurs';
+    if (value === 'aucun') return 'Peu importe';
+    return value || '';
+}
+
+function getProfileSummaryData(sourceUser = currentUser) {
+    const profile = sourceUser?.profile || {};
+    const motifs = profile.motifs ? profile.motifs.split(',').map(item => item.trim()).filter(Boolean) : [];
+
+    return {
+        fullname: sourceUser?.fullname || '',
+        age: getAgeFromBirthDate(profile.birthDate),
+        gender: profile.gender || '',
+        motifs,
+        language: profile.language || '',
+        prefGender: profile.prefGender || '',
+        prefType: profile.prefType || ''
+    };
+}
+
+function hasProfileSummaryData(summaryData) {
+    return Object.values(summaryData).some(value => Array.isArray(value) ? value.length > 0 : Boolean(value));
+}
+
+function buildSelectOptions(options, currentValue) {
+    return ['<option value="">Sélectionnez</option>', ...options.map(option => {
+        const selected = option.value === currentValue ? ' selected' : '';
+        return `<option value="${escapeHTML(option.value)}"${selected}>${escapeHTML(option.label)}</option>`;
+    })].join('');
+}
+
+function renderSummaryValue(field, value) {
+    if (Array.isArray(value)) {
+        if (!value.length) {
+            return '<span class="profile-summary-placeholder">Non renseigné</span>';
+        }
+        return `<div class="profile-summary-tags">${value.map(item => `<span class="profile-summary-tag">${escapeHTML(item)}</span>`).join('')}</div>`;
+    }
+
+    if (!value) {
+        return '<span class="profile-summary-placeholder">Non renseigné</span>';
+    }
+
+    if (field === 'gender') return escapeHTML(getGenderLabel(value));
+    if (field === 'language') return escapeHTML(getLanguageLabel(value));
+    if (field === 'prefGender') return escapeHTML(getPrefGenderLabel(value));
+    if (field === 'prefType') return escapeHTML(getPrefTypeLabel(value));
+
+    return escapeHTML(value);
+}
+
+function renderSummaryEditor(field, value) {
+    if (field === 'fullname') {
+        return `<input class="profile-summary-field" type="text" data-profile-input value="${escapeHTML(value)}" placeholder="Votre nom complet">`;
+    }
+
+    if (field === 'age') {
+        return `<input class="profile-summary-field" type="number" min="1" max="120" data-profile-input value="${escapeHTML(value)}" placeholder="Votre âge">`;
+    }
+
+    if (field === 'motifs') {
+        return `<textarea class="profile-summary-field" data-profile-input placeholder="Séparez vos motifs par des virgules">${escapeHTML(Array.isArray(value) ? value.join(', ') : value)}</textarea>`;
+    }
+
+    const config = profileSummaryFields.find(item => item.key === field);
+    const options = config?.options || [];
+    return `<select class="profile-summary-field" data-profile-input>${buildSelectOptions(options, value)}</select>`;
+}
+
+function renderPatientProfileSummary(sourceUser = currentUser) {
+    const card = document.getElementById('patientProfileSummaryCard');
+    const container = document.getElementById('patientProfileSummary');
+    if (!card || !container) return;
+
+    const summaryData = getProfileSummaryData(sourceUser);
+    if (!hasProfileSummaryData(summaryData)) {
+        card.style.display = 'none';
+        container.innerHTML = '';
+        return;
+    }
+
+    card.style.display = 'block';
+    container.innerHTML = profileSummaryFields.map(field => {
+        const value = summaryData[field.key];
+        return `
+            <div class="profile-summary-item" data-profile-field="${field.key}">
+                <span class="profile-summary-label">${escapeHTML(field.label)}</span>
+                <div class="profile-summary-view" data-profile-view>
+                    <div class="profile-summary-value">${renderSummaryValue(field.key, value)}</div>
+                    <button type="button" class="profile-summary-edit-btn" onclick="startProfileFieldEdit('${field.key}')">Modifier</button>
+                </div>
+                <div class="profile-summary-editor" data-profile-editor>
+                    ${renderSummaryEditor(field.key, value)}
+                    <div class="profile-summary-actions">
+                        <button type="button" class="profile-summary-cancel-btn" onclick="cancelProfileFieldEdit('${field.key}')">Annuler</button>
+                        <button type="button" class="profile-summary-save-btn" onclick="saveProfileFieldEdit('${field.key}')">Enregistrer</button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    if (activeProfileSummaryField) {
+        const activeField = container.querySelector(`[data-profile-field="${activeProfileSummaryField}"]`);
+        if (activeField) {
+            const activeView = activeField.querySelector('[data-profile-view]');
+            const activeEditor = activeField.querySelector('[data-profile-editor]');
+            if (activeView) activeView.style.display = 'none';
+            if (activeEditor) activeEditor.classList.add('active');
+        } else {
+            activeProfileSummaryField = null;
+        }
+    }
+}
+
+function updateUserIdentityDisplay(user) {
+    const displayName = user?.fullname || user?.email || '';
+    document.querySelectorAll('.user-name').forEach(el => {
+        el.textContent = displayName;
+    });
+
+    const greetingTitle = document.getElementById('greetingTitle');
+    if (greetingTitle) {
+        greetingTitle.textContent = displayName ? `Bonjour, ${displayName}` : 'Bonjour';
+    }
+}
+
+function syncCurrentUserState(updatedUser, updateData = {}) {
+    const baseUser = updatedUser || currentUser || getCurrentUser() || {};
+    const mergedUser = {
+        ...baseUser,
+        profile: {
+            ...(currentUser?.profile || {}),
+            ...(baseUser.profile || {})
+        }
+    };
+
+    if (Object.prototype.hasOwnProperty.call(updateData, 'fullname')) {
+        mergedUser.fullname = updateData.fullname;
+    }
+    if (Object.prototype.hasOwnProperty.call(updateData, 'birthDate')) {
+        mergedUser.profile.birthDate = updateData.birthDate;
+    }
+    if (Object.prototype.hasOwnProperty.call(updateData, 'gender')) {
+        mergedUser.profile.gender = updateData.gender;
+    }
+    if (Object.prototype.hasOwnProperty.call(updateData, 'motifs')) {
+        mergedUser.profile.motifs = updateData.motifs;
+    }
+    if (Object.prototype.hasOwnProperty.call(updateData, 'language')) {
+        mergedUser.profile.language = updateData.language;
+    }
+    if (Object.prototype.hasOwnProperty.call(updateData, 'prefGender')) {
+        mergedUser.profile.prefGender = updateData.prefGender;
+    }
+    if (Object.prototype.hasOwnProperty.call(updateData, 'prefType')) {
+        mergedUser.profile.prefType = updateData.prefType;
+    }
+
+    currentUser = mergedUser;
+    localStorage.setItem('nebras_user', JSON.stringify(mergedUser));
+    updateUserIdentityDisplay(mergedUser);
+    renderPatientProfileSummary(mergedUser);
+}
+
+function startProfileFieldEdit(field) {
+    if (activeProfileSummaryField && activeProfileSummaryField !== field) {
+        closeProfileFieldEdit(activeProfileSummaryField);
+    }
+
+    const row = document.querySelector(`[data-profile-field="${field}"]`);
+    if (!row) return;
+
+    const view = row.querySelector('[data-profile-view]');
+    const editor = row.querySelector('[data-profile-editor]');
+    const input = row.querySelector('[data-profile-input]');
+
+    if (view) view.style.display = 'none';
+    if (editor) editor.classList.add('active');
+    if (input) {
+        input.focus();
+        if (typeof input.select === 'function') {
+            input.select();
+        }
+    }
+
+    activeProfileSummaryField = field;
+}
+
+function closeProfileFieldEdit(field) {
+    const row = document.querySelector(`[data-profile-field="${field}"]`);
+    if (!row) return;
+
+    const view = row.querySelector('[data-profile-view]');
+    const editor = row.querySelector('[data-profile-editor]');
+    if (view) view.style.display = 'flex';
+    if (editor) editor.classList.remove('active');
+
+    if (activeProfileSummaryField === field) {
+        activeProfileSummaryField = null;
+    }
+}
+
+async function saveProfileFieldEdit(field) {
+    const row = document.querySelector(`[data-profile-field="${field}"]`);
+    if (!row) return;
+
+    const input = row.querySelector('[data-profile-input]');
+    if (!input) return;
+
+    let updateData = {};
+    const rawValue = typeof input.value === 'string' ? input.value.trim() : input.value;
+
+    if (field === 'fullname') {
+        if (!rawValue) {
+            showToast('Le nom complet est obligatoire', 'error');
+            return;
+        }
+        updateData.fullname = rawValue;
+    } else if (field === 'age') {
+        const age = parseInt(rawValue, 10);
+        if (!age || age < 1 || age > 120) {
+            showToast('Veuillez saisir un âge valide', 'error');
+            return;
+        }
+        updateData.birthDate = new Date(new Date().getFullYear() - age, 0, 1).toISOString();
+    } else if (field === 'motifs') {
+        const motifs = rawValue.split(',').map(item => item.trim()).filter(Boolean);
+        updateData.motifs = motifs.length ? motifs.join(',') : null;
+    } else if (field === 'language') {
+        if (!rawValue) {
+            showToast('Veuillez sélectionner une langue', 'error');
+            return;
+        }
+        updateData.language = rawValue.replace(/_/g, ' ');
+    } else if (field === 'gender') {
+        if (!rawValue) {
+            showToast('Veuillez sélectionner un genre', 'error');
+            return;
+        }
+        updateData.gender = rawValue;
+    } else if (field === 'prefGender') {
+        if (!rawValue) {
+            showToast('Veuillez sélectionner une préférence', 'error');
+            return;
+        }
+        updateData.prefGender = rawValue;
+    } else if (field === 'prefType') {
+        if (!rawValue) {
+            showToast('Veuillez sélectionner un type de consultation', 'error');
+            return;
+        }
+        updateData.prefType = rawValue;
+    }
+
+    const saveBtn = row.querySelector('.profile-summary-save-btn');
+    const originalText = saveBtn?.textContent || 'Enregistrer';
+    if (saveBtn) {
+        saveBtn.textContent = 'Enregistrement...';
+        saveBtn.disabled = true;
+    }
+
+    try {
+        const result = await authAPI.updateProfile(updateData);
+        syncCurrentUserState(result?.user, updateData);
+        closeProfileFieldEdit(field);
+        showToast('Informations mises à jour', 'success');
+    } catch (error) {
+        console.error('Error updating profile field:', error);
+        showToast('Erreur: ' + error.message, 'error');
+    } finally {
+        if (saveBtn) {
+            saveBtn.textContent = originalText;
+            saveBtn.disabled = false;
+        }
+    }
+}
 
 function generateMotifs() {
     const grid = document.getElementById('motifsGrid');
@@ -326,15 +679,9 @@ async function submitNeeds() {
     }
 
     try {
-        await authAPI.updateProfile(updateData);
+        const result = await authAPI.updateProfile(updateData);
+        syncCurrentUserState(result?.user, updateData);
         showToast('Vos préférences ont été enregistrées!', 'success');
-        
-        // Update localStorage
-        const currentUser = getCurrentUser();
-        if (currentUser) {
-            currentUser.profile = { ...currentUser.profile, ...updateData };
-            localStorage.setItem('nebras_user', JSON.stringify(currentUser));
-        }
         
         document.getElementById('besoinsSection').style.display = 'none';
         document.getElementById('welcomeContent').style.display = 'block';
@@ -354,6 +701,9 @@ window.nextStep = nextStep;
 window.prevStep = prevStep;
 window.submitNeeds = submitNeeds;
 window.highlightCurrentSidebarLink = highlightCurrentSidebarLink;
+window.startProfileFieldEdit = startProfileFieldEdit;
+window.cancelProfileFieldEdit = closeProfileFieldEdit;
+window.saveProfileFieldEdit = saveProfileFieldEdit;
 
 // Scroll persistence
 document.querySelectorAll('.nav-menu .nav-item').forEach(link => {

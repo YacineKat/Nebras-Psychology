@@ -81,9 +81,8 @@ function renderPatientProfileFromUser(profileUser) {
     if (lastNameEl) lastNameEl.value = lastName;
 
     const birthDateEl = document.getElementById('birthDate');
-    if (birthDateEl && p.birthDate) {
-        const date = new Date(p.birthDate);
-        birthDateEl.value = date.toISOString().split('T')[0];
+    if (birthDateEl) {
+        birthDateEl.value = formatBirthDateForDateInput(p.birthDate);
     }
 
     const genderEl = document.getElementById('gender');
@@ -126,6 +125,29 @@ function renderPatientProfileFromUser(profileUser) {
     }
 }
 
+function formatBirthDateForDateInput(rawBirthDate) {
+    if (!rawBirthDate) return '';
+
+    const stringValue = String(rawBirthDate).trim();
+    if (!stringValue) return '';
+
+    // Keep date-only values stable and avoid timezone shifts in UI.
+    const directDateMatch = stringValue.match(/^(\d{4}-\d{2}-\d{2})/);
+    if (directDateMatch) {
+        return directDateMatch[1];
+    }
+
+    const parsed = new Date(stringValue);
+    if (Number.isNaN(parsed.getTime())) {
+        return '';
+    }
+
+    const year = parsed.getUTCFullYear();
+    const month = String(parsed.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(parsed.getUTCDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
 // Toggle tag selection
 function toggleTag(element) {
     element.classList.toggle('selected');
@@ -146,6 +168,7 @@ async function loadProfileData() {
     // Update sidebar immediately from localStorage BEFORE loading
     updateSidebarWithUserData();
     renderPatientProfileFromUser(user);
+    await loadProfileStats();
 
     const formContainer = document.getElementById('tabProfil');
     const besoinsContainer = document.getElementById('tabBesoins');
@@ -173,6 +196,33 @@ async function loadProfileData() {
             besoinsContainer.style.opacity = '1';
             besoinsContainer.style.pointerEvents = 'auto';
         }
+    }
+}
+
+async function loadProfileStats() {
+    const appointmentsCountEl = document.getElementById('appointmentsCount');
+    const therapiesCountEl = document.getElementById('therapiesCount');
+
+    try {
+        const appointments = await appointmentAPI.getAll({ view: 'summary' });
+        if (appointmentsCountEl) {
+            appointmentsCountEl.textContent = Array.isArray(appointments) ? appointments.length : '0';
+        }
+    } catch (error) {
+        console.error('Error loading appointment count:', error);
+        if (appointmentsCountEl) appointmentsCountEl.textContent = '0';
+    }
+
+    try {
+        const groupsResponse = await fetchAPI('/groups');
+        if (therapiesCountEl) {
+            const groups = Array.isArray(groupsResponse?.groups) ? groupsResponse.groups : [];
+            const activeTherapies = groups.filter(group => group.membershipStatus === 'accepted');
+            therapiesCountEl.textContent = String(activeTherapies.length);
+        }
+    } catch (error) {
+        console.error('Error loading therapy count:', error);
+        if (therapiesCountEl) therapiesCountEl.textContent = '0';
     }
 }
 
@@ -215,6 +265,9 @@ async function updateProfile() {
         if (user) {
             user.fullname = fullname;
             user.profile = { ...(user.profile || {}), ...updateData };
+            if (result?.user?.profile?.birthDate !== undefined) {
+                user.profile.birthDate = result.user.profile.birthDate;
+            }
             localStorage.setItem('nebras_user', JSON.stringify(user));
         }
 
