@@ -10,6 +10,7 @@ const { authMiddleware, requireRole } = require('../middleware/authMiddleware');
 // Public routes (anyone can view doctors)
 router.get('/', doctorController.getAllDoctors);
 router.get('/patients', authMiddleware, requireRole('psychologue', 'counselor'), doctorController.getPatients);
+router.get('/patients/:patientId', authMiddleware, requireRole('psychologue', 'counselor'), doctorController.getPatientById);
 
 // Protected routes (must come before /:id)
 router.get('/profile/me', authMiddleware, doctorController.getMyProfile);

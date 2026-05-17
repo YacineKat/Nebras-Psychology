@@ -26,6 +26,9 @@ router.delete('/psychologue/groups/:groupId', authMiddleware, therapyGroupContro
 router.post('/psychologue/groups/accept', authMiddleware, therapyGroupController.acceptPatientRequest);
 router.post('/psychologue/groups/reject', authMiddleware, therapyGroupController.rejectPatientRequest);
 
+// End a group session — notify all patients
+router.post('/psychologue/groups/:groupId/end-session', authMiddleware, therapyGroupController.endGroupSession);
+
 // =============================================
 // PATIENT ROUTES
 // =============================================
@@ -37,6 +40,9 @@ router.get('/groups', authMiddleware, therapyGroupController.getGroups);
 router.post('/groups/join', authMiddleware, therapyGroupController.joinGroup);
 router.post('/groups/leave', authMiddleware, therapyGroupController.leaveGroup);
 router.get('/my-groups', authMiddleware, therapyGroupController.getMyGroupsAsPatient);
+
+// Rate a group therapy session
+router.post('/groups/rate', authMiddleware, therapyGroupController.createGroupSessionRating);
 
 // Seed route (for development)
 router.post('/seed', therapyGroupController.seedGroups);

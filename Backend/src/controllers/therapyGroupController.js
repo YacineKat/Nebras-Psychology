@@ -1,6 +1,19 @@
 const prisma = require('../prisma');
 
 // =============================================
+// REAL-TIME BROADCAST HELPERS
+// =============================================
+
+function broadcastGroupChange(type, details = {}) {
+  if (!global.io) return;
+  global.io.emit('group-data-changed', {
+    type,
+    timestamp: new Date().toISOString(),
+    ...details
+  });
+}
+
+// =============================================
 // PSYCHOLOGUE GROUP MANAGEMENT
 // =============================================
 
@@ -36,6 +49,9 @@ async function createGroup(req, res) {
         psychologueId
       }
     });
+
+    // Broadcast real-time update
+    broadcastGroupChange('group-created', { groupId: group.id, psychologueId });
 
     res.status(201).json({ 
       success: true, 
@@ -157,6 +173,9 @@ async function updateGroup(req, res) {
       }
     });
 
+    // Broadcast real-time update
+    broadcastGroupChange('group-updated', { groupId: group.id, psychologueId });
+
     res.json({ 
       success: true, 
       group: {
@@ -206,6 +225,9 @@ async function deleteGroup(req, res) {
       where: { id: groupId }
     });
 
+    // Broadcast real-time update
+    broadcastGroupChange('group-deleted', { groupId, psychologueId });
+
     res.json({ success: true, message: 'Groupe supprimé' });
   } catch (error) {
     console.error('Error deleting group:', error);
@@ -224,7 +246,12 @@ async function getGroupDetails(req, res) {
     const { groupId } = req.params;
 
     const group = await prisma.therapyGroup.findFirst({
-      where: { id: groupId, psychologueId }
+      where: { id: groupId, psychologueId },
+      include: {
+        psychologue: {
+          select: { id: true, fullname: true, profile: { select: { avatar: true } } }
+        }
+      }
     });
 
     if (!group) {
@@ -235,12 +262,12 @@ async function getGroupDetails(req, res) {
 
     const waitingList = await prisma.groupMember.findMany({
       where: { groupId, status: 'pending' },
-      include: { user: { select: { id: true, fullname: true } } }
+      include: { user: { select: { id: true, fullname: true, profile: { select: { avatar: true } } } } }
     });
 
     const participants = await prisma.groupMember.findMany({
       where: { groupId, status: 'accepted' },
-      include: { user: { select: { id: true, fullname: true } } }
+      include: { user: { select: { id: true, fullname: true, profile: { select: { avatar: true } } } } }
     });
 
     res.json({
@@ -259,14 +286,21 @@ async function getGroupDetails(req, res) {
           id: w.id,
           userId: w.user.id,
           name: w.user.fullname,
+          avatar: w.user.profile?.avatar || null,
           requestDate: w.joinedAt.toLocaleDateString('fr-FR')
         })),
         participants: participants.map(p => ({
           id: p.id,
           userId: p.user.id,
           name: p.user.fullname,
+          avatar: p.user.profile?.avatar || null,
           joinedDate: p.joinedAt.toLocaleDateString('fr-FR')
-        }))
+        })),
+        doctor: group.psychologue ? {
+          id: group.psychologue.id,
+          name: group.psychologue.fullname,
+          avatar: group.psychologue.profile?.avatar || null
+        } : null
       }
     });
   } catch (error) {
@@ -319,6 +353,23 @@ async function acceptPatientRequest(req, res) {
       })
     ]);
 
+    // Emit group:join-accepted to the patient so they auto-join the live call
+    if (global.io) {
+      const doctorUser = await prisma.user.findUnique({
+        where: { id: psychologueId },
+        select: { fullname: true }
+      });
+      global.io.to(`patient:${member.userId}`).emit('group:join-accepted', {
+        groupId: member.groupId,
+        roomId: `group_${member.groupId}`,
+        doctorId: member.group.psychologueId,
+        doctorName: doctorUser?.fullname || 'Psychologue'
+      });
+    }
+
+    // Broadcast real-time update (for doctor group listing)
+    broadcastGroupChange('group-member-accepted', { groupId: member.groupId, psychologueId });
+
     res.json({ success: true, message: 'Patient accepté dans le groupe' });
   } catch (error) {
     console.error('Error accepting request:', error);
@@ -359,9 +410,184 @@ async function rejectPatientRequest(req, res) {
       data: { status: 'rejected' }
     });
 
+    // Emit group:join-rejected to the patient so they get real-time feedback
+    if (global.io) {
+      global.io.to(`patient:${member.userId}`).emit('group:join-rejected', {
+        groupId: member.groupId
+      });
+    }
+
+    // Broadcast real-time update
+    broadcastGroupChange('group-member-rejected', { groupId: member.groupId, psychologueId });
+
     res.json({ success: true, message: 'Demande refusée' });
   } catch (error) {
     console.error('Error rejecting request:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+}
+
+// End a group session — notify all accepted + pending members in real-time,
+// delete video room, mark group inactive, and clean up stale pending requests
+async function endGroupSession(req, res) {
+  try {
+    const psychologueId = req.user?.id;
+    if (!psychologueId) {
+      return res.status(401).json({ error: 'Non autorisé' });
+    }
+
+    const { groupId } = req.params;
+
+    const group = await prisma.therapyGroup.findFirst({
+      where: { id: groupId, psychologueId }
+    });
+
+    if (!group) {
+      return res.status(404).json({ error: 'Groupe introuvable' });
+    }
+
+    // 1. Get accepted members BEFORE deleting group (for notifications)
+    const acceptedMemberRecords = await prisma.groupMember.findMany({
+      where: { groupId, status: 'accepted' },
+      include: { user: { select: { id: true } } }
+    });
+
+    // 2. Delete group permanently - remove from database entirely so it never reappears
+    //    (Cascade will automatically delete all groupMember records)
+    await prisma.therapyGroup.delete({
+      where: { id: groupId }
+    });
+
+    // 3. Notify ALL accepted members via socket.io that the group has ended
+    if (global.io) {
+      const doctor = await prisma.user.findUnique({
+        where: { id: psychologueId },
+        select: { fullname: true }
+      });
+      const doctorName = doctor?.fullname || 'Psychologue';
+      const notifiedIds = new Set();
+      for (const member of acceptedMemberRecords) {
+        const patientId = member.user.id;
+        if (!notifiedIds.has(patientId)) {
+          notifiedIds.add(patientId);
+          global.io.to(`patient:${patientId}`).emit('group:ended', {
+            groupId,
+            doctorId: psychologueId,
+            doctorName,
+            disconnect: true,
+            reason: 'doctor-ended'
+          });
+        }
+      }
+    }
+
+    // 4. Delete video server room for this group
+    const VIDEO_SERVER_URL = process.env.VIDEO_SERVER_URL || 'http://localhost:5000';
+    const roomId = `group_${groupId}`;
+    try {
+      await fetch(`${VIDEO_SERVER_URL}/api/rooms/${roomId}`, {
+        method: 'DELETE'
+      });
+    } catch (videoErr) {
+      console.log('Video server room deletion (non-blocking):', videoErr.message);
+    }
+
+    // Broadcast real-time update so ALL clients re-fetch
+    broadcastGroupChange('group-ended', { groupId, psychologueId });
+
+    res.json({ success: true, message: 'Session terminée, données nettoyées' });
+  } catch (error) {
+    console.error('Error ending group session:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+}
+
+// Rate a group therapy session (patient only)
+async function createGroupSessionRating(req, res) {
+  try {
+    const patientId = req.user?.id;
+    if (!patientId) {
+      return res.status(401).json({ error: 'Non autorisé' });
+    }
+
+    const { doctorId, groupId, rating, comment } = req.body;
+
+    if (!doctorId || !groupId || !rating) {
+      return res.status(400).json({ error: 'doctorId, groupId et rating requis' });
+    }
+
+    if (rating < 1 || rating > 5) {
+      return res.status(400).json({ error: 'La note doit être entre 1 et 5' });
+    }
+
+    // Check patient is a member
+    const membership = await prisma.groupMember.findUnique({
+      where: {
+        groupId_userId: {
+          groupId,
+          userId: patientId
+        }
+      }
+    });
+
+    if (!membership || membership.status !== 'accepted') {
+      return res.status(403).json({ error: 'Vous n\'êtes pas membre de ce groupe' });
+    }
+
+    // Check for duplicate rating
+    const existing = await prisma.groupSessionRating.findUnique({
+      where: {
+        patientId_doctorId_groupId: {
+          patientId,
+          doctorId,
+          groupId
+        }
+      }
+    });
+
+    if (existing) {
+      return res.status(409).json({ error: 'Vous avez déjà noté cette session' });
+    }
+
+    const ratingRecord = await prisma.groupSessionRating.create({
+      data: {
+        patientId,
+        doctorId,
+        groupId,
+        rating,
+        comment: comment || undefined
+      }
+    });
+
+    // Update doctor's overall rating
+    const allRatings = await prisma.groupSessionRating.findMany({
+      where: { doctorId },
+      select: { rating: true }
+    });
+    const reviewRatings = await prisma.review.findMany({
+      where: { doctorId },
+      select: { rating: true }
+    });
+    const allScores = [
+      ...allRatings.map(r => r.rating),
+      ...reviewRatings.map(r => r.rating)
+    ];
+    const avgRating = allScores.length > 0
+      ? Math.round((allScores.reduce((a, b) => a + b, 0) / allScores.length) * 100) / 100
+      : 0;
+
+    await prisma.profile.updateMany({
+      where: { userId: doctorId },
+      data: { rating: avgRating }
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Note enregistrée',
+      rating: ratingRecord
+    });
+  } catch (error) {
+    console.error('Error creating group session rating:', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 }
@@ -443,6 +669,23 @@ async function joinGroup(req, res) {
       return res.status(404).json({ error: 'Groupe introuvable' });
     }
 
+    // Validate: patient must have had at least one appointment with the group's psychologist
+    if (group.psychologueId) {
+      const hasAppointment = await prisma.appointment.findFirst({
+        where: {
+          patientId: userId,
+          doctorId: group.psychologueId,
+          status: { in: ['confirmed', 'completed'] }
+        }
+      });
+
+      if (!hasAppointment) {
+        return res.status(403).json({
+          error: 'Vous devez avoir consulté ce psychologue avant de rejoindre un groupe thérapeutique'
+        });
+      }
+    }
+
     // Check if already a member or has pending request
     const existingMember = await prisma.groupMember.findUnique({
       where: {
@@ -466,6 +709,14 @@ async function joinGroup(req, res) {
           where: { id: existingMember.id },
           data: { status: 'pending' }
         });
+        // Broadcast real-time update (re-request)
+        broadcastGroupChange('group:join-request', { groupId, userId });
+        // Also notify psychologue via socket
+        const patientUser = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { fullname: true }
+        });
+        emitJoinRequestNotification(group.psychologueId, userId, groupId, patientUser?.fullname);
         return res.json({ success: true, message: 'Demande de réinscription envoyée' });
       }
     }
@@ -475,11 +726,31 @@ async function joinGroup(req, res) {
       data: { groupId, userId, status: 'pending' }
     });
 
+    // Broadcast real-time update (new join request)
+    broadcastGroupChange('group:join-request', { groupId, userId });
+    // Notify psychologue via socket about the new join request
+    const patientUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { fullname: true }
+    });
+    emitJoinRequestNotification(group.psychologueId, userId, groupId, patientUser?.fullname);
+
     res.json({ success: true, message: 'Demande envoyée, en attente de validation' });
   } catch (error) {
     console.error('Error joining group:', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
+}
+
+// Helper: emit real-time join request notification to the psychologue
+function emitJoinRequestNotification(psychologueId, patientId, groupId, patientName) {
+  if (!global.io || !psychologueId) return;
+  global.io.to(`doctor:${psychologueId}`).emit('group:join-request', {
+    patientId,
+    patientName: patientName || 'Patient',
+    groupId,
+    timestamp: new Date().toISOString()
+  });
 }
 
 // Leave a therapy group
@@ -520,6 +791,9 @@ async function leaveGroup(req, res) {
       })
     ]);
 
+    // Broadcast real-time update
+    broadcastGroupChange('group-member-left', { groupId, userId });
+
     res.json({ success: true, message: 'Désinscription réussie' });
   } catch (error) {
     console.error('Error leaving group:', error);
@@ -538,7 +812,21 @@ async function getMyGroupsAsPatient(req, res) {
     const memberships = await prisma.groupMember.findMany({
       where: { userId },
       include: {
-        group: true
+        group: {
+          include: {
+            psychologue: {
+              select: { id: true, fullname: true, profile: { select: { avatar: true } } }
+            },
+            members: {
+              where: { status: 'accepted' },
+              include: {
+                user: {
+                  select: { id: true, fullname: true, profile: { select: { avatar: true } } }
+                }
+              }
+            }
+          }
+        }
       }
     });
 
@@ -552,6 +840,19 @@ async function getMyGroupsAsPatient(req, res) {
       duration: m.group.duration,
       maxParticipants: m.group.maxParticipants,
       currentParticipants: m.group.currentParticipants,
+      doctorId: m.group.psychologueId || null,
+      doctor: m.group.psychologue ? {
+        id: m.group.psychologue.id,
+        name: m.group.psychologue.fullname,
+        avatar: m.group.psychologue.profile?.avatar || null
+      } : null,
+      participants: (m.group.members || []).map(member => ({
+        id: member.id,
+        userId: member.user.id,
+        name: member.user.fullname,
+        avatar: member.user.profile?.avatar || null,
+        joinedAt: member.joinedAt
+      })),
       icon: m.group.icon,
       joinedAt: m.joinedAt
     }));
@@ -693,6 +994,7 @@ module.exports = {
   getGroupDetails,
   acceptPatientRequest,
   rejectPatientRequest,
+  endGroupSession,
   // Patient functions
   getGroups,
   joinGroup,
@@ -701,5 +1003,6 @@ module.exports = {
   getPendingRequests,
   acceptRequest,
   rejectRequest,
+  createGroupSessionRating,
   seedGroups
 };

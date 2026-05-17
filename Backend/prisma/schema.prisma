@@ -37,6 +37,8 @@ model User {
   appointmentsAsDoctor   Appointment[] @relation("DoctorAppointments")
   reviewsAsPatient   Review[] @relation("PatientReviews")
   reviewsAsDoctor    Review[] @relation("DoctorReviews")
+  groupSessionRatingsAsPatient GroupSessionRating[] @relation("PatientGroupSessionRatings")
+  groupSessionRatingsAsDoctor  GroupSessionRating[] @relation("DoctorGroupSessionRatings")
   timeSlots      TimeSlot[]
   sentMessages      Message[] @relation("SentMessages")
   receivedMessages  Message[] @relation("ReceivedMessages")
@@ -191,6 +193,7 @@ model TherapyGroup {
   psychologue   User?   @relation("PsychologueGroups", fields: [psychologueId], references: [id], onDelete: SetNull)
   
   members     GroupMember[]
+  groupSessionRatings GroupSessionRating[]
 
   @@index([psychologueId])
 }
@@ -206,6 +209,23 @@ model GroupMember {
   joinedAt    DateTime @default(now())
 
   @@unique([groupId, userId])
+}
+
+// ============== GROUP SESSION RATINGS TABLE ==============
+model GroupSessionRating {
+  id        String   @id @default(uuid())
+  patientId String
+  patient   User     @relation("PatientGroupSessionRatings", fields: [patientId], references: [id])
+  doctorId  String
+  doctor    User     @relation("DoctorGroupSessionRatings", fields: [doctorId], references: [id])
+  groupId   String
+  group     TherapyGroup @relation(fields: [groupId], references: [id])
+  rating    Int      // 1-5 stars
+  comment   String?
+  createdAt DateTime @default(now())
+
+  @@unique([patientId, doctorId, groupId])
+  @@index([doctorId])
 }
 
 // ============== VIP SUBSCRIPTION TABLE ==============

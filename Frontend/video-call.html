@@ -10,7 +10,7 @@
         body {
             margin: 0;
             padding: 0;
-            background: #F5F6F8;
+            background: #F0F2F5;
             overflow: hidden;
         }
         .video-page-container {
@@ -19,59 +19,61 @@
             flex-direction: column;
         }
         .video-header {
-            background: #091346;
-            color: white;
-            padding: 15px 20px;
+            background: #FFFFFF;
+            color: #1F2937;
+            padding: 12px 24px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            border-bottom: 1px solid #E5E7EB;
         }
         .video-header-info {
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 12px;
         }
         .video-header h2 {
             margin: 0;
-            font-size: 18px;
+            font-size: 15px;
+            font-weight: 600;
+            color: #1F2937;
         }
         .call-timer {
-            font-size: 14px;
-            opacity: 0.8;
+            font-size: 13px;
+            color: #6B7280;
+            font-weight: 500;
         }
         .header-actions {
             display: flex;
-            gap: 10px;
+            gap: 8px;
         }
         .header-btn {
-            background: rgba(255,255,255,0.1);
+            background: #F3F4F6;
             border: none;
-            color: white;
+            color: #1F2937;
             padding: 8px 16px;
             border-radius: 8px;
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            transition: background 0.2s;
         }
         .header-btn:hover {
-            background: rgba(255,255,255,0.2);
+            background: #E5E7EB;
+        }
+        .header-btn.active {
+            background: #091346;
+            color: white;
         }
 
-        /* ISOLATED VIDEO STYLES - ENSURE NO CROSS-CONTAMINATION */
-        
-        /* Remote video - NEVER mirror - always display as received from WebRTC */
+        /* Remote video - NEVER mirror */
         #remoteVideo {
             transform: none !important;
         }
-
-        /* Ensure speaker-view container doesn't inherit any transforms */
-        .speaker-view {
-            transform: none !important;
-        }
-
-        /* Explicitly ensure remote video container has no transform */
-        #speakerView {
+        .participant-tile:not(.mirrored) video {
             transform: none !important;
         }
     </style>
@@ -82,8 +84,13 @@
             <div class="video-header-info">
                 <h2 id="callTitle">Appel vidéo</h2>
                 <span class="call-timer" id="callDuration">00:00</span>
+                <span id="participantCountText" style="display:none; font-size:13px; color:#6B7280; margin-left:8px;"></span>
             </div>
             <div class="header-actions">
+                <button class="header-btn" onclick="openEditCallModal()" id="editCallBtn" style="display:none;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3l4 4-7 7H10v-4l7-7zM3 21h18"/></svg>
+                    Modifier
+                </button>
                 <button class="header-btn" onclick="toggleChat()" id="chatToggleBtn">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
@@ -96,46 +103,47 @@
 
         <div class="video-call-container" id="videoCallContainer">
             <div class="video-main-section">
-                <div id="speakerView" class="speaker-view">
-                    <div class="empty-state" id="remotePlaceholder" style="display: flex; flex-direction: column; align-items: center;">
-                        <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                <div id="participantGrid" class="participants-grid count-1">
+                    <div class="grid-placeholder" id="remotePlaceholder" style="display:flex;">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:0.35;">
                             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
                         </svg>
-                        <p style="margin-top:15px; font-size:16px;" id="remotePlaceholderText">En attente de l'autre participant...</p>
+                        <p style="margin:10px 0 0; font-size:13px; color:#9CA3AF;" id="remotePlaceholderText">En attente de l'autre participant...</p>
                     </div>
-                    <video id="remoteVideo" autoplay playsinline style="display:none; width:100%; height:100%; object-fit:contain; transform:none !important;"></video>
-                    <div id="remoteAvatar" class="video-avatar">
-                        <div class="avatar-circle" id="remoteAvatarCircle">P</div>
+                    <div id="remoteVideoContainer" class="participant-tile" style="display:none;">
+                        <video id="remoteVideo" autoplay playsinline style="transform:none !important;"></video>
+                        <div class="tile-avatar" id="remoteAvatar" style="display:none;">
+                            <div class="avatar-circle" id="remoteAvatarCircle" style="background:#44AA99;">P</div>
+                        </div>
+                        <div class="tile-info">
+                            <span id="remoteParticipantName">Participant</span>
+                        </div>
+                        <div class="tile-badge badge-mute" id="remoteMuteIndicator" style="display:none;">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/></svg>
+                        </div>
+                        <div class="tile-badge badge-videooff" id="remoteVideoOffIndicator" style="display:none;">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M1 1l22 22M21 21H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3m3-3h6l2 3h4a2 2 0 0 1 2 2v9.34"/></svg>
+                        </div>
                     </div>
-                    <div id="speakerBadge" class="speaker-badge" style="display:none;">
-                        <div class="speaking-indicator"></div>
-                        <span id="currentSpeakerName">Participant</span>
-                    </div>
-                </div>
-
-                <div id="thumbnailGrid" class="thumbnail-section">
-                    <div id="localVideoContainer" class="thumbnail-video active">
-                        <div id="localVideoPlaceholder" class="video-avatar" style="display:flex;">
-                            <div class="avatar-circle" id="localAvatarCircle">P</div>
+                    <div id="localVideoContainer" class="participant-tile mirrored">
+                        <div class="tile-avatar" id="localVideoPlaceholder" style="display:flex;">
+                            <div class="avatar-circle" id="localAvatarCircle" style="background:#091346;">V</div>
                         </div>
                         <video id="localVideo" autoplay muted playsinline style="display:none;"></video>
-                        <div class="thumbnail-info">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M12 15c1.66 0 2.99-1.34 2.99-3L15 6c0-1.66-1.34-3-3-3S9 4.34 9 6v6c0 1.66 1.34 3 3 3z"/>
-                            </svg>
+                        <div class="tile-info">
                             <span id="localName">Vous</span>
                         </div>
-                        <div id="localMuteIndicator" class="thumbnail-badge muted" style="display:none;">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-                                <line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/>
-                            </svg>
+                        <div id="localMuteIndicator" class="tile-badge badge-mute" style="display:none;">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/></svg>
                         </div>
-                        <div id="localVideoOffIndicator" class="thumbnail-badge video-off" style="display:none;">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-                                <path d="M1 1l22 22M21 21H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3m3-3h6l2 3h4a2 2 0 0 1 2 2v9.34"/>
-                            </svg>
+                        <div id="localVideoOffIndicator" class="tile-badge badge-videooff" style="display:none;">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M1 1l22 22M21 21H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3m3-3h6l2 3h4a2 2 0 0 1 2 2v9.34"/></svg>
                         </div>
                     </div>
+                </div>
+                <div id="speakerBadge" class="speaker-badge" style="display:none;">
+                    <div class="speaking-indicator"></div>
+                    <span id="currentSpeakerName">Participant</span>
                 </div>
             </div>
 
@@ -149,7 +157,36 @@
                     </h3>
                 </div>
                 <div id="messagesContainer" class="messages-container scrollbar"></div>
+                <div id="typingIndicator" class="typing-indicator" style="display:none;">Quelqu'un écrit...</div>
                 <div class="chat-input-container">
+                    <div class="emoji-btn">
+                        <button onclick="toggleEmojiPicker()" class="chat-header-btn" type="button">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+                        </button>
+                        <div id="emojiPicker" class="emoji-picker">
+                            <div class="emoji-picker-header"><span>Émojis</span></div>
+                            <div class="emoji-picker-grid">
+                                <span class="emoji-item" onclick="insertEmoji('😀')">😀</span>
+                                <span class="emoji-item" onclick="insertEmoji('😂')">😂</span>
+                                <span class="emoji-item" onclick="insertEmoji('🥰')">🥰</span>
+                                <span class="emoji-item" onclick="insertEmoji('😔')">😔</span>
+                                <span class="emoji-item" onclick="insertEmoji('😎')">😎</span>
+                                <span class="emoji-item" onclick="insertEmoji('🤔')">🤔</span>
+                                <span class="emoji-item" onclick="insertEmoji('👍')">👍</span>
+                                <span class="emoji-item" onclick="insertEmoji('👎')">👎</span>
+                                <span class="emoji-item" onclick="insertEmoji('👏')">👏</span>
+                                <span class="emoji-item" onclick="insertEmoji('❤️')">❤️</span>
+                                <span class="emoji-item" onclick="insertEmoji('👋')">👋</span>
+                                <span class="emoji-item" onclick="insertEmoji('🙏')">🙏</span>
+                                <span class="emoji-item" onclick="insertEmoji('✅')">✅</span>
+                                <span class="emoji-item" onclick="insertEmoji('❌')">❌</span>
+                                <span class="emoji-item" onclick="insertEmoji('💡')">💡</span>
+                                <span class="emoji-item" onclick="insertEmoji('🎉')">🎉</span>
+                                <span class="emoji-item" onclick="insertEmoji('🔥')">🔥</span>
+                                <span class="emoji-item" onclick="insertEmoji('⭐')">⭐</span>
+                            </div>
+                        </div>
+                    </div>
                     <input type="text" id="chatInput" class="chat-input" placeholder="Écrire un message..." onkeypress="handleChatKeyPress(event)">
                     <button onclick="sendChatMessage()" id="sendBtn" class="send-btn">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
@@ -172,6 +209,9 @@
                     <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
                 </svg>
             </button>
+            <button onclick="toggleScreenShare()" id="screenShareBtn" class="control-btn" title="Partager l'écran" style="display:none;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            </button>
             <div class="control-separator"></div>
             <button onclick="endCall()" id="endCallBtn" class="control-btn end-call">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -179,6 +219,65 @@
                 </svg>
                 Terminer
             </button>
+        </div>
+    </div>
+
+    <!-- Join Request Container (bottom-right overlay during doctor group calls) -->
+    <div id="joinRequestContainer" style="display: none; position: fixed; bottom: 100px; right: 20px; z-index: 1001; flex-direction: column; gap: 10px; max-width: 320px; width: auto;"></div>
+
+    <!-- Edit Call Modal (doctor group only) -->
+    <div id="editCallModal" class="vip-modal" style="display: none;">
+        <div class="vip-modal-content" style="max-width: 500px;">
+            <div class="vip-modal-header">
+                <h2><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#091346" stroke-width="2"><path d="M17 3l4 4-7 7H10v-4l7-7z"/><path d="M3 21h18"/></svg> Modifier l'appel</h2>
+                <button class="close-modal" onclick="closeEditCallModal()">&times;</button>
+            </div>
+            <div class="vip-modal-body">
+                <div class="form-group"><label>Titre de l'appel</label><input type="text" id="editCallTitle" class="vip-input" placeholder="Titre de la session"></div>
+                <div class="form-row">
+                    <div class="form-group"><label>Places max</label><input type="number" id="editCallMaxParticipants" class="vip-input" min="2" max="20" value="10"></div>
+                    <div class="form-group"><label>Prix (DA)</label><input type="number" id="editCallPrice" class="vip-input" placeholder="Prix par séance"></div>
+                </div>
+                <button class="save-form-btn" onclick="saveCallDetails()">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Participant Actions Modal (doctor group only) -->
+    <div id="participantActionsModal" class="vip-modal" style="display: none;">
+        <div class="vip-modal-content" style="max-width: 400px;">
+            <div class="vip-modal-header">
+                <h2 id="participantModalTitle"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#091346" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Participant</h2>
+                <button class="close-modal" onclick="closeParticipantActionsModal()">&times;</button>
+            </div>
+            <div class="vip-modal-body">
+                <div id="participantActions" style="display: flex; flex-direction: column; gap: 10px;">
+                    <button onclick="toggleParticipantMute()" id="toggleMuteBtn" style="background: #333; color: white; border: none; padding: 15px 20px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 12px; font-size: 15px;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15c1.66 0 2.99-1.34 2.99-3L15 6c0-1.66-1.34-3-3-3S9 4.34 9 6v6c0 1.66 1.34 3 3 3z"/></svg>
+                        <span>Désactiver le micro</span>
+                    </button>
+                    <button onclick="toggleParticipantVideo()" id="toggleVideoBtn" style="background: #333; color: white; border: none; padding: 15px 20px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 12px; font-size: 15px;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                        <span>Désactiver la caméra</span>
+                    </button>
+                    <button onclick="removeParticipant()" style="background: #e74c3c; color: white; border: none; padding: 15px 20px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 12px; font-size: 15px;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="18" y1="8" x2="23" y2="13"/><line x1="23" y1="8" x2="18" y2="13"/></svg>
+                        <span>Retirer du groupe</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Patient Profile Modal (used from join requests) -->
+    <div id="patientProfileModal" class="notes-modal">
+        <div class="notes-modal-content" style="max-width: 600px;" onclick="event.stopPropagation()">
+            <div class="notes-modal-header">
+                <h2><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#091346" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg> Profil du patient</h2>
+                <button class="close-modal" onclick="closePatientModal()">&times;</button>
+            </div>
+            <div id="patientProfileContent" class="notes-list">
+            </div>
         </div>
     </div>
 

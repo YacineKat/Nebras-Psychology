@@ -8,7 +8,8 @@ const mediasoup = require('mediasoup');
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
-    cors: { origin: '*', methods: ['GET', 'POST'] }
+    cors: { origin: '*', methods: ['GET', 'POST'] },
+    maxHttpBufferSize: 5 * 1024 * 1024
 });
 
 app.use(express.json());
@@ -75,6 +76,8 @@ app.get('/api/rooms', (req, res) => {
 
 app.delete('/api/rooms/:id', (req, res) => {
     if (!rooms.has(req.params.id)) return res.status(404).json({ error: 'Room not found' });
+    // Notify all participants that the room is closing
+    io.to(req.params.id).emit('room-closed', { roomId: req.params.id });
     rooms.delete(req.params.id);
     res.json({ message: 'Room deleted' });
 });
@@ -83,13 +86,14 @@ app.delete('/api/rooms/:id', (req, res) => {
 io.on('connection', (socket) => {
     console.log(`Socket connected: ${socket.id}`);
 
-    socket.on('join-room', async ({ roomId, userName }, callback) => {
+    socket.on('join-room', async ({ roomId, userName, avatarUrl, userId }, callback) => {
+        console.log('[Server] join-room userId:', userId, 'userName:', userName);
         // Auto-create room if it doesn't exist
         if (!rooms.has(roomId)) {
             rooms.set(roomId, {
                 id: roomId,
                 name: roomId,
-                mode: 'p2p', // Default to p2p for group therapy
+                mode: 'p2p',
                 participants: new Map(),
                 router: null,
                 transports: new Map(),
@@ -104,15 +108,19 @@ io.on('connection', (socket) => {
             return callback({ error: `Room is full (max ${maxParticipants})` });
         }
 
-        const participant = { id: socket.id, name: userName, socketId: socket.id };
+        const participant = { id: socket.id, name: userName, socketId: socket.id, userId: userId || null, avatarUrl: avatarUrl || null };
+        console.log('[Server] Storing participant userId:', participant.userId);
         room.participants.set(socket.id, participant);
         socket.join(roomId);
         socket.roomId = roomId;
         socket.userName = userName;
+        socket.userId = userId || null;
 
         socket.to(roomId).emit('participant-joined', participant);
 
-        const others = Array.from(room.participants.values()).filter(p => p.id !== socket.id);
+        const others = Array.from(room.participants.values()).map(p => ({ ...p }));
+        console.log('[Server] Returning participants, first has userId:', others[0]?.userId);
+        console.log('[Server] Room participants count:', room.participants.size);
 
         callback({ mode: room.mode, roomId, participants: others });
     });
@@ -131,8 +139,13 @@ io.on('connection', (socket) => {
     });
 
     // Participant control events
-    socket.on('participant-update', ({ roomId, socketId, isMuted }) => {
-        socket.to(roomId).emit('participant-update', { socketId: socket.id, isMuted });
+    socket.on('participant-update', ({ roomId, socketId, isMuted, isVideoOff }) => {
+        console.log(`[Server] participant-update received: roomId=${roomId}, isMuted=${isMuted}, isVideoOff=${isVideoOff}, socketId=${socketId}`);
+        const payload = { socketId: socket.id };
+        if (isMuted !== undefined) payload.isMuted = isMuted;
+        if (isVideoOff !== undefined) payload.isVideoOff = isVideoOff;
+        console.log(`[Server] participant-update broadcasting:`, JSON.stringify(payload));
+        socket.to(roomId).emit('participant-update', payload);
     });
 
     socket.on('participant-mute-update', ({ roomId, targetId, isMuted }) => {
@@ -140,7 +153,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('participant-video-update', ({ roomId, targetId, isVideoOff }) => {
-        socket.to(targetId).emit('participant-video-update', { isVideoOff });
+        socket.to(targetId).emit('participant-video-update', { socketId: socket.id, isVideoOff });
     });
 
     socket.on('remove-participant', ({ roomId, targetId }) => {

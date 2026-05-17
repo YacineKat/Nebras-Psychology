@@ -998,6 +998,98 @@ exports.getDashboard = async (req, res) => {
 // ============================================
 // GET DOCTOR'S PATIENTS
 // ============================================
+exports.getPatientById = async (req, res) => {
+  try {
+    const doctorId = req.user.id;
+    const { patientId } = req.params;
+
+    const appointments = await prisma.appointment.findMany({
+      where: {
+        doctorId,
+        patientId,
+        status: { in: ['confirmed', 'completed'] }
+      },
+      select: {
+        appointmentDate: true,
+        patient: {
+          select: {
+            id: true,
+            fullname: true,
+            email: true,
+            profile: {
+              select: {
+                phone: true,
+                gender: true,
+                birthDate: true,
+                language: true,
+                motifs: true,
+                prefGender: true,
+                prefType: true,
+                avatar: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: { appointmentDate: 'desc' }
+    });
+
+    if (!appointments || appointments.length === 0) {
+      const user = await prisma.user.findUnique({
+        where: { id: patientId },
+        select: {
+          id: true,
+          fullname: true,
+          email: true,
+          profile: { select: { phone: true, avatar: true } }
+        }
+      });
+      if (!user) return res.status(404).json({ error: 'Patient non trouvé' });
+      return res.json({
+        patient: {
+          id: user.id,
+          fullname: user.fullname,
+          email: user.email,
+          phone: user.profile?.phone || null,
+          avatar: user.profile?.avatar || null,
+          totalSessions: 0,
+          firstSession: null,
+          lastSession: null
+        }
+      });
+    }
+
+    const apt = appointments[0];
+    const patient = apt.patient;
+    const totalSessions = appointments.length;
+    const firstSession = appointments[totalSessions - 1].appointmentDate;
+    const lastSession = appointments[0].appointmentDate;
+
+    res.json({
+      patient: {
+        id: patient.id,
+        fullname: patient.fullname,
+        email: patient.email,
+        phone: patient.profile?.phone,
+        gender: patient.profile?.gender,
+        birthDate: patient.profile?.birthDate,
+        language: patient.profile?.language,
+        motifs: patient.profile?.motifs,
+        prefGender: patient.profile?.prefGender,
+        prefType: patient.profile?.prefType,
+        avatar: patient.profile?.avatar,
+        totalSessions,
+        firstSession,
+        lastSession
+      }
+    });
+  } catch (error) {
+    console.error('getPatientById error:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+};
+
+// ============================================
 exports.getPatients = async (req, res) => {
   try {
     const doctorId = req.user.id;
