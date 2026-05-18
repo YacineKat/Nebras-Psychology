@@ -18,6 +18,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadDashboardData();
     await loadUrgentRequests();
     highlightCurrentSidebarLink();
+    
+    // Real-time socket will auto-initialize from socket-manager.js
 });
 
 function initUserDisplay() {
@@ -887,4 +889,8 @@ window.addEventListener('load', function() {
     if (scrollPos) {
         document.querySelector('.nav-menu').scrollTop = scrollPos;
     }
+});
+
+window.addEventListener('beforeunload', function() {
+    disconnectSocket();
 });

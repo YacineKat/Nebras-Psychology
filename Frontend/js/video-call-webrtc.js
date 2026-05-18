@@ -628,12 +628,12 @@ function handleGroupCallEnded() {
             remoteTiles.forEach(t => t.remove());
         }
 
-        const dashboardUrl = isDoctor ? 'psychologue_dashboard.html' : 'patient_dashboard.html';
+        const dashboardUrl = isDoctor ? 'psychologue_dashboard.html' : (isCounselor ? 'counselor_dashboard.html' : 'patient_dashboard.html');
         const patientId = getCurrentUser()?.id || 'unknown';
         const ratingKey = `group_rated_${groupId}_${doctorIdForRating}_${patientId}`;
-        if (!isDoctor && doctorIdForRating && groupId && !sessionStorage.getItem(ratingKey)) {
+        if (!isDoctor && !isCounselor && doctorIdForRating && groupId && !sessionStorage.getItem(ratingKey)) {
             showGroupRatingModal();
-        } else if (!isDoctor && doctorIdForRating && groupId && sessionStorage.getItem(ratingKey)) {
+        } else if (!isDoctor && !isCounselor && doctorIdForRating && groupId && sessionStorage.getItem(ratingKey)) {
             console.log('Rating already submitted for this session, skipping');
             window.location.href = dashboardUrl;
         } else {
@@ -641,7 +641,7 @@ function handleGroupCallEnded() {
         }
     } catch (e) {
         console.error('Error in group call cleanup:', e);
-        const dashboardUrl = isDoctor ? 'psychologue_dashboard.html' : 'patient_dashboard.html';
+        const dashboardUrl = isDoctor ? 'psychologue_dashboard.html' : (isCounselor ? 'counselor_dashboard.html' : 'patient_dashboard.html');
         window.location.href = dashboardUrl;
     }
 }

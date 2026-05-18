@@ -31,7 +31,7 @@
                 <a href="counselor_messagerie.html" class="nav-item">
                     <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z" fill="currentColor"/></svg>
                     <span>Messagerie</span>
-                    <span class="badge">5</span>
+                    <span class="badge">0</span>
                 </a>
                 <a href="counselor_honoraires.html" class="nav-item">
                     <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.5 15h-3v-2h3v2zm0-4h-3V7h3v6z" fill="currentColor"/></svg>
@@ -44,10 +44,17 @@
                 </a>
             </nav>
             <a href="counselor_profil.html" class="nav-item profile-link">
-                <div class="user-avatar">
-                    <img src="./image/24d0759cbb02c3157112d0ef0f8463b1.jpg" alt="Photo profil" style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover;">
-                </div>
+                <div class="user-avatar" id="sidebarAvatar"></div>
                 <div class="user-info"><span class="user-name">Sarah Mansouri</span></div>
+            </a>
+
+            <a href="#" class="nav-item" onclick="logout()" style="color: #e74c3c;">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                    <polyline points="16,17 21,12 16,7"/>
+                    <line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+                <span>Déconnexion</span>
             </a>
         </div>
 
@@ -57,136 +64,209 @@
                     <h1>Emploi du temps</h1>
                     <p class="subtitle">Gérez vos rendez-vous et disponibilités</p>
                 </div>
+                <button class="btn-primary" onclick="openSlotModal(1, '09:00', new Date().toISOString().split('T')[0])" style="background: var(--primary-green); color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Ajouter un créneau
+                </button>
             </header>
 
             <!-- Navigation semaine -->
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
-                <button class="btn-prev" onclick="alert('Semaine précédente')" style="padding: 10px 20px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="15 18 9 12 15 6"/></svg> Semaine précédente</button>
-                <h3 style="color: #091346;">Semaine du 14 au 20 Avril 2025</h3>
-                <button class="btn-next" onclick="alert('Semaine suivante')" style="padding: 10px 20px;">Semaine suivante <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="9 18 15 12 9 6"/></svg></button>
+            <div class="week-navigation" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <button class="btn-prev" id="prevWeekBtn" style="padding: 10px 20px; background: #091346; color: white; border: none; border-radius: 8px; cursor: pointer;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="15 18 9 12 15 6"/></svg>
+                    </button>
+                    <span id="weekRange" style="font-weight: 600; color: #091346; min-width: 200px; text-align: center;"></span>
+                    <button class="btn-next" id="nextWeekBtn" style="padding: 10px 20px; background: #091346; color: white; border: none; border-radius: 8px; cursor: pointer;">
+                        Semaine suivante <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="9 18 15 12 9 6"/></svg>
+                    </button>
+                </div>
+                <button onclick="goToToday()" style="padding: 8px 16px; background: #44AA99; color: white; border: none; border-radius: 6px; cursor: pointer;">Aujourd'hui</button>
             </div>
 
-            <!-- Calendrier -->
-            <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; margin-bottom: 30px;">
-                <div style="background: #091346; color: white; padding: 15px; text-align: center; border-radius: 12px;"><strong>Lundi</strong><br>14/04</div>
-                <div style="background: #091346; color: white; padding: 15px; text-align: center; border-radius: 12px;"><strong>Mardi</strong><br>15/04</div>
-                <div style="background: #091346; color: white; padding: 15px; text-align: center; border-radius: 12px;"><strong>Mercredi</strong><br>16/04</div>
-                <div style="background: #091346; color: white; padding: 15px; text-align: center; border-radius: 12px;"><strong>Jeudi</strong><br>17/04</div>
-                <div style="background: #091346; color: white; padding: 15px; text-align: center; border-radius: 12px;"><strong>Vendredi</strong><br>18/04</div>
-                <div style="background: #e8f4ee; color: #091346; padding: 15px; text-align: center; border-radius: 12px;"><strong>Samedi</strong><br>19/04</div>
-                <div style="background: #e8f4ee; color: #091346; padding: 15px; text-align: center; border-radius: 12px;"><strong>Dimanche</strong><br>20/04</div>
+            <!-- Stats du jour -->
+            <div class="stats-dashboard" id="dayStats" style="margin-bottom: 25px; display: none;">
+                <div class="stat-card">
+                    <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+                    <div class="stat-info"><h3 id="todayApptCount">0</h3><p>Séances aujourd'hui</p></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
+                    <div class="stat-info"><h3 id="weekApptCount">0</h3><p>Cette semaine</p></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg></div>
+                    <div class="stat-info"><h3 id="availableSlotsCount">0</h3><p>Créneaux disponibles</p></div>
+                </div>
             </div>
 
-            <!-- Rendez-vous du jour -->
+            <!-- Jours de la semaine -->
             <div class="dashboard-section">
-                <h2><svg viewBox="0 0 24 24" fill="none" stroke="#B39DDB" stroke-width="1.5" width="20" height="20"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Rendez-vous du mercredi 16/04/2025</h2>
-                <div class="rdv-list">
-                    <div class="rdv-item"><div class="rdv-date">10:00 - 11:00</div><div class="rdv-info"><span>Maria Benbernou</span><span class="rdv-type">Vidéo</span></div><button class="seance-btn" onclick="alert('Démarrer la séance')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polygon points="5 3 19 12 5 21 5 3"/></svg> Démarrer</button></div>
-                    <div class="rdv-item"><div class="rdv-date">14:00 - 15:00</div><div class="rdv-info"><span>Amira Mansouri</span><span class="rdv-type">Téléphone</span></div><button class="seance-btn" onclick="alert('Préparer la séance')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 6v6l4 2"/></svg> Préparer</button></div>
-                    <div class="rdv-item"><div class="rdv-date">16:30 - 17:30</div><div class="rdv-info"><span>Youcef Hamdi</span><span class="rdv-type">Chat</span></div><button class="seance-btn" onclick="alert('Préparer la séance')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 6v6l4 2"/></svg> Préparer</button></div>
-                </div>
+                <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20" height="20"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Vue de la semaine</h2>
+                <div id="weekView" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px;"></div>
             </div>
 
-            <!-- Sélection de créneau (calendrier) -->
-            <div class="dashboard-section">
-                <div class="creneau-header">
-                    <h2><svg viewBox="0 0 24 24" fill="none" stroke="#B39DDB" stroke-width="2" width="18" height="18"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Sélectionnez un créneau</h2>
-                    <p class="fuseau-info">Les horaires affichés sont basés sur le fuseau horaire de Paris (Europe/Paris).</p>
-                </div>
+            
 
-                <div class="next-availability">
-                    <span class="next-label">La prochaine disponibilité est le</span>
-                    <span class="next-date">02/03 à 13:45</span>
-                </div>
-
-                <div class="calendar-days">
-                    <div class="day-card">Dim<br><span class="day-date">1</span></div>
-                    <div class="day-card">Lun<br><span class="day-date">2</span></div>
-                    <div class="day-card">Mar<br><span class="day-date">3</span></div>
-                    <div class="day-card">Mer<br><span class="day-date">4</span></div>
-                    <div class="day-card">Jeu<br><span class="day-date">5</span></div>
-                    <div class="day-card">Ven<br><span class="day-date">6</span></div>
-                    <div class="day-card">Sam<br><span class="day-date">7</span></div>
-                </div>
-
-                <div class="slots-table">
-                    <div class="slots-header">
-                        <div class="slot-time">Horaire</div>
-                        <div class="slot-day">Lun 2</div>
-                        <div class="slot-day">Mar 3</div>
-                        <div class="slot-day">Mer 4</div>
-                        <div class="slot-day">Jeu 5</div>
-                        <div class="slot-day">Ven 6</div>
-                        <div class="slot-day">Sam 7</div>
-                    </div>
-                    <div class="slots-row">
-                        <div class="slot-time">09:15</div>
-                        <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
-                        <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
-                        <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
-                        <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
-                        <div class="slot-cell taken">Réservé</div>
-                        <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
-                    </div>
-                    <div class="slots-row">
-                        <div class="slot-time">10:00</div>
-                        <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
-                        <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
-                        <div class="slot-cell taken">Réservé</div>
-                        <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
-                        <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
-                        <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
-                    </div>
-                    <div class="slots-row">
-                        <div class="slot-time">10:45</div>
-                        <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
-                        <div class="slot-cell taken">Réservé</div>
-                        <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
-                        <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
-                        <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
-                        <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
-                    </div>
-                    <div class="slots-row">
-                        <div class="slot-time">11:30</div>
-                        <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
-                        <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
-                        <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
-                        <div class="slot-cell taken">Réservé</div>
-                        <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
-                        <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
-                    </div>
-                    <div class="slots-row">
-                        <div class="slot-time">12:15</div>
-                        <div class="slot-cell taken">Réservé</div>
-                        <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
-                        <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
-                        <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
-                        <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
-                        <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
-                    </div>
-                    <div class="slots-row">
-                        <div class="slot-time">13:45</div>
-                        <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
-                        <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
-                        <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
-                        <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
-                        <div class="slot-cell taken">Réservé</div>
-                        <div class="slot-cell available" onclick="selectSlot(this)">Disponible</div>
-                    </div>
-                </div>
-
-                <div class="week-navigation">
-                    <button class="nav-week-btn" onclick="previousWeek()">← Semaine précédente</button>
-                    <button class="nav-week-btn" onclick="nextWeek()">Semaine suivante →</button>
-                </div>
-
-                <div class="booking-info">
-                    <p>Les créneaux marqués en <span class="info-available">violet</span> sont disponibles. Cliquez sur un créneau pour réserver.</p>
-                </div>
+            <!-- Prochain rendez-vous -->
+            <div class="dashboard-section" id="nextAppointmentSection" style="display: none;">
+                <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20" height="20"><polygon points="12 2 15 9 22 9 16 14 19 22 12 17 5 22 8 14 2 9 9 9 12 2"/></svg> Prochain rendez-vous</h2>
+                <div id="nextAppointment" style="background: linear-gradient(135deg, #091346 0%, #1a237e 100%); color: white; padding: 20px; border-radius: 12px;"></div>
             </div>
         </div>
     </div>
-    
-<script src="js/counselor_emploi_du_temps.js" defer></script>
+    <script src="js/api.js"></script>
+    <script>
+function selectSlot(cell) {
+    if (cell.classList.contains('available')) {
+        cell.classList.remove('available');
+        cell.classList.add('selected');
+        cell.textContent = 'Sélectionné';
+    } else if (cell.classList.contains('selected')) {
+        cell.classList.remove('selected');
+        cell.classList.add('available');
+        cell.textContent = 'Disponible';
+    }
+}
+function previousWeek() { showToast('Navigation semaine précédente', 'info'); }
+function nextWeek() { showToast('Navigation semaine suivante', 'info'); }
+    </script>
+
+    <!-- Patient Profile Modal -->
+    <div id="patientProfileModal" class="notes-modal">
+        <div class="notes-modal-content" style="max-width: 600px;" onclick="event.stopPropagation()">
+            <div class="notes-modal-header">
+                <h2><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#091346" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg> Profil du patient</h2>
+                <button class="close-modal" onclick="closePatientModal()">&times;</button>
+            </div>
+            <div id="patientProfileContent" class="notes-list"></div>
+        </div>
+    </div>
+
+    <!-- Add/Block Slot Modal -->
+    <div id="slotModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+        <div style="background: white; padding: 30px; border-radius: 12px; width: 450px; max-width: 90%;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 id="slotModalTitle" style="margin: 0; color: var(--primary-dark);">Ajouter un créneau</h3>
+                <button onclick="closeSlotModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #666;">&times;</button>
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Date spécifique</label>
+                <input type="date" id="slotSpecificDate" style="width: 100%; padding: 10px; border: 2px solid var(--border-color); border-radius: 8px;">
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Heure</label>
+                <input type="time" id="slotStartTime" style="width: 100%; padding: 10px; border: 2px solid var(--border-color); border-radius: 8px;">
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Répéter</label>
+                <select id="slotRecurrence" style="width: 100%; padding: 10px; border: 2px solid var(--border-color); border-radius: 8px;">
+                    <option value="none">Une seule fois</option>
+                    <option value="daily">Tous les jours (30 jours)</option>
+                    <option value="weekly">Toutes les semaines (4 semaines)</option>
+                    <option value="monthly">Tous les mois (3 mois)</option>
+                </select>
+            </div>
+            
+            <div id="blockOptions" style="display: none; margin-bottom: 15px; padding: 15px; background: #fff3cd; border-radius: 8px;">
+                <label style="display: block; margin-bottom: 10px; font-weight: 600; color: #856404;">
+                    <input type="checkbox" id="blockEntireDay" style="margin-right: 8px;">
+                    Bloquer toute la journée
+                </label>
+                <p style="font-size: 12px; color: #856404; margin: 0;">
+                    En cochant cette option, tous les créneaux de cette journée seront bloqués.
+                </p>
+            </div>
+
+            <div id="blockRangeWrapper" style="margin-bottom: 15px;">
+                <label style="display: flex; align-items: center; gap: 6px; font-weight: 600; font-size: 13px; color: #475569; cursor: pointer;">
+                    <input type="checkbox" id="enableBlockRange" onchange="toggleTimeRange()" style="margin: 0;">
+                    Appliquer une plage horaire
+                </label>
+                <div id="blockRangeContent" style="display: none; margin-top: 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px;">
+                    <div style="display: flex; gap: 0; margin-bottom: 12px; border: 1.5px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+                        <button type="button" id="rangeActionAvailableBtn" onclick="setRangeAction('available')" style="flex: 1; padding: 8px 12px; border: none; font-weight: 600; font-size: 13px; cursor: pointer; background: var(--primary-green); color: white;">
+                            ✅ Disponible
+                        </button>
+                        <button type="button" id="rangeActionBlockedBtn" onclick="setRangeAction('blocked')" style="flex: 1; padding: 8px 12px; border: none; font-weight: 600; font-size: 13px; cursor: pointer; background: white; color: #94a3b8;">
+                            🚫 Indisponible
+                        </button>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+                        <div>
+                            <label style="display: block; margin-bottom: 4px; font-weight: 600; font-size: 12px; color: #333;">Début</label>
+                            <input type="time" id="blockRangeStart" step="1800" style="width: 100%; padding: 8px; border: 1.5px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 4px; font-weight: 600; font-size: 12px; color: #333;">Fin</label>
+                            <input type="time" id="blockRangeEnd" step="1800" style="width: 100%; padding: 8px; border: 1.5px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
+                        </div>
+                    </div>
+                    <button onclick="applyTimeRange()" id="applyRangeBtn" style="width: 100%; padding: 10px; background: var(--primary-green); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px;">
+                        Rendre disponible cette plage
+                    </button>
+                    <p style="font-size: 11px; color: #64748b; margin: 8px 0 0;">
+                        Tous les créneaux intermédiaires (pas à pas de 1h) seront automatiquement générés.
+                    </p>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 10px;">
+                <button onclick="saveSlot(false)" id="btnAddSlot" style="flex: 1; background: var(--primary-green); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                    ✅ Disponible
+                </button>
+                <button onclick="saveSlot(true)" id="btnBlockSlot" style="flex: 1; background: #e74c3c; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                    🚫 Bloquer
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Unavailable Modal -->
+    <div id="unavailableModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+        <div style="background: white; padding: 30px; border-radius: 12px; width: 400px; max-width: 90%; text-align: center;">
+            <div style="margin-bottom: 20px;">
+                <div style="width: 60px; height: 60px; background: #fff3cd; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px;">
+                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#856404" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                </div>
+                <h3 style="margin: 0 0 10px 0; color: #091346;">Êtes-vous indisponible ?</h3>
+                <p id="unavailableTimeText" style="color: #666; margin: 0;"></p>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button onclick="closeUnavailableModal()" style="flex: 1; background: #f5f5f5; color: #333; border: none; padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                    Non, je reste disponible
+                </button>
+                <button onclick="confirmUnavailableAction()" id="confirmUnavailableBtn" style="flex: 1; background: #e74c3c; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                    Oui, je suis indisponible
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Generic Confirm Modal -->
+    <div id="confirmModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+        <div style="background: white; padding: 30px; border-radius: 12px; width: 400px; max-width: 90%; text-align: center;">
+            <div style="margin-bottom: 20px;">
+                <div id="confirmModalIcon" style="width: 60px; height: 60px; background: #fff3cd; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px;">
+                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#856404" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                </div>
+                <h3 id="confirmModalTitle" style="margin: 0 0 10px 0; color: #091346;">Confirmation</h3>
+                <p id="confirmModalText" style="color: #666; margin: 0;"></p>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button onclick="closeConfirmModal()" style="flex: 1; background: #f5f5f5; color: #333; border: none; padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                    Non
+                </button>
+                <button onclick="confirmModalAction()" id="confirmModalBtn" style="flex: 1; background: #e74c3c; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                    Oui
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/counselor_emploi_du_temps.js" defer></script>
 </body>
 </html>

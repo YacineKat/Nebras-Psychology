@@ -37,7 +37,7 @@
                     <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.5 15h-3v-2h3v2zm0-4h-3V7h3v6z" fill="currentColor"/></svg>
                     <span>Honoraires</span>
                 </a>
-                <a href="counselor_vip.html" class="nav-item active">
+                <a href="counselor_VIP.html" class="nav-item active">
                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15 9 22 9 16 14 19 22 12 17 5 22 8 14 2 9 9 9 12 2"/></svg>
                     <span>Espace VIP</span>
                     <span class="vip-status-badge" id="vipStatusBadge">Non activé</span>
@@ -45,9 +45,18 @@
             </nav>
             <a href="counselor_profil.html" class="nav-item profile-link">
                 <div class="user-avatar">
-                    <img src="./image/24d0759cbb02c3157112d0ef0f8463b1.jpg" alt="Photo profil" style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover;">
+                    <img src="./assets/image/24d0759cbb02c3157112d0ef0f8463b1.jpg" alt="Photo profil" style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover;">
                 </div>
                 <div class="user-info"><span class="user-name">Sarah Mansouri</span></div>
+            </a>
+
+            <a href="#" class="nav-item" onclick="logout()" style="color: #e74c3c;">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                    <polyline points="16,17 21,12 16,7"/>
+                    <line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+                <span>Déconnexion</span>
             </a>
         </div>
 
@@ -62,13 +71,13 @@
 
             <div id="vipFormContainer" class="espace-vip-container">
                 <h2>
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#B39DDB" stroke-width="2"><polygon points="12 2 15 9 22 9 16 14 19 22 12 17 5 22 8 14 2 9 9 9 12 2"/></svg>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><polygon points="12 2 15 9 22 9 16 14 19 22 12 17 5 22 8 14 2 9 9 9 12 2"/></svg>
                     Formulaire pré-consultation VIP
                 </h2>
                 <p class="subtitle">Ce formulaire sera rempli par vos patients avant chaque séance VIP.</p>
 
                 <div class="info-note">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#B39DDB" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
                     Ce questionnaire permet de mieux connaître vos patients avant la séance.
                 </div>
 
@@ -115,10 +124,10 @@
             <div class="vip-modal-body">
                 <p>Devenez counselor VIP et bénéficiez de :</p>
                 <ul class="vip-benefits">
-                    <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B39DDB" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Formulaire pré-rempli pour vos patients</li>
-                    <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B39DDB" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Gain de temps en séance</li>
-                    <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B39DDB" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Meilleure connaissance du patient</li>
-                    <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B39DDB" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Badge VIP sur votre profil</li>
+                    <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Formulaire pré-rempli pour vos patients</li>
+                    <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Gain de temps en séance</li>
+                    <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Meilleure connaissance du patient</li>
+                    <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Badge VIP sur votre profil</li>
                 </ul>
                 
                 <div class="vip-offers">
@@ -156,16 +165,6 @@
     </div>
 
 <script src="js/api.js"></script>
-<script>
-function showToast(message, type = 'success') {
-    const container = document.querySelector('.toast-container') || (() => { const c = document.createElement('div'); c.className = 'toast-container'; document.body.appendChild(c); return c; })();
-    const toast = document.createElement('div');
-    toast.className = 'toast ' + type;
-    toast.textContent = message;
-    container.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
-}
-</script>
 <script src="js/counselor_VIP.js" defer></script>
 </body>
 </html>

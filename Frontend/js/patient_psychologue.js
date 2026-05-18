@@ -100,20 +100,27 @@ async function loadUserPreferences() {
 
 async function fetchDoctors() {
     try {
-        const result = await doctorAPI.getAll({ view: 'summary' });
-        doctors = result || [];
-        
-        // Clear cache when new doctors are fetched
+        const [psyResult, counselorResult] = await Promise.all([
+            doctorAPI.getAll({ view: 'summary', role: 'psychologue' }),
+            doctorAPI.getAll({ view: 'summary', role: 'counselor' })
+        ]);
+
+        const psychologues = (psyResult || []).map(p => ({ ...p, role: 'psychologue' }));
+        const counselors = (counselorResult || []).map(c => ({ ...c, role: 'counselor' }));
+
+        doctors = [...psychologues, ...counselors];
+
         doctorCache.clear();
-        
+
+        let filtered = doctors;
         if (userPreferences && userPreferences.prefGender) {
-            doctors = filterDoctorsByPreferences(doctors);
+            filtered = filterDoctorsByPreferences(filtered);
         }
-        
-        renderDoctors(doctors);
+
+        renderDoctors(filtered);
     } catch (error) {
         console.error('Error fetching doctors:', error);
-        showToast('Erreur lors du chargement des psychologues', 'error');
+        showToast('Erreur lors du chargement', 'error');
     }
 }
 
@@ -143,65 +150,71 @@ function filterDoctorsByPreferences(doctorsList) {
     return filtered;
 }
 
-function renderDoctors(doctorsList) {
-    const grid = document.getElementById('psychologuesGrid');
-    if (!grid) return;
-
-    if (doctorsList.length === 0) {
-        grid.innerHTML = '<div class="no-results"><p>Aucun psychologue ne correspond à vos préférences.</p><p>Modifiez vos préférences dans votre profil pour voir plus de résultats.</p></div>';
-        document.getElementById('resultCount').textContent = '0 psychologue disponible';
-        return;
-    }
-
-    grid.innerHTML = doctorsList.map(doctor => {
-        const nextAvailable = getNextAvailableSlot(doctor.availableSlots);
-        const onlineStatus = doctor.isAvailable ? 'En ligne' : (nextAvailable ? `Disponible ${nextAvailable}` : 'Non disponible');
-        const avatarHtml = doctor.avatar 
-            ? `<img src="${doctor.avatar}" alt="${doctor.fullname}" class="psy-avatar-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">`
-            : '';
-        const defaultAvatarSvg = `
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="psy-avatar-default">
-                <circle cx="12" cy="8" r="4"/>
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-            </svg>
-        `;
-        
-        return `
-        <div class="psy-card" 
-             data-name="${doctor.fullname.toLowerCase()}" 
-             data-online="${doctor.isAvailable}"
-             onclick="viewDoctor('${doctor.id}')">
-            <div class="psy-card-header">
-                <div class="psy-avatar-container">
-                    ${avatarHtml}
-                    <div class="psy-avatar-default" ${doctor.avatar ? 'style="display:none"' : ''}>
-                        ${defaultAvatarSvg}
-                    </div>
-                    ${doctor.isAvailable ? '<div class="online-indicator"></div>' : ''}
+function renderDoctorCard(doctor, roleLabel) {
+    const nextAvailable = getNextAvailableSlot(doctor.availableSlots);
+    const avatarHtml = doctor.avatar 
+        ? `<img src="${doctor.avatar}" alt="${doctor.fullname}" class="psy-avatar-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">`
+        : '';
+    const defaultAvatarSvg = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="psy-avatar-default">
+            <circle cx="12" cy="8" r="4"/>
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+        </svg>
+    `;
+    const roleDisplayName = roleLabel === 'counselor' ? 'Conseiller' : 'Psychologue';
+    const roleBadgeClass = roleLabel === 'counselor' ? 'counselor' : 'psy';
+    
+    return `
+    <div class="psy-card" 
+         data-name="${doctor.fullname.toLowerCase()}" 
+         data-online="${doctor.isAvailable}"
+         data-role="${roleLabel}"
+         onclick="viewDoctor('${doctor.id}')">
+        <div class="psy-card-header">
+            <div class="psy-avatar-container">
+                ${avatarHtml}
+                <div class="psy-avatar-default" ${doctor.avatar ? 'style="display:none"' : ''}>
+                    ${defaultAvatarSvg}
                 </div>
-            </div>
-            <div class="psy-card-body">
-                <h3 class="psy-name">${doctor.fullname}</h3>
-                <p class="psy-specialite">${doctor.specialite || 'Psychologie générale'}</p>
-                <div class="psy-meta">
-                    <div class="psy-rating">
-                        ${'★'.repeat(Math.floor(doctor.rating || 0))}${'☆'.repeat(5 - Math.floor(doctor.rating || 0))}
-                        <span class="rating-value">${doctor.rating ? doctor.rating.toFixed(1) : '0'}</span>
-                    </div>
-                    <div class="psy-price">${doctor.tarif || 2000} DA</div>
-                </div>
-            </div>
-            <div class="psy-card-footer">
-                <button class="psy-view-btn" onclick="event.stopPropagation(); viewDoctor('${doctor.id}')">
-                    Voir profil
-                </button>
+                ${doctor.isAvailable ? '<div class="online-indicator"></div>' : ''}
             </div>
         </div>
-        `;
-    }).join('');
+        <div class="psy-card-body">
+            <h3 class="psy-name">${doctor.fullname}</h3>
+            <p class="psy-specialite">${doctor.specialite || 'Général'}</p>
+            <span class="psy-role-badge ${roleBadgeClass}">${roleDisplayName}</span>
+            <div class="psy-meta">
+                <div class="psy-rating">
+                    ${'★'.repeat(Math.floor(doctor.rating || 0))}${'☆'.repeat(5 - Math.floor(doctor.rating || 0))}
+                    <span class="rating-value">${doctor.rating ? doctor.rating.toFixed(1) : '0'}</span>
+                </div>
+                <div class="psy-price">${doctor.tarif || 2000} DA</div>
+            </div>
+        </div>
+        <div class="psy-card-footer">
+            <button class="psy-view-btn" onclick="event.stopPropagation(); viewDoctor('${doctor.id}')">
+                Voir profil
+            </button>
+        </div>
+    </div>
+    `;
+}
 
-    document.getElementById('resultCount').textContent = 
-        `${doctorsList.length} psychologue(s) disponible(s)`;
+function renderDoctors(allDoctors) {
+    const psyGrid = document.getElementById('psychologuesGrid');
+    if (!psyGrid) return;
+
+    if (allDoctors.length === 0) {
+        psyGrid.innerHTML = '<div class="no-results"><p>Aucun professionnel ne correspond à vos préférences.</p><p>Modifiez vos préférences dans votre profil pour voir plus de résultats.</p></div>';
+    } else {
+        psyGrid.innerHTML = allDoctors.map(d => renderDoctorCard(d, d.userType === 'counselor' ? 'counselor' : 'psychologue')).join('');
+    }
+
+    const resultEl = document.getElementById('resultCount');
+    if (resultEl) {
+        const total = allDoctors.length;
+        resultEl.textContent = `${total} professionnel${total > 1 ? 's' : ''} disponible${total > 1 ? 's' : ''}`;
+    }
 }
 
 function getNextAvailableSlot(slots) {
@@ -450,14 +463,17 @@ async function viewDoctor(doctorId) {
         
         selectedDoctor = doctor;
 
-        // Avatar
+        // Avatar with default fallback
         const avatarImg = document.querySelector('.psy-detail-avatar');
-        if (avatarImg) {
+        const avatarDefault = document.querySelector('.psy-detail-avatar-default');
+        if (avatarImg && avatarDefault) {
             if (doctor.avatar) {
                 avatarImg.src = doctor.avatar;
                 avatarImg.style.display = 'block';
+                avatarDefault.style.display = 'none';
             } else {
                 avatarImg.style.display = 'none';
+                avatarDefault.style.display = 'flex';
             }
         }
 
@@ -468,6 +484,14 @@ async function viewDoctor(doctorId) {
         const specialiteSpan = document.getElementById('detailSpecialite');
         if (specialiteSpan) {
             specialiteSpan.textContent = doctor.specialite || 'Psychologie';
+        }
+
+        // Role badge
+        const roleBadge = document.getElementById('detailRoleBadge');
+        if (roleBadge) {
+            const isCounselor = doctor.userType === 'counselor';
+            roleBadge.textContent = isCounselor ? 'Conseiller' : 'Psychologue';
+            roleBadge.className = 'detail-role-badge ' + (isCounselor ? 'counselor' : 'psy');
         }
 
         // Rating with stars (NEW)
@@ -694,9 +718,9 @@ function filterPsychologues() {
 
     const resultCount = document.getElementById('resultCount');
     if (urgentActif) {
-        resultCount.innerHTML = `${visibleCount} psychologue(s) EN LIGNE disponible(s) pour appel immédiat`;
+        resultCount.innerHTML = `${visibleCount} professionnel${visibleCount > 1 ? 's' : ''} EN LIGNE disponible${visibleCount > 1 ? 's' : ''} pour appel immédiat`;
     } else {
-        resultCount.innerHTML = `${visibleCount} psychologue(s) correspondent à votre recherche`;
+        resultCount.innerHTML = `${visibleCount} professionnel${visibleCount > 1 ? 's' : ''} correspondent à votre recherche`;
     }
 }
 
@@ -733,14 +757,12 @@ async function openUrgentPayment() {
 async function activateUrgentNoPayment() {
     // Direct activation without payment - for users with active 7-day access
     try {
-        const onlineDoctor = doctors.find(d => d.isAvailable);
-        const selectedDoctorId = onlineDoctor?.id;
+        // Send urgent requests to all available psychologists and counselors
+        const success = await sendUrgentToAllProviders(undefined);
         
-        const result = await appointmentAPI.createUrgent(
-            selectedDoctorId,
-            'Patient requested URGENT VIP consultation',
-            undefined
-        );
+        if (!success) {
+            return;
+        }
         
         urgentActif = true;
         document.getElementById('urgentBanner').style.display = 'flex';
@@ -749,6 +771,46 @@ async function activateUrgentNoPayment() {
     } catch (error) {
         console.error('Error activating urgent:', error);
         showToast('Erreur lors de l\'activation URGENT', 'error');
+    }
+}
+
+async function sendUrgentToAllProviders(appointmentTime) {
+    // Send urgent requests to all available psychologists and counselors
+    const availableDoctors = doctors.filter(d => d.isAvailable && d.role === 'psychologue');
+    const availableCounselors = doctors.filter(d => d.isAvailable && d.role === 'counselor');
+    const allProviders = [...availableDoctors, ...availableCounselors];
+    
+    if (allProviders.length === 0) {
+        showToast('Aucun professionnel disponible en ce moment', 'error');
+        return false;
+    }
+    
+    try {
+        // Send urgent requests to all available providers in parallel
+        const urgentPromises = allProviders.map(provider =>
+            appointmentAPI.createUrgent(
+                provider.id,
+                'Patient requested URGENT VIP consultation',
+                appointmentTime || undefined
+            ).catch(e => {
+                console.log(`Failed to send urgent to ${provider.fullname}:`, e);
+                return null;
+            })
+        );
+        
+        const results = await Promise.all(urgentPromises);
+        const successCount = results.filter(r => r !== null).length;
+        
+        if (successCount > 0) {
+            return true;
+        } else {
+            showToast('Erreur lors de l\'envoi des demandes urgentes', 'error');
+            return false;
+        }
+    } catch (error) {
+        console.error('Error sending urgent to all providers:', error);
+        showToast('Erreur lors de l\'envoi des demandes urgentes', 'error');
+        return false;
     }
 }
 
@@ -774,16 +836,12 @@ async function activateUrgent() {
         // Activate 7-day urgent access
         await appointmentAPI.activateUrgentAccess();
         
-        // Find an online doctor - use first available
-        const onlineDoctor = doctors.find(d => d.isAvailable);
-        const selectedDoctorId = onlineDoctor?.id;
+        // Send urgent requests to all available psychologists and counselors
+        const success = await sendUrgentToAllProviders(appointmentTime);
         
-        // Create urgent VIP request via API with custom time
-        const result = await appointmentAPI.createUrgent(
-            selectedDoctorId,
-            'Patient requested URGENT VIP consultation',
-            appointmentTime || undefined
-        );
+        if (!success) {
+            return;
+        }
         
         showToast('Demande URGENTE VIP envoyée avec succès! Accès actif pour 7 jours.', 'success');
         urgentActif = true;

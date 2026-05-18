@@ -449,6 +449,54 @@ function formatTime(timeString) {
 }
 
 // ============================================
+// CENTRALIZED UI HELPERS
+// ============================================
+function showToast(message, type = 'success') {
+  const container = document.querySelector('.toast-container') || (() => {
+    const c = document.createElement('div');
+    c.className = 'toast-container';
+    document.body.appendChild(c);
+    return c;
+  })();
+  const toast = document.createElement('div');
+  toast.className = 'toast ' + type;
+  toast.textContent = message;
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
+}
+
+function logout() {
+  localStorage.removeItem('nebras_token');
+  localStorage.removeItem('nebras_user');
+  showToast('Déconnexion réussie', 'success');
+  setTimeout(() => window.location.href = 'home.html', 500);
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function getMediaLabel(mediaType) {
+  const labels = { video: 'Vidéo', phone: 'Téléphone', chat: 'Chat' };
+  return labels[mediaType] || mediaType;
+}
+
+function highlightCurrentSidebarLink() {
+  const currentPage = window.location.pathname.split('/').pop().toLowerCase();
+  const navItems = document.querySelectorAll('.nav-item');
+  navItems.forEach(item => {
+    const href = item.getAttribute('href')?.split('/').pop().toLowerCase();
+    if (href && href === currentPage) {
+      item.classList.add('active');
+    } else {
+      item.classList.remove('active');
+    }
+  });
+}
+
+// ============================================
 // REVIEWS / RATINGS API
 // ============================================
 const reviewAPI = {
@@ -481,6 +529,11 @@ window.getUserType = getUserType;
 window.redirectByUserType = redirectByUserType;
 window.formatDate = formatDate;
 window.formatTime = formatTime;
+window.showToast = showToast;
+window.logout = logout;
+window.escapeHtml = escapeHtml;
+window.getMediaLabel = getMediaLabel;
+window.highlightCurrentSidebarLink = highlightCurrentSidebarLink;
 window.daysOfWeek = daysOfWeek;
 
 // ============================================

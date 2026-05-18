@@ -81,10 +81,10 @@
                 </button>
             </div>
 
-            <p class="result-count" id="resultCount">6 psychologues correspondent à votre recherche</p>
+            <p class="result-count" id="resultCount">Chargement...</p>
 
             <div class="psychologues-grid" id="psychologuesGrid">
-                <div class="loading-spinner">Chargement des psychologues...</div>
+                <div class="loading-spinner">Chargement des professionnels...</div>
             </div>
         </div>
     </div>
@@ -130,6 +130,7 @@
     </div>
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script src="js/api.js"></script>
+<script src="js/socket-manager.js"></script>
 <script src="js/patient-call-listener.js"></script>
 <script>
     (function() {
@@ -165,10 +166,19 @@ function logout() {
         <div class="psy-detail-content">
             <div class="psy-detail-header">
                 <div class="psy-detail-profile">
-                    <img src="" alt="Psychologue" class="psy-detail-avatar" style="display: none;">
+                    <div class="psy-detail-avatar-container">
+                        <img src="" alt="" class="psy-detail-avatar" style="display: none;">
+                        <div class="psy-detail-avatar-default">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <circle cx="12" cy="8" r="4"/>
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                            </svg>
+                        </div>
+                    </div>
                     <div class="psy-detail-name">
                         <h2 id="detailName">Chargement...</h2>
                         <span id="detailSpecialite" class="detail-specialite">Spécialité...</span>
+                        <span id="detailRoleBadge" class="detail-role-badge"></span>
                         <div class="detail-rating">
                             <span class="stars" id="detailStars"></span>
                             <span class="rating-value" id="detailRating">0.0</span>

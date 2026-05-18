@@ -44,9 +44,7 @@
                 </a>
             </nav>
             <a href="counselor_profil.html" class="nav-item profile-link active">
-                <div class="user-avatar">
-                    <img src="./image/24d0759cbb02c3157112d0ef0f8463b1.jpg" alt="Photo profil" style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover;">
-                </div>
+                <div class="user-avatar" id="sidebarAvatar"></div>
                 <div class="user-info"><span class="user-name">Sarah Mansouri</span></div>
             </a>
 
@@ -72,16 +70,22 @@
             <div class="profile-content">
                 <!-- Profile Header avec statut en ligne -->
                 <div class="profile-header">
-                    <div class="profile-avatar-large">
-                        <img src="./image/24d0759cbb02c3157112d0ef0f8463b1.jpg" alt="Avatar" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">
+                    <div class="profile-avatar-large" onclick="document.getElementById('avatarInput').click()">
+                        <img id="profileAvatarImg" alt="Avatar" style="width:100%; height:100%; border-radius:50%; object-fit:cover; display:none;">
+                        <div class="avatar-initials" id="profileAvatarInitials"></div>
+                        <div class="avatar-overlay">
+                            <svg viewBox="0 0 24 24" fill="white" width="30" height="30"><path d="M12 12c2.21 0 4-1.79 4-4S14.21 4 12 4 8 5.79 8 8s1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                            <span>Changer</span>
+                        </div>
                     </div>
+                    <input type="file" id="avatarInput" accept="image/*" style="display:none;" onchange="handleAvatarChange(event)">
                     <div class="profile-info">
-                        <h2>Sarah Mansouri <span id="onlineStatusBadge" class="online-status">En ligne</span></h2>
-                        <p class="specialite">Counselor spécialisée en orientation</p>
+                        <h2 id="counselorProfileName"></h2>
+                        <p class="specialite" id="counselorSpecialiteDisplay"></p>
                         <div class="profile-stats">
-                            <div><span class="number">18</span><br><span class="label">Patients</span></div>
-                            <div><span class="number">52</span><br><span class="label">Séances</span></div>
-                            <div><span class="number">4.7</span><br><span class="label">Note</span></div>
+                            <div><span class="number" id="statsPatients">0</span><br><span class="label">Patients</span></div>
+                            <div><span class="number" id="statsSessions">0</span><br><span class="label">Séances</span></div>
+                            <div><span class="number" id="statsRating">0.0</span><br><span class="label">Note</span></div>
                         </div>
                     </div>
                 </div>
@@ -89,19 +93,15 @@
                 <!-- Onglets -->
                 <div class="profile-tabs">
                     <button class="tab-btn active" onclick="showTab('profil')">
-                        <span class="tab-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></span>
                         Informations personnelles
                     </button>
                     <button class="tab-btn" onclick="showTab('statistiques')">
-                        <span class="tab-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M21 6h-7.59l3.29-3.29L16 2l-4 4-4-4-.71.71L10.59 6H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2z"/></svg></span>
                         Statistiques
                     </button>
                     <button class="tab-btn" onclick="showTab('statut')">
-                        <span class="tab-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg></span>
                         Statut en ligne
                     </button>
                     <button class="tab-btn" onclick="showTab('securite')">
-                        <span class="tab-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 17a2 2 0 100-4 2 2 0 000 4zm6-6h-1V8a5 5 0 00-10 0v3H6c-1.1 0-2 .9-2 2v9c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-9c0-1.1-.9-2-2-2zm-6-4a3 3 0 013 3v3H9V8a3 3 0 013-3z"/></svg></span>
                         Sécurité
                     </button>
                 </div>
@@ -109,10 +109,9 @@
                 <!-- TAB 1 - Informations personnelles -->
                 <div id="tabProfil" class="profile-tab-content active">
                     <div class="profile-section">
-                        <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4z"/></svg> Informations personnelles</h3>
+                        <h3>Informations personnelles</h3>
                         <div class="form-row">
-                            <div class="form-group"><label>Prénom</label><input type="text" id="counselorFirstName" placeholder="Prénom"></div>
-                            <div class="form-group"><label>Nom</label><input type="text" id="counselorLastName" placeholder="Nom"></div>
+                            <div class="form-group"><label>Nom complet</label><input type="text" id="counselorFullname" placeholder="Votre nom complet"></div>
                         </div>
                         <div class="form-row">
                             <div class="form-group"><label>Date de naissance</label><input type="date" id="counselorBirthDate" class="input"></div>
@@ -127,33 +126,31 @@
                     </div>
 
                     <div class="profile-section">
-                        <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/></svg> Informations professionnelles</h3>
-                        <div class="form-group"><label>Spécialité</label><select id="counselorSpecialite"><option value="">Sélectionner</option><option value="Conseil en orientation">Conseil en orientation</option><option value="Psychologie sociale">Psychologie sociale</option><option value="Développement personnel">Développement personnel</option><option value="Médiation familiale">Médiation familiale</option></select></div>
+                        <h3>Informations professionnelles</h3>
+                        <div class="form-group"><label>Spécialité</label><select id="counselorSpecialiteSelect"><option value="">Sélectionner</option><option value="Conseil en orientation">Conseil en orientation</option><option value="Psychologie sociale">Psychologie sociale</option><option value="Développement personnel">Développement personnel</option><option value="Médiation familiale">Médiation familiale</option></select></div>
                         <div class="form-group"><label>Numéro d'agrément</label><input type="text" id="counselorAgrement" placeholder="Numéro d'agrément"></div>
                         <div class="form-group"><label>Diplômes</label><textarea id="counselorDiplomes" rows="3" placeholder="Vos diplômes..."></textarea></div>
-                        <div class="form-group"><label>Biographie</label><textarea id="counselorBio" rows="4" placeholder="Parlez de vous..."></textarea></div>
-                        <div class="form-group"><label>Tarif par séance</label><input type="number" id="counselorTarif" class="input" placeholder="0"> DA</div>
-                        <button class="update-btn" onclick="updateCounselorProfile()">Mettre à jour</button>
-                    </div>
+                        <div class="form-group"><label>Biographie</label><textarea id="counselorBioText" rows="4" placeholder="Parlez de vous..."></textarea></div>
+                        </div>
                 </div>
 
                 <!-- TAB 2 - Statistiques -->
                 <div id="tabStatistiques" class="profile-tab-content">
                     <div class="profile-section">
-                        <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M21 6h-7.59l3.29-3.29L16 2l-4 4-4-4-.71.71L10.59 6H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2z"/></svg> Statistiques de consultation</h3>
+                        <h3>Statistiques de consultation</h3>
                         
                         <div class="stats-grid-profile">
                             <div class="stat-card-profile">
                                 <div class="stat-icon-profile"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
-                                <div class="stat-info-profile"><h3>2,180</h3><p>Vues totales</p><div class="stat-trend up">↑ +320 ce mois</div></div>
+                                <div class="stat-info-profile"><h3 id="statViews">0</h3><p>Vues totales</p><div class="stat-trend up">↑ +0 ce mois</div></div>
                             </div>
                             <div class="stat-card-profile">
                                 <div class="stat-icon-profile"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
-                                <div class="stat-info-profile"><h3>52</h3><p>Contacts reçus</p><div class="stat-trend up">↑ +15 ce mois</div></div>
+                                <div class="stat-info-profile"><h3 id="statContacts">0</h3><p>Contacts reçus</p><div class="stat-trend up">↑ +0 ce mois</div></div>
                             </div>
                             <div class="stat-card-profile">
                                 <div class="stat-icon-profile"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
-                                <div class="stat-info-profile"><h3>38</h3><p>RDV réservés</p><div class="stat-trend up">↑ +10 ce mois</div></div>
+                                <div class="stat-info-profile"><h3 id="statAppointments">0</h3><p>RDV réservés</p><div class="stat-trend up">↑ +0 ce mois</div></div>
                             </div>
                         </div>
 
@@ -162,34 +159,28 @@
                             <div class="stats-row">
                                 <div class="stats-item">
                                     <span class="stats-label">Femmes</span>
-                                    <div class="progress-bar"><div class="progress-fill" style="width: 70%; background: #B39DDB;"></div></div>
-                                    <span class="stats-percent">70%</span>
+                                    <div class="progress-bar"><div class="progress-fill" id="femaleBar" style="width: 0%; background: #B39DDB;"></div></div>
+                                    <span class="stats-percent" id="femalePercent">0%</span>
                                 </div>
                                 <div class="stats-item">
                                     <span class="stats-label">Hommes</span>
-                                    <div class="progress-bar"><div class="progress-fill" style="width: 30%; background: #44AA99;"></div></div>
-                                    <span class="stats-percent">30%</span>
+                                    <div class="progress-bar"><div class="progress-fill" id="maleBar" style="width: 0%; background: #44AA99;"></div></div>
+                                    <span class="stats-percent" id="malePercent">0%</span>
                                 </div>
                             </div>
                         </div>
 
                         <div class="stats-detail">
                             <h4>Tranches d'âge</h4>
-                            <div class="stats-item"><span class="stats-label">18-25 ans</span><div class="progress-bar"><div class="progress-fill" style="width: 35%;"></div></div><span class="stats-percent">35%</span></div>
-                            <div class="stats-item"><span class="stats-label">26-35 ans</span><div class="progress-bar"><div class="progress-fill" style="width: 40%;"></div></div><span class="stats-percent">40%</span></div>
-                            <div class="stats-item"><span class="stats-label">36-50 ans</span><div class="progress-bar"><div class="progress-fill" style="width: 15%;"></div></div><span class="stats-percent">15%</span></div>
-                            <div class="stats-item"><span class="stats-label">50+ ans</span><div class="progress-bar"><div class="progress-fill" style="width: 10%;"></div></div><span class="stats-percent">10%</span></div>
+                            <div class="stats-item"><span class="stats-label">18-25 ans</span><div class="progress-bar"><div class="progress-fill" id="age1Bar" style="width: 0%;"></div></div><span class="stats-percent" id="age1Percent">0%</span></div>
+                            <div class="stats-item"><span class="stats-label">26-35 ans</span><div class="progress-bar"><div class="progress-fill" id="age2Bar" style="width: 0%;"></div></div><span class="stats-percent" id="age2Percent">0%</span></div>
+                            <div class="stats-item"><span class="stats-label">36-50 ans</span><div class="progress-bar"><div class="progress-fill" id="age3Bar" style="width: 0%;"></div></div><span class="stats-percent" id="age3Percent">0%</span></div>
+                            <div class="stats-item"><span class="stats-label">50+ ans</span><div class="progress-bar"><div class="progress-fill" id="age4Bar" style="width: 0%;"></div></div><span class="stats-percent" id="age4Percent">0%</span></div>
                         </div>
 
                         <div class="stats-detail">
                             <h4>Motifs les plus recherchés</h4>
-                            <div class="tags-list">
-                                <span class="tag">Orientation (312)</span>
-                                <span class="tag">Confiance en soi (245)</span>
-                                <span class="tag">Stress (189)</span>
-                                <span class="tag">Développement personnel (156)</span>
-                                <span class="tag">Anxiété (98)</span>
-                            </div>
+                            <div class="tags-list" id="motifsTags"></div>
                         </div>
                     </div>
                 </div>
@@ -197,7 +188,7 @@
                 <!-- TAB 3 - Statut en ligne -->
                 <div id="tabStatut" class="profile-tab-content">
                     <div class="profile-section">
-                        <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg> Statut en ligne</h3>
+                        <h3>Statut en ligne</h3>
                         <div class="online-status-container">
                             <div class="online-toggle-card">
                                 <div class="toggle-header">
@@ -220,23 +211,22 @@
                 <!-- TAB 4 - Sécurité -->
                 <div id="tabSecurite" class="profile-tab-content">
                     <div class="profile-section">
-                        <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 17a2 2 0 100-4 2 2 0 000 4zm6-6h-1V8a5 5 0 00-10 0v3H6c-1.1 0-2 .9-2 2v9c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-9c0-1.1-.9-2-2-2z"/></svg> Informations de connexion</h3>
+                        <h3>Informations de connexion</h3>
                         <div class="info-row">
-                            <div><p class="info-label">Adresse email</p><p class="info-value">sarah.mansouri@nebras.dz</p></div>
-                            <button class="link-btn" onclick="alert('Modifier email')">Modifier</button>
+                            <div><p class="info-label">Adresse email</p><p class="info-value" id="counselorEmail">-</p></div>
                         </div>
                         <div class="info-row">
                             <div><p class="info-label">Mot de passe</p><p class="info-value">************</p></div>
-                            <button class="link-btn" onclick="alert('Modifier mot de passe')">Modifier</button>
+                            <button class="link-btn" onclick="openPasswordModal()">Modifier</button>
                         </div>
                         <div class="info-row">
                             <div><p class="info-label">Notifications email</p><p class="info-value">Activées</p></div>
-                            <button class="link-btn" onclick="alert('Gérer les notifications')">Gérer</button>
+                            <button class="link-btn" onclick="showToast('Fonctionnalité bientôt disponible', 'info')">Gérer</button>
                         </div>
                     </div>
 
                     <div class="profile-section danger-section">
-                        <h3 style="color: #e74c3c;"><svg width="18" height="18" viewBox="0 0 24 24" fill="#e74c3c"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Suppression du compte</h3>
+                        <h3 style="color: #e74c3c;">⚠️ Suppression du compte</h3>
                         <p>Cette action est irréversible. Toutes vos données personnelles et votre historique seront définitivement supprimés.</p>
                         <button class="delete-btn" onclick="confirmDelete()">Supprimer mon compte</button>
                     </div>
@@ -245,33 +235,28 @@
         </div>
     </div>
 
+    <!-- Password Change Modal -->
+    <div id="passwordModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 400px; padding: 30px;">
+            <span class="close-modal" onclick="closePasswordModal()" style="position: absolute; right: 20px; top: 15px; font-size: 28px; cursor: pointer;">&times;</span>
+            <h3 style="margin-bottom: 20px; color: #091346;">Changer le mot de passe</h3>
+            <div class="form-group">
+                <label>Mot de passe actuel</label>
+                <input type="password" id="currentPassword" class="input" placeholder="Entrez le mot de passe actuel">
+            </div>
+            <div class="form-group">
+                <label>Nouveau mot de passe</label>
+                <input type="password" id="newPassword" class="input" placeholder="Entrez le nouveau mot de passe">
+            </div>
+            <div class="form-group">
+                <label>Confirmer le mot de passe</label>
+                <input type="password" id="confirmPassword" class="input" placeholder="Confirmez le nouveau mot de passe">
+            </div>
+            <button class="update-btn" onclick="changePassword()" style="width: 100%; margin-top: 15px;">Enregistrer</button>
+        </div>
+    </div>
+
 <script src="js/api.js"></script>
-<script>
-(function() {
-    var userStr = localStorage.getItem('nebras_user');
-    if (userStr) {
-        try {
-            var user = JSON.parse(userStr);
-            var name = user.fullname || user.email || '';
-            document.querySelectorAll('.user-name').forEach(function(el) { el.textContent = name; });
-        } catch(e) {}
-    }
-})();
-function showToast(message, type = 'success') {
-    const container = document.querySelector('.toast-container') || (() => { const c = document.createElement('div'); c.className = 'toast-container'; document.body.appendChild(c); return c; })();
-    const toast = document.createElement('div');
-    toast.className = 'toast ' + type;
-    toast.textContent = message;
-    container.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
-}
-function logout() {
-    localStorage.removeItem('nebras_token');
-    localStorage.removeItem('nebras_user');
-    showToast('Déconnexion réussie', 'success');
-    setTimeout(() => window.location.href = 'home.html', 500);
-}
-</script>
 <script src="js/counselor_profil.js" defer></script>
 </body>
 </html>

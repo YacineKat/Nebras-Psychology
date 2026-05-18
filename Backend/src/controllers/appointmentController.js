@@ -608,10 +608,26 @@ exports.createUrgentRequest = async (req, res) => {
         priority: true,
         appointmentTime: appointmentTime || defaultTime,
         appointmentDate: new Date()
+      },
+      include: {
+        patient: { select: { id: true, fullname: true } }
       }
     });
 
     console.log('Urgent request created:', urgentRequest.id);
+    
+    // Emit socket event to notify the doctor/counselor about the new urgent request
+    if (global.io) {
+      global.io.to(`user:${selectedDoctorId}`).emit('urgentRequestCreated', {
+        id: urgentRequest.id,
+        patientId: urgentRequest.patientId,
+        doctorId: urgentRequest.doctorId,
+        patientName: urgentRequest.patient?.fullname,
+        appointmentTime: urgentRequest.appointmentTime,
+        status: urgentRequest.status,
+        createdAt: urgentRequest.createdAt
+      });
+    }
 
     res.status(201).json({
       message: 'Urgent VIP request created successfully',
@@ -695,6 +711,17 @@ exports.acceptUrgentRequest = async (req, res) => {
       }
     });
 
+    // Notify patient that their urgent request was accepted
+    if (global.io) {
+      global.io.to(`user:${urgentRequest.patientId}`).emit('callAccepted', {
+        urgentId: id,
+        appointmentId: appointment.id,
+        providerName: urgentRequest.doctor?.fullname || 'Provider',
+        appointmentTime: appointmentTime,
+        roomId: appointment.id
+      });
+    }
+
     res.json({
       message: 'Urgent VIP request accepted - starting video call',
       urgentRequest,
@@ -721,8 +748,21 @@ exports.rejectUrgentRequest = async (req, res) => {
       data: { 
         status: 'rejected',
         notes: reason || 'Request rejected by doctor'
+      },
+      include: {
+        patient: { select: { id: true, fullname: true } },
+        doctor: { select: { fullname: true, id: true } }
       }
     });
+
+    // Notify patient that their urgent request was rejected
+    if (global.io) {
+      global.io.to(`user:${urgentRequest.patientId}`).emit('callRejected', {
+        urgentId: id,
+        providerName: urgentRequest.doctor?.fullname || 'Provider',
+        reason: reason || 'Request rejected by provider'
+      });
+    }
 
     res.json({
       message: 'Urgent request rejected',

@@ -31,6 +31,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const mode = params.get('mode');
     const role = params.get('role');
     isDoctor = role === 'doctor' || type === 'doctor';
+    isCounselor = role === 'counselor' || type === 'counselor';
     isGroupCall = mode === 'group' || type === 'group';
     groupId = params.get('groupId');
     sessionAppointmentId = params.get('appointment');
@@ -48,7 +49,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (isGroupCall) {
         document.getElementById('callTitle').textContent = 'Appel de groupe thérapeutique';
         document.getElementById('remotePlaceholderText').textContent = 'Connexion Ã  la session de groupe...';
-        if (isDoctor) {
+        if (isDoctor || isCounselor) {
             await initializeDoctorGroupCall();
         } else {
             await initializeGroupCall();
@@ -66,9 +67,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('localName').textContent = userName;
     localAvatarUrl = currentUser.profile?.avatar || null;
     setAvatarInitial('localAvatarCircle', currentUser.fullname, localAvatarUrl);
-    document.getElementById('callTitle').textContent = isDoctor ? 'Appel video avec patient' : 'Appel video avec psychologue';
+    document.getElementById('callTitle').textContent = (isDoctor || isCounselor) ? 'Appel video avec patient' : 'Appel video avec psychologue';
     
-    if (isDoctor) {
+    if (isDoctor || isCounselor) {
         const screenShareBtn = document.getElementById('screenShareBtn');
         if (screenShareBtn) screenShareBtn.style.display = 'flex';
     }
@@ -85,7 +86,8 @@ async function initializeSession() {
         if (!status.inCall || status.appointmentId !== sessionAppointmentId) {
             showError('La session n\'est plus active');
             setTimeout(() => {
-                window.location.href = isDoctor ? 'psychologue_dashboard.html' : 'patient_dashboard.html';
+                const redirectAfterInactive = isDoctor ? 'psychologue_dashboard.html' : (isCounselor ? 'counselor_dashboard.html' : 'patient_dashboard.html');
+                window.location.href = redirectAfterInactive;
             }, 2000);
             return;
         }
@@ -98,7 +100,7 @@ async function initializeSession() {
                 if (!resp) return null;
                 const data = resp.appointment || resp;
 
-                if (isDoctor) {
+                if (isDoctor || isCounselor) {
                     chatPartnerId = data.patientId;
                     remoteAvatarUrl = data.patient?.profile?.avatar || data.patient?.avatar || null;
                 } else {
@@ -108,8 +110,15 @@ async function initializeSession() {
                     remoteAvatarUrl = data.doctor?.profile?.avatar || data.doctor?.avatar || null;
                 }
 
-                const remoteName = isDoctor ? data.patient?.fullname : data.doctor?.fullname;
+                const remoteName = (isDoctor || isCounselor) ? data.patient?.fullname : data.doctor?.fullname;
                 setRemoteParticipantDisplay(remoteName, remoteAvatarUrl);
+
+                // If current user is a patient, adjust title based on provider type
+                if (!(isDoctor || isCounselor)) {
+                    const provider = data.doctor || {};
+                    const providerIsCounselor = provider.role === 'counselor' || provider.type === 'counselor' || provider.userType === 'counselor' || provider.isCounselor;
+                    document.getElementById('callTitle').textContent = providerIsCounselor ? 'Appel video avec counselor' : 'Appel video avec psychologue';
+                }
 
                 return data;
             }).catch((e) => {
@@ -264,11 +273,11 @@ function attachLocalTracksToActivePeerConnections() {
     attachLocalTracksToPeerConnection(peerConnection);
     Object.values(peerConnections).forEach((pc) => attachLocalTracksToPeerConnection(pc));
 
-    if (!isGroupCall && isDoctor && peerConnection && otherParticipantId && peerConnection.signalingState === 'stable' && !peerConnection.__offerInFlight) {
+    if (!isGroupCall && (isDoctor || isCounselor) && peerConnection && otherParticipantId && peerConnection.signalingState === 'stable' && !peerConnection.__offerInFlight) {
         createAndSendOffer();
     }
 
-    if (isGroupCall && isDoctor && videoSocket?.connected) {
+    if (isGroupCall && (isDoctor || isCounselor) && videoSocket?.connected) {
         Object.entries(peerConnections).forEach(([socketId, pc]) => {
             const participant = otherParticipants[socketId];
             if (participant?.shouldInitiate && pc && pc.signalingState === 'stable' && !pc.__groupOfferInFlight) {
@@ -317,7 +326,7 @@ async function endCall() {
         }
         
         if (isGroupCall) {
-            if (isDoctor && groupId) {
+            if ((isDoctor || isCounselor) && groupId) {
                 stopCallTimer();
                 try {
                     const token = localStorage.getItem('nebras_token');
@@ -334,7 +343,7 @@ async function endCall() {
                     doctorMainSocket.disconnect();
                     doctorMainSocket = null;
                 }
-                window.location.href = 'psychologue_dashboard.html';
+                window.location.href = isDoctor ? 'psychologue_dashboard.html' : 'counselor_dashboard.html';
                 return;
             }
             stopCallTimer();
@@ -348,17 +357,19 @@ async function endCall() {
         stopCallTimer();
         
         // For patient: show rating modal before redirect
-        if (!isDoctor && doctorIdForRating && sessionAppointmentId) {
+        if (!(isDoctor || isCounselor) && doctorIdForRating && sessionAppointmentId) {
             showRatingModal();
             return;
         }
         
         // Doctor: redirect immediately
-        window.location.href = 'psychologue_dashboard.html';
+            const redirectAfterEnd = isDoctor ? 'psychologue_dashboard.html' : (isCounselor ? 'counselor_dashboard.html' : 'patient_dashboard.html');
+            window.location.href = redirectAfterEnd;
         
     } catch (error) {
         console.error('Error ending call:', error);
-        window.location.href = isDoctor ? 'psychologue_dashboard.html' : 'patient_dashboard.html';
+        const fallbackRedirect = isDoctor ? 'psychologue_dashboard.html' : (isCounselor ? 'counselor_dashboard.html' : 'patient_dashboard.html');
+        window.location.href = fallbackRedirect;
     }
 }
 
@@ -366,7 +377,7 @@ async function endCall() {
 
 // Save pending rating on tab close (patient only)
 window.addEventListener('beforeunload', function() {
-    if (!isDoctor && sessionAppointmentId && doctorIdForRating) {
+    if (!(isDoctor || isCounselor) && sessionAppointmentId && doctorIdForRating) {
         try {
             sessionStorage.setItem('pendingRating', JSON.stringify({
                 appointmentId: sessionAppointmentId,

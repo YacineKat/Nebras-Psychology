@@ -10,13 +10,16 @@ const { buildAvailabilityForDate, normalizeDateOnly } = require('../utils/availa
 // ============================================
 exports.getAllDoctors = async (req, res) => {
   try {
-    const { search, specialty, available, view } = req.query;
+    const { search, specialty, available, view, role } = req.query;
     const isSummary = view === 'summary';
 
-    // Build where clause for doctors only
-    const where = {
-      userType: 'psychologue' // Only psychologists
-    };
+    // Build where clause
+    const where = {};
+    if (role) {
+      where.userType = role;
+    } else {
+      where.userType = 'psychologue'; // Default: only psychologists
+    }
 
     // Search by name (case insensitive)
     if (search) {
@@ -38,6 +41,7 @@ exports.getAllDoctors = async (req, res) => {
     const select = isSummary ? {
       id: true,
       fullname: true,
+      userType: true,
       profile: {
         select: {
           specialite: true,
@@ -89,6 +93,7 @@ exports.getAllDoctors = async (req, res) => {
       const response = doctors.map(d => ({
         id: d.id,
         fullname: d.fullname,
+        userType: d.userType,
         specialite: d.profile?.specialite || 'General',
         rating: Number(d.profile?.rating) || 0,
         isAvailable: d.profile?.isAvailable || false,
@@ -173,7 +178,7 @@ exports.getDoctorById = async (req, res) => {
       }
     });
 
-    if (!doctor || doctor.userType !== 'psychologue') {
+    if (!doctor || (doctor.userType !== 'psychologue' && doctor.userType !== 'counselor')) {
       return res.status(404).json({ error: 'Doctor not found' });
     }
 
@@ -194,6 +199,7 @@ exports.getDoctorById = async (req, res) => {
       id: doctor.id,
       fullname: doctor.fullname,
       email: doctor.email,
+      userType: doctor.userType,
       phone: doctor.profile?.phone,
       adresse: doctor.profile?.adresse || null,
       specialite: doctor.profile?.specialite,
