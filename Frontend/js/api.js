@@ -156,6 +156,17 @@ const doctorAPI = {
     return fetchAPI(`/doctors/patients/${patientId}`);
   },
 
+  getPatientNote: async (patientId) => {
+    return fetchAPI(`/doctors/patients/${patientId}/notes`);
+  },
+
+  savePatientNote: async (patientId, content) => {
+    return fetchAPI(`/doctors/patients/${patientId}/notes`, {
+      method: 'POST',
+      body: JSON.stringify({ content })
+    });
+  },
+
   getHonoraires: async () => {
     return fetchAPI('/doctors/honoraires');
   },

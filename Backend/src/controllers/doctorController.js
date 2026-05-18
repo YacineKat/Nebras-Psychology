@@ -1092,7 +1092,12 @@ exports.getPatientById = async (req, res) => {
 // ============================================
 exports.getPatients = async (req, res) => {
   try {
-    const doctorId = req.user.id;
+    const doctorId = req.user && req.user.id;
+    console.log('GetPatients called by doctorId=', doctorId);
+    if (!doctorId) {
+      console.error('GetPatients error: missing doctorId on request');
+      return res.status(400).json({ error: 'Invalid request' });
+    }
     const { view } = req.query;
     const isSummary = view === 'summary';
 
@@ -1106,7 +1111,8 @@ exports.getPatients = async (req, res) => {
       language: true,
       motifs: true,
       prefGender: true,
-      prefType: true
+      prefType: true,
+      avatar: true
     };
 
     const patientSelect = {
@@ -1127,6 +1133,7 @@ exports.getPatients = async (req, res) => {
       },
       orderBy: { appointmentDate: 'desc' }
     });
+    console.log('GetPatients: fetched appointments count=', appointments?.length || 0);
     
     if (!appointments || appointments.length === 0) {
       return res.json({ count: 0, patients: [] });
@@ -1149,6 +1156,7 @@ exports.getPatients = async (req, res) => {
             motifs: apt.patient.profile?.motifs,
             prefGender: apt.patient.profile?.prefGender,
             prefType: apt.patient.profile?.prefType,
+            avatar: apt.patient.profile?.avatar,
             totalSpent: 0
           }),
           gender: apt.patient.profile?.gender,
@@ -1209,6 +1217,52 @@ exports.getPatients = async (req, res) => {
   } catch (error) {
     console.error('GetPatients error:', error);
     res.status(500).json({ error: 'Failed to get patients' });
+  }
+};
+
+// ============================================
+// PATIENT NOTES
+// ============================================
+exports.getPatientNote = async (req, res) => {
+  try {
+    const doctorId = req.user.id;
+    const { patientId } = req.params;
+
+    const notes = await prisma.patientNote.findMany({
+      where: {
+        doctorId,
+        patientId
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
+    res.json({ notes });
+  } catch (error) {
+    console.error('GetPatientNote error:', error);
+    res.status(500).json({ error: 'Failed to get patient notes' });
+  }
+};
+
+exports.savePatientNote = async (req, res) => {
+  try {
+    const doctorId = req.user.id;
+    const { patientId } = req.params;
+    const { content } = req.body;
+
+    const note = await prisma.patientNote.create({
+      data: {
+        doctorId,
+        patientId,
+        content
+      }
+    });
+
+    res.json({ success: true, note });
+  } catch (error) {
+    console.error('SavePatientNote error:', error);
+    res.status(500).json({ error: 'Failed to save patient note' });
   }
 };
 

@@ -12,6 +12,10 @@ router.get('/', doctorController.getAllDoctors);
 router.get('/patients', authMiddleware, requireRole('psychologue', 'counselor'), doctorController.getPatients);
 router.get('/patients/:patientId', authMiddleware, requireRole('psychologue', 'counselor'), doctorController.getPatientById);
 
+// Patient Notes
+router.get('/patients/:patientId/notes', authMiddleware, requireRole('psychologue', 'counselor'), doctorController.getPatientNote);
+router.post('/patients/:patientId/notes', authMiddleware, requireRole('psychologue', 'counselor'), doctorController.savePatientNote);
+
 // Protected routes (must come before /:id)
 router.get('/profile/me', authMiddleware, doctorController.getMyProfile);
 router.put('/profile', authMiddleware, requireRole('psychologue', 'counselor'), doctorController.updateProfile);
