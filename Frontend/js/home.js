@@ -2,16 +2,12 @@
 // HOME PAGE LOGIC
 // ============================================
 
-import { isLoggedIn, getCurrentUser, redirectByUserType } from './api.js';
-
 // Handle auth button click - available globally for onclick
 function auth() {
-    if (isLoggedIn()) {
-        // Already logged in, go to dashboard
-        const user = getCurrentUser();
-        redirectByUserType(user.userType);
+    if (window.isLoggedIn()) {
+        const user = window.getCurrentUser();
+        window.redirectByUserType(user.userType);
     } else {
-        // Not logged in, go to auth page
         window.location.href = "auth.html";
     }
 }
@@ -20,31 +16,6 @@ function auth() {
 function toggleFaq(element) {
     element.classList.toggle('active');
 }
-
-// Tab functionality
-document.addEventListener('DOMContentLoaded', function() {
-    const tabButtons = document.querySelectorAll('.offers-section .offers-tab-btn');
-    const tabContents = document.querySelectorAll('.offers-section .offers-tab-content');
-    
-    if (tabButtons.length > 0) {
-        tabButtons[0].classList.add('active');
-    }
-    
-    tabButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            tabButtons.forEach(btn => btn.classList.remove('active'));
-            tabContents.forEach(content => content.classList.remove('active'));
-            
-            this.classList.add('active');
-            
-            const tabId = this.getAttribute('data-tab');
-            const activeTab = document.getElementById(tabId);
-            if (activeTab) {
-                activeTab.classList.add('active');
-            }
-        });
-    });
-});
 
 // Tab switching function - works with buttons
 function switchTab(tabId, button) {

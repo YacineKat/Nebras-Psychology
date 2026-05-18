@@ -20,6 +20,7 @@ model User {
   password  String
   fullname  String
   userType  String   @default("patient") // patient, psychologue, counselor, admin
+  status    String   @default("active") // active, pending, rejected, suspended
   createdAt DateTime @default(now())
 
   // URGENT Access (7-day priority)
@@ -52,6 +53,12 @@ model User {
   // Private notes from doctor to patient
   patientNotesAsPatient PatientNote[] @relation("PatientPatientNotes")
   patientNotesAsDoctor  PatientNote[] @relation("DoctorPatientNotes")
+
+  // Admin relations
+  validationRequest     ValidationRequest?
+  adminValidations      ValidationRequest[] @relation("AdminValidationActions")
+  documents             Document[]
+  transactions          Transaction[]
 }
 
 // ============== PROFILES TABLE ==============
@@ -271,4 +278,67 @@ model PatientNote {
 
   doctor      User     @relation("DoctorPatientNotes", fields: [doctorId], references: [id], onDelete: Cascade)
   patient     User     @relation("PatientPatientNotes", fields: [patientId], references: [id], onDelete: Cascade)
+}
+
+// ============== VALIDATION REQUESTS TABLE ==============
+model ValidationRequest {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type            String   // "psychologue" | "counselor"
+  specialite      String?
+  universite      String?
+  bio             String?
+  status          String   @default("pending") // pending, approved, rejected
+  adminId         String?
+  admin           User?    @relation("AdminValidationActions", fields: [adminId], references: [id])
+  rejectionReason String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  documents       Document[]
+}
+
+// ============== DOCUMENTS TABLE ==============
+model Document {
+  id                  String   @id @default(uuid())
+  validationRequestId String?
+  validationRequest   ValidationRequest? @relation(fields: [validationRequestId], references: [id])
+  userId              String?
+  user                User?    @relation(fields: [userId], references: [id])
+  name                String   // Display name
+  type                String   // diplome, cv, carte_pro, certification
+  fileUrl             String   // Path/URL to stored file
+  fileType            String   // pdf, jpg, png
+  uploadedAt          DateTime @default(now())
+}
+
+// ============== TRANSACTIONS TABLE ==============
+model Transaction {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+  type            String   // "consultation" | "vip_subscription"
+  amount          Int      // Amount in DA
+  reference       String?  // External payment reference (e.g., CCP-123456)
+  status          String   @default("pending") // pending, validated, rejected
+  validatedBy     String?
+  validatedAt     DateTime?
+  appointmentId   String?
+  subscriptionId  String?
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// ============== PLATFORM SETTINGS TABLE ==============
+model PlatformSettings {
+  id                 String   @id @default(uuid())
+  siteName           String   @default("Nebras")
+  contactEmail       String   @default("contact@nebras.dz")
+  phone              String   @default("+213 XXX XXX XXX")
+  consultationPrice  Int      @default(1000)
+  vipMonthlyPrice    Int      @default(5000)
+  platformCommission Int      @default(10)
+  updatedAt          DateTime @updatedAt
+  updatedBy          String?
 }

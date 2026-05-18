@@ -7,46 +7,27 @@
     <link rel="stylesheet" href="./css/admin_style.css">
     <link rel="icon" type="image/png" href="./assets/image/logo.png">
 </head>
-<body>
+<body class="admin-stats-page">
     <div class="container">
-        <!-- Sidebar -->
         <div class="sidebar">
-            <div class="logo">
-                <img src="./assets/image/logo.png" alt="Nebras Logo">
-            </div>
+            <div class="logo"><img src="./assets/image/logo.png" alt="Nebras Logo"></div>
             <nav class="nav-menu">
-                <a href="admin_dashboard.html" class="nav-item">
-                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2h-5v-7H9v7H5a2 2 0 0 1-2-2z"/></svg>
-                    <span>Tableau de bord</span>
-                </a>
-                <a href="admin_utilisateurs.html" class="nav-item">
-                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                    <span>Utilisateurs</span>
-                    <span class="badge">1,314</span>
-                </a>
-                <a href="admin_validation.html" class="nav-item">
-                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                    <span>Validations</span>
-                    <span class="badge">5</span>
-                </a>
-                <a href="admin_paiements.html" class="nav-item">
-                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M16 8l-4 8-4-8"/></svg>
-                    <span>Paiements</span>
-                    <span class="badge">6</span>
-                </a>
+                <a href="admin_dashboard.html" class="nav-item"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2h-5v-7H9v7H5a2 2 0 0 1-2-2z"/></svg><span>Tableau de bord</span></a>
+                <a href="admin_utilisateurs.html" class="nav-item"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Utilisateurs</span><span class="badge" id="usersBadge"></span></a>
+                <a href="admin_validation.html" class="nav-item"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>Validations</span><span class="badge" id="validationsBadge"></span></a>
+                <a href="admin_paiements.html" class="nav-item"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M16 8l-4 8-4-8"/></svg><span>Paiements</span><span class="badge" id="paymentsBadge"></span></a>
                 <a href="admin_statistiques.html" class="nav-item active">
                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12v3a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4v-3"/><path d="M12 2v12m0 0l-3-3m3 3l3-3"/></svg>
                     <span>Statistiques</span>
                 </a>
             </nav>
-            <a href="admin.html" class="nav-item profile-link">
-                <div class="user-avatar">A</div>
-                <div class="user-info"><span class="user-name">Admin</span></div>
-                <span class="settings-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H5.78a1.65 1.65 0 0 0-1.51 1 1.65 1.65 0 0 0 .33 1.82l.08.1A10 10 0 0 0 12 18a10 10 0 0 0 6.33-2.2z"/></svg></span>
+            <a href="admin.html" class="nav-item profile-link"><div class="user-avatar">A</div><div class="user-info"><span class="user-name">Admin</span></div><span class="settings-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H5.78a1.65 1.65 0 0 0-1.51 1 1.65 1.65 0 0 0 .33 1.82l.08.1A10 10 0 0 0 12 18a10 10 0 0 0 6.33-2.2z"/></svg></span></a>
+            <a href="#" class="nav-item" onclick="logout()" style="color: #e74c3c;">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                <span>Déconnexion</span>
             </a>
         </div>
 
-        <!-- Main Content -->
         <div class="main-content">
             <header class="page-header">
                 <div>
@@ -54,114 +35,100 @@
                     <p class="subtitle">Analyse détaillée de votre plateforme</p>
                 </div>
                 <div class="header-icons">
-                    <button class="icon-btn" onclick="alert('Exporter les statistiques')">
+                    <button class="icon-btn" onclick="exportStats()">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                     </button>
                 </div>
             </header>
 
-            <!-- Filtre période -->
             <div class="stats-filters">
                 <div class="filter-group">
                     <label>Période</label>
-                    <select class="filter-select">
-                        <option>7 derniers jours</option>
-                        <option selected>30 derniers jours</option>
-                        <option>3 derniers mois</option>
-                        <option>12 derniers mois</option>
+                    <select class="filter-select" id="periodSelect" onchange="loadStats()">
+                        <option value="7d">7 derniers jours</option>
+                        <option value="30d" selected>30 derniers jours</option>
+                        <option value="3m">3 derniers mois</option>
+                        <option value="12m">12 derniers mois</option>
                     </select>
                 </div>
-                <button class="action-btn primary" onclick="alert('Appliquer filtre')">
+                <button class="action-btn primary" onclick="loadStats()">
                     <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" width="14" height="14"><polygon points="22 3 2 3 10 13 10 21 14 18 14 13 22 3"/></svg> Appliquer
                 </button>
             </div>
 
-            <!-- Graphique 1 - Évolution des inscriptions (avec counselors) -->
+            <section class="stats-kpi-grid" aria-label="Aperçu rapide">
+                <article class="stats-kpi-card">
+                    <p class="stats-kpi-label">Nouveaux inscrits</p>
+                    <p class="stats-kpi-value" id="kpiUsers">-</p>
+                    <p class="stats-kpi-meta">Total cumulé sur les 6 derniers mois</p>
+                </article>
+                <article class="stats-kpi-card">
+                    <p class="stats-kpi-label">Revenus période</p>
+                    <p class="stats-kpi-value" id="kpiRevenue">-</p>
+                    <p class="stats-kpi-meta">Total validé sur la période sélectionnée</p>
+                </article>
+                <article class="stats-kpi-card">
+                    <p class="stats-kpi-label">Rendez-vous semaine</p>
+                    <p class="stats-kpi-value" id="kpiAppointments">-</p>
+                    <p class="stats-kpi-meta">Somme des 7 derniers jours</p>
+                </article>
+                <article class="stats-kpi-card">
+                    <p class="stats-kpi-label">Top note pro</p>
+                    <p class="stats-kpi-value" id="kpiTopRating">-</p>
+                    <p class="stats-kpi-meta">Meilleure évaluation actuelle</p>
+                </article>
+            </section>
+
             <div class="stats-chart">
                 <div class="chart-header">
                     <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M2 20L22 20"/><path d="M4 16L8 8L12 12L16 4L20 8"/></svg> Évolution des inscriptions</h3>
-                    <p>6 derniers mois</p>
+                    <p class="chart-period" id="registrationPeriodText">6 derniers mois</p>
                 </div>
-                <div class="chart-line">
-                    <div class="line-marker" style="height: 30px;"><span class="marker-label">Jan</span><div class="line-bar" style="height: 30px; width: 40px;"></div><span class="marker-value">45</span></div>
-                    <div class="line-marker" style="height: 45px;"><span class="marker-label">Fév</span><div class="line-bar" style="height: 45px; width: 50px;"></div><span class="marker-value">68</span></div>
-                    <div class="line-marker" style="height: 60px;"><span class="marker-label">Mar</span><div class="line-bar" style="height: 60px; width: 65px;"></div><span class="marker-value">89</span></div>
-                    <div class="line-marker" style="height: 75px;"><span class="marker-label">Avr</span><div class="line-bar" style="height: 75px; width: 80px;"></div><span class="marker-value">112</span></div>
-                    <div class="line-marker" style="height: 90px;"><span class="marker-label">Mai</span><div class="line-bar" style="height: 90px; width: 95px;"></div><span class="marker-value">145</span></div>
-                    <div class="line-marker" style="height: 105px;"><span class="marker-label">Juin</span><div class="line-bar" style="height: 105px; width: 110px;"></div><span class="marker-value">178</span></div>
-                </div>
+                <div class="chart-line" id="registrationsChart"></div>
                 <div class="chart-legend">
-                    <span class="legend-color patients"></span> Patients
-                    <span class="legend-color psychologues"></span> Psychologues
-                    <span class="legend-color counselors"></span> Counselors
+                    <span><span class="legend-color patients"></span> Patients</span>
+                    <span><span class="legend-color psychologues"></span> Psychologues</span>
+                    <span><span class="legend-color counselors"></span> Counselors</span>
                 </div>
             </div>
 
-            <!-- Graphique 2 - Répartition utilisateurs (avec counselors) -->
             <div class="stats-row">
                 <div class="stats-chart half">
                     <div class="chart-header">
                         <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg> Répartition des utilisateurs</h3>
                     </div>
-                    <div class="pie-chart-simple">
-                        <div class="pie-segment patients-normaux" style="width: 55%;">55%</div>
-                        <div class="pie-segment patients-vip" style="width: 18%;">18%</div>
-                        <div class="pie-segment psychologues" style="width: 15%;">15%</div>
-                        <div class="pie-segment counselors" style="width: 12%;">12%</div>
-                    </div>
-                    <div class="chart-legend">
-                        <span class="legend-color patients-normaux"></span> Patients normaux (55%)
-                        <span class="legend-color patients-vip"></span> Patients VIP (18%)
-                        <span class="legend-color psychologues"></span> Psychologues (15%)
-                        <span class="legend-color counselors"></span> Counselors (12%)
+                    <div class="pie-chart-simple" id="distributionChart"></div>
+                    <div class="chart-legend" id="distributionLegend">
+                        <span class="legend-color patients-normaux"></span> Patients normaux
+                        <span class="legend-color patients-vip"></span> Patients VIP
+                        <span class="legend-color psychologues"></span> Psychologues
+                    <span class="legend-color" style="background:#9575CD;"></span> Counselors
                     </div>
                 </div>
 
-                <!-- Graphique 3 - Revenus mensuels -->
                 <div class="stats-chart half">
                     <div class="chart-header">
                         <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="12" cy="12" r="10"/><path d="M16 8l-4 8-4-8"/></svg> Revenus mensuels</h3>
                     </div>
-                    <div class="bar-chart">
-                        <div class="bar-item"><span class="bar-label">Jan</span><div class="bar-fill" style="width: 45%;"></div><span class="bar-value">450K</span></div>
-                        <div class="bar-item"><span class="bar-label">Fév</span><div class="bar-fill" style="width: 52%;"></div><span class="bar-value">520K</span></div>
-                        <div class="bar-item"><span class="bar-label">Mar</span><div class="bar-fill" style="width: 68%;"></div><span class="bar-value">680K</span></div>
-                        <div class="bar-item"><span class="bar-label">Avr</span><div class="bar-fill" style="width: 75%;"></div><span class="bar-value">750K</span></div>
-                        <div class="bar-item"><span class="bar-label">Mai</span><div class="bar-fill" style="width: 82%;"></div><span class="bar-value">820K</span></div>
-                        <div class="bar-item"><span class="bar-label">Juin</span><div class="bar-fill" style="width: 90%;"></div><span class="bar-value">900K</span></div>
-                    </div>
+                    <div class="bar-chart" id="revenueChart"></div>
                 </div>
             </div>
 
-            <!-- Graphique 4 - Rendez-vous par jour -->
             <div class="stats-chart">
                 <div class="chart-header">
-                    <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Rendez-vous par jour (semaine dernière)</h3>
+                    <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Rendez-vous par jour</h3>
+                    <p class="chart-period" id="appointmentsPeriodText">7 derniers jours</p>
                 </div>
-                <div class="week-chart">
-                    <div class="day-bar"><span class="day-name">Lun</span><div class="day-fill" style="height: 45px;"></div><span class="day-value">45</span></div>
-                    <div class="day-bar"><span class="day-name">Mar</span><div class="day-fill" style="height: 62px;"></div><span class="day-value">62</span></div>
-                    <div class="day-bar"><span class="day-name">Mer</span><div class="day-fill" style="height: 78px;"></div><span class="day-value">78</span></div>
-                    <div class="day-bar"><span class="day-name">Jeu</span><div class="day-fill" style="height: 55px;"></div><span class="day-value">55</span></div>
-                    <div class="day-bar"><span class="day-name">Ven</span><div class="day-fill" style="height: 83px;"></div><span class="day-value">83</span></div>
-                    <div class="day-bar"><span class="day-name">Sam</span><div class="day-fill" style="height: 38px;"></div><span class="day-value">38</span></div>
-                    <div class="day-bar"><span class="day-name">Dim</span><div class="day-fill" style="height: 25px;"></div><span class="day-value">25</span></div>
-                </div>
+                <div class="week-chart" id="appointmentsChart"></div>
             </div>
 
-            <!-- Top psychologues et counselors -->
             <div class="admin-section">
-                <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4z"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg> Top 5 psychologues et counselors</h2>
+                <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4z"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg> Top professionnels actifs</h2>
+                <p class="section-subtitle">Classement basé sur la note, le nombre de patients suivis et les revenus générés.</p>
                 <div class="table-wrapper">
                     <table class="admin-table">
-                        <thead><tr><th>Nom</th><th>Type</th><th>Spécialité</th><th>Patients</th><th>Revenus</th><th>Note</th></tr></thead>
-                        <tbody>
-                            <tr><td>Dr. Karim Benali</td><td>Psychologue</td><td>TCC</td><td>12</td><td>125,000 DA</td><td>4.8 ⭐</td></tr>
-                            <tr><td>Dr. Sarah Amrani</td><td>Psychologue</td><td>Psychologie clinique</td><td>18</td><td>180,000 DA</td><td>4.9 ⭐</td></tr>
-                            <tr><td>Sarah Mansouri</td><td>Counselor</td><td>Conseil en orientation</td><td>22</td><td>110,000 DA</td><td>4.7 ⭐</td></tr>
-                            <tr><td>Dr. Leila Zerouali</td><td>Psychologue</td><td>Psychanalyse</td><td>15</td><td>150,000 DA</td><td>4.7 ⭐</td></tr>
-                            <tr><td>Karim Boudiaf</td><td>Counselor</td><td>Psychologie sociale</td><td>14</td><td>70,000 DA</td><td>4.6 ⭐</td></tr>
-                        </tbody>
+                        <thead><tr><th>Rang</th><th>Professionnel</th><th>Type</th><th>Spécialité</th><th>Patients</th><th>Revenus</th><th>Note</th></tr></thead>
+                        <tbody id="topProfessionalsBody"></tbody>
                     </table>
                 </div>
             </div>
@@ -169,39 +136,269 @@
     </div>
 
     <style>
-        .legend-color.counselors {
-            background: #B39DDB;
+        .chart-loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100px;
+            color: #999;
+            font-size: 13px;
+            gap: 8px;
         }
-        .pie-segment.counselors {
-            background: #B39DDB;
+        .chart-loading::after {
+            content: '';
+            width: 16px; height: 16px;
+            border: 2px solid #e0e0e0;
+            border-top-color: #44AA99;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
         }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .top-rank { font-weight: 700; color: #091346; font-size: 15px; }
+        .top-rank-1 { color: #f1c40f; }
+        .top-rank-2 { color: #95a5a6; }
+        .top-rank-3 { color: #cd7f32; }
+        .data-empty { text-align:center;padding:30px;color:#999;font-size:13px; }
+        .data-empty-icon { display:block;margin:0 auto 10px;width:40px;height:40px;opacity:0.3; }
+        .prof-rating { display:inline-flex;align-items:center;gap:3px; }
+        .legend-color.counselors { background: #9575CD; }
+        .pie-segment.counselors { background: #9575CD; }
     </style>
 <script src="js/api.js"></script>
 <script>
-(function() {
-    var userStr = localStorage.getItem('nebras_user');
-    if (userStr) {
-        try {
-            var user = JSON.parse(userStr);
-            var name = user.fullname || user.email || '';
-            document.querySelectorAll('.user-name').forEach(function(el) { el.textContent = name; });
-        } catch(e) {}
+let statsData = null;
+
+function escapeHtmlSafe(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function formatDa(value) {
+    return Number(value || 0).toLocaleString('fr-FR') + ' DA';
+}
+
+function periodLabel(value) {
+    if (value === '7d') return '7 derniers jours';
+    if (value === '3m') return '3 derniers mois';
+    if (value === '12m') return '12 derniers mois';
+    return '30 derniers jours';
+}
+
+function updateKpis(data) {
+    const totalUsers = (data.registrations || []).reduce((sum, month) => {
+        return sum + (month.patients || 0) + (month.psychologues || 0) + (month.counselors || 0);
+    }, 0);
+    const revenue = (data.revenue || []).reduce((sum, m) => sum + (m.revenue || 0), 0);
+    const appointments = (data.appointmentsByDay || []).reduce((sum, d) => sum + (d.count || 0), 0);
+    const topRating = (data.topProfessionals && data.topProfessionals.length > 0) ? data.topProfessionals[0].rating : null;
+
+    document.getElementById('kpiUsers').textContent = String(totalUsers);
+    document.getElementById('kpiRevenue').textContent = formatDa(revenue);
+    document.getElementById('kpiAppointments').textContent = String(appointments);
+    document.getElementById('kpiTopRating').textContent = topRating !== null ? Number(topRating).toFixed(1) + ' / 5' : '-';
+}
+
+function csvQuote(str) {
+    return '"' + String(str).replace(/"/g, '""') + '"';
+}
+
+function setLoading(containerId) {
+    const el = document.getElementById(containerId);
+    el.innerHTML = '<div class="chart-loading">Chargement</div>';
+}
+
+async function loadStats() {
+    const period = document.getElementById('periodSelect').value;
+    document.getElementById('registrationPeriodText').textContent = periodLabel(period);
+    document.getElementById('appointmentsPeriodText').textContent = '7 derniers jours';
+
+    setLoading('registrationsChart');
+    setLoading('revenueChart');
+    setLoading('appointmentsChart');
+    document.getElementById('distributionChart').innerHTML = '<div class="chart-loading">Chargement</div>';
+    document.getElementById('topProfessionalsBody').innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;color:#999;">Chargement...</td></tr>';
+
+    try {
+        const data = await adminAPI.getStatistics({ period });
+        statsData = data;
+        renderRegistrations(data.registrations);
+        renderDistribution(data.distribution);
+        renderRevenue(data.revenue);
+        renderAppointments(data.appointmentsByDay);
+        renderTopProfessionals(data.topProfessionals);
+        updateKpis(data);
+    } catch (e) {
+        showToast('Erreur chargement statistiques', 'error');
+        console.error(e);
+        ['registrationsChart','revenueChart','appointmentsChart','distributionChart'].forEach(id => {
+            document.getElementById(id).innerHTML = '<p class="data-empty">Erreur de chargement</p>';
+        });
+        document.getElementById('topProfessionalsBody').innerHTML = '<tr><td colspan="7" class="data-empty">Erreur de chargement</td></tr>';
+        ['kpiUsers', 'kpiRevenue', 'kpiAppointments', 'kpiTopRating'].forEach(id => { document.getElementById(id).textContent = '-'; });
     }
-})();
-function showToast(message, type = 'success') {
-    var container = document.querySelector('.toast-container') || (function() { var c = document.createElement('div'); c.className = 'toast-container'; document.body.appendChild(c); return c; })();
-    var toast = document.createElement('div');
-    toast.className = 'toast ' + type;
-    toast.textContent = message;
-    container.appendChild(toast);
-    setTimeout(function() { toast.remove(); }, 3000);
 }
-function logout() {
-    localStorage.removeItem('nebras_token');
-    localStorage.removeItem('nebras_user');
-    showToast('Déconnexion réussie', 'success');
-    setTimeout(function() { window.location.href = 'home.html'; }, 500);
+
+function renderRegistrations(months) {
+    const container = document.getElementById('registrationsChart');
+    if (!months || months.length === 0) {
+        container.innerHTML = '<p class="data-empty"><svg class="data-empty-icon" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>Aucune inscription sur cette période</p>';
+        return;
+    }
+    const maxVal = Math.max(...months.map(m => Math.max(m.patients, m.psychologues, m.counselors)), 1);
+    container.innerHTML = months.map(m => {
+        const h = v => Math.max(Math.round((v / maxVal) * 120), 4);
+        return `<div class="line-marker" style="height:130px;">
+            <span class="marker-label">${m.month}</span>
+            <div style="display:flex;gap:2px;align-items:flex-end;height:120px;">
+                <div style="width:14px;height:${h(m.patients)}px;background:#44AA99;border-radius:3px 3px 0 0;" title="Patients: ${m.patients}"></div>
+                <div style="width:14px;height:${h(m.psychologues)}px;background:#091346;border-radius:3px 3px 0 0;" title="Psychologues: ${m.psychologues}"></div>
+                <div style="width:14px;height:${h(m.counselors)}px;background:#9575CD;border-radius:3px 3px 0 0;" title="Counselors: ${m.counselors}"></div>
+            </div>
+            <span class="marker-value">${m.patients + m.psychologues + m.counselors}</span>
+        </div>`;
+    }).join('');
 }
+
+function renderDistribution(dist) {
+    const container = document.getElementById('distributionChart');
+    if (!dist) {
+        container.innerHTML = '<p class="data-empty">Aucune donnée</p>';
+        return;
+    }
+    const segments = [
+        { label: 'Patients normaux', pct: dist.patientsNormaux || 0, color: '#44AA99' },
+        { label: 'Patients VIP', pct: dist.patientsVip || 0, color: '#B39DDB' },
+        { label: 'Psychologues', pct: dist.psychologues || 0, color: '#091346' },
+        { label: 'Counselors', pct: dist.counselors || 0, color: '#9575CD' }
+    ];
+    container.innerHTML = segments.map(s =>
+        `<div class="pie-segment" style="width:${s.pct}%;background:${s.color};" title="${s.label}: ${s.pct}%">${s.pct > 8 ? s.pct + '%' : ''}</div>`
+    ).join('');
+
+    document.getElementById('distributionLegend').innerHTML = segments.map(s =>
+        `<span><span class="legend-color" style="background:${s.color};"></span> ${s.label} (${s.pct}%)</span>`
+    ).join('');
+}
+
+function renderRevenue(months) {
+    const container = document.getElementById('revenueChart');
+    if (!months || months.length === 0) {
+        container.innerHTML = '<p class="data-empty"><svg class="data-empty-icon" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M16 8l-4 8-4-8"/></svg>Aucun revenu sur cette période</p>';
+        return;
+    }
+    const maxRev = Math.max(...months.map(m => m.revenue), 1);
+    container.innerHTML = months.map(m => {
+        const pct = Math.max(Math.round((m.revenue / maxRev) * 100), 2);
+        return `<div class="bar-item"><span class="bar-label">${m.month}</span><div class="bar-fill" style="width:${pct}%;"></div><span class="bar-value">${(m.revenue / 1000).toFixed(0)}K</span></div>`;
+    }).join('');
+}
+
+function renderAppointments(days) {
+    const container = document.getElementById('appointmentsChart');
+    if (!days || days.length === 0) {
+        container.innerHTML = '<p class="data-empty"><svg class="data-empty-icon" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Aucun rendez-vous cette semaine</p>';
+        return;
+    }
+    const maxVal = Math.max(...days.map(d => d.count), 1);
+    container.innerHTML = days.map(d => {
+        const h = Math.max(Math.round((d.count / maxVal) * 130), 4);
+        return `<div class="day-bar"><span class="day-name">${d.day}</span><div class="day-fill" style="height:${h}px;"></div><span class="day-value">${d.count}</span></div>`;
+    }).join('');
+}
+
+function renderTopProfessionals(pros) {
+    const tbody = document.getElementById('topProfessionalsBody');
+    tbody.innerHTML = '';
+    if (!pros || pros.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="data-empty">Aucun professionnel enregistré</td></tr>';
+        return;
+    }
+    pros.forEach((p, i) => {
+        const rank = i + 1;
+        const rankClass = rank <= 3 ? 'top-rank top-rank-' + rank : 'top-rank';
+        const typeLabel = p.type === 'psychologue' ? 'Psychologue' : 'Counselor';
+        const initial = (p.fullname || '?').charAt(0).toUpperCase();
+        const safeName = escapeHtmlSafe(p.fullname);
+        const safeSpecialite = escapeHtmlSafe(p.specialite);
+        const roundedRating = Math.max(0, Math.min(5, Math.round(Number(p.rating) || 0)));
+        tbody.innerHTML += `<tr>
+            <td><span class="${rankClass}">#${rank}</span></td>
+            <td>
+                <div class="pro-cell">
+                    <span class="pro-avatar">${initial}</span>
+                    <span class="pro-name">${safeName}</span>
+                </div>
+            </td>
+            <td><span class="pro-type-badge ${p.type === 'psychologue' ? 'psy' : 'cns'}">${typeLabel}</span></td>
+            <td>${safeSpecialite}</td>
+            <td>${p.patientCount}</td>
+            <td>${formatDa(p.revenue)}</td>
+            <td><span class="prof-rating">${'★'.repeat(roundedRating)}${'☆'.repeat(5 - roundedRating)} ${Number(p.rating || 0).toFixed(1)}</span></td>
+        </tr>`;
+    });
+}
+
+function exportStats() {
+    showConfirmModal({
+        title: 'Exporter',
+        icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#091346" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
+        message: 'Exporter les statistiques en CSV ?',
+        confirmText: 'Exporter',
+        confirmClass: 'primary',
+        onConfirm: () => {
+            if (!statsData) { showToast('Aucune donnée à exporter', 'error'); return; }
+
+            const rows = [];
+            rows.push('=== Évolution des inscriptions ===');
+            rows.push('Mois,Patients,Psychologues,Counselors');
+            (statsData.registrations || []).forEach(r => rows.push(`${csvQuote(r.month)},${r.patients},${r.psychologues},${r.counselors}`));
+            rows.push('');
+
+            rows.push('=== Répartition des utilisateurs ===');
+            rows.push('Catégorie,Pourcentage');
+            if (statsData.distribution) {
+                rows.push('Patients normaux,' + (statsData.distribution.patientsNormaux || 0));
+                rows.push('Patients VIP,' + (statsData.distribution.patientsVip || 0));
+                rows.push('Psychologues,' + (statsData.distribution.psychologues || 0));
+                rows.push('Counselors,' + (statsData.distribution.counselors || 0));
+            }
+            rows.push('');
+
+            rows.push('=== Revenus mensuels ===');
+            rows.push('Mois,Revenu (DA)');
+            (statsData.revenue || []).forEach(r => rows.push(`${csvQuote(r.month)},${r.revenue}`));
+            rows.push('');
+
+            rows.push('=== Rendez-vous par jour ===');
+            rows.push('Jour,Nombre');
+            (statsData.appointmentsByDay || []).forEach(d => rows.push(`${csvQuote(d.day)},${d.count}`));
+            rows.push('');
+
+            rows.push('=== Top professionnels ===');
+            rows.push('Nom,Type,Spécialité,Patients,Revenus (DA),Note');
+            (statsData.topProfessionals || []).forEach(p => rows.push(`${csvQuote(p.fullname)},${csvQuote(p.type)},${csvQuote(p.specialite)},${p.patientCount},${p.revenue},${p.rating}`));
+
+            const csv = rows.join('\r\n');
+            const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'statistiques_nebras.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            showToast('Export terminé ✓', 'success');
+        }
+    });
+}
+
+loadStats();
 </script>
 </body>
 </html>

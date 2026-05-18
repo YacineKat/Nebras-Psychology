@@ -201,6 +201,17 @@ function logout() {
     setTimeout(() => window.location.href = 'home.html', 500);
 }
 </script>
+<script src="js/settings.js"></script>
+<script>
+loadPublicSettings().then(s => {
+    if (s.vipMonthlyPrice) {
+        const monthly = document.querySelector('.vip-offer:first-child .price');
+        const annual = document.querySelector('.vip-offer:last-child .price');
+        if (monthly) monthly.textContent = Number(s.vipMonthlyPrice).toLocaleString() + ' DA';
+        if (annual) annual.textContent = Number(s.vipMonthlyPrice * 12 * 0.833).toLocaleString() + ' DA';
+    }
+});
+</script>
 <script src="js/psychologue_VIP.js" defer></script>
 </body>
 </html>

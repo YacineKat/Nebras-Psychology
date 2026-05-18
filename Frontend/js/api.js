@@ -512,9 +512,201 @@ const reviewAPI = {
   }
 };
 
+// ============================================
+// ADMIN API
+// ============================================
+const adminAPI = {
+  getDashboard: async () => {
+    return fetchAPI('/admin/dashboard');
+  },
+
+  getUsers: async (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    return fetchAPI(`/admin/users${queryString ? '?' + queryString : ''}`);
+  },
+
+  getUser: async (id) => {
+    return fetchAPI(`/admin/users/${id}`);
+  },
+
+  updateUser: async (id, data) => {
+    return fetchAPI(`/admin/users/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
+  },
+
+  deleteUser: async (id) => {
+    return fetchAPI(`/admin/users/${id}`, { method: 'DELETE' });
+  },
+
+  approveUser: async (id) => {
+    return fetchAPI(`/admin/users/${id}/approve`, { method: 'PUT' });
+  },
+
+  rejectUser: async (id, reason) => {
+    return fetchAPI(`/admin/users/${id}/reject`, {
+      method: 'PUT',
+      body: JSON.stringify({ reason: reason || '' })
+    });
+  },
+
+  getValidations: async (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    return fetchAPI(`/admin/validations${queryString ? '?' + queryString : ''}`);
+  },
+
+  approveValidation: async (id) => {
+    return fetchAPI(`/admin/validations/${id}/approve`, { method: 'PUT' });
+  },
+
+  rejectValidation: async (id, reason) => {
+    return fetchAPI(`/admin/validations/${id}/reject`, {
+      method: 'PUT',
+      body: JSON.stringify({ reason: reason || '' })
+    });
+  },
+
+  getPaymentsSummary: async () => {
+    return fetchAPI('/admin/payments/summary');
+  },
+
+  getPayments: async (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    return fetchAPI(`/admin/payments${queryString ? '?' + queryString : ''}`);
+  },
+
+  validatePayment: async (id) => {
+    return fetchAPI(`/admin/payments/${id}/validate`, { method: 'PUT' });
+  },
+
+  rejectPayment: async (id, reason) => {
+    return fetchAPI(`/admin/payments/${id}/reject`, {
+      method: 'PUT',
+      body: JSON.stringify({ reason: reason || '' })
+    });
+  },
+
+  getStatistics: async (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    return fetchAPI(`/admin/statistics${queryString ? '?' + queryString : ''}`);
+  },
+
+  getSettings: async () => {
+    return fetchAPI('/admin/settings');
+  },
+
+  updateSettings: async (data) => {
+    return fetchAPI('/admin/settings', {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
+  }
+};
+
 const daysOfWeek = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
 
+// ============================================
+// SHARED MODAL SYSTEM
+// ============================================
+let modalCounter = 0;
+
+function showConfirmModal(opts) {
+  const id = 'admin-modal-' + (++modalCounter);
+  const iconHtml = opts.icon || '';
+  const title = opts.title || 'Confirmation';
+  const message = opts.message || 'Êtes-vous sûr ?';
+  const confirmText = opts.confirmText || 'Confirmer';
+  const confirmClass = opts.confirmClass || 'primary';
+  const cancelText = opts.cancelText || 'Annuler';
+  const onConfirm = opts.onConfirm || (() => {});
+  const onCancel = opts.onCancel || (() => {});
+
+  const overlay = document.createElement('div');
+  overlay.className = 'admin-modal-overlay active';
+  overlay.id = id;
+  overlay.innerHTML = `
+    <div class="admin-modal">
+      <div class="admin-modal-header">
+        <h2>${iconHtml} ${title}</h2>
+        <button class="admin-modal-close" data-close>&times;</button>
+      </div>
+      <div class="admin-modal-body"><p>${message}</p></div>
+      <div class="admin-modal-footer">
+        <button class="action-btn secondary" data-cancel>${cancelText}</button>
+        <button class="action-btn ${confirmClass}" data-confirm>${confirmText}</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  const close = () => { overlay.remove(); onCancel(); };
+  overlay.querySelector('[data-close]').onclick = close;
+  overlay.querySelector('[data-cancel]').onclick = close;
+  overlay.querySelector('[data-confirm]').onclick = () => {
+    onConfirm();
+    overlay.remove();
+  };
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) close();
+  });
+  document.addEventListener('keydown', function handler(e) {
+    if (e.key === 'Escape') { close(); document.removeEventListener('keydown', handler); }
+  });
+}
+
+function showPromptModal(opts) {
+  const id = 'admin-modal-' + (++modalCounter);
+  const title = opts.title || 'Action';
+  const bodyHtml = opts.bodyHtml || '';
+  const confirmText = opts.confirmText || 'Confirmer';
+  const confirmClass = opts.confirmClass || 'primary';
+  const cancelText = opts.cancelText || 'Annuler';
+  const onConfirm = opts.onConfirm || (() => {});
+  const onCancel = opts.onCancel || (() => {});
+  const width = opts.width || '480px';
+
+  const overlay = document.createElement('div');
+  overlay.className = 'admin-modal-overlay active';
+  overlay.id = id;
+  overlay.innerHTML = `
+    <div class="admin-modal" style="max-width:${width}">
+      <div class="admin-modal-header">
+        <h2>${title}</h2>
+        <button class="admin-modal-close" data-close>&times;</button>
+      </div>
+      <div class="admin-modal-body">${bodyHtml}</div>
+      <div class="admin-modal-footer">
+        <button class="action-btn secondary" data-cancel>${cancelText}</button>
+        <button class="action-btn ${confirmClass}" data-confirm>${confirmText}</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  const close = () => { overlay.remove(); onCancel(); };
+  overlay.querySelector('[data-close]').onclick = close;
+  overlay.querySelector('[data-cancel]').onclick = close;
+  overlay.querySelector('[data-confirm]').onclick = () => {
+    onConfirm();
+    overlay.remove();
+  };
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) close();
+  });
+  document.addEventListener('keydown', function handler(e) {
+    if (e.key === 'Escape') { close(); document.removeEventListener('keydown', handler); }
+  });
+
+  return overlay;
+}
+
+// ============================================
+
 // Make all APIs available globally
+window.adminAPI = adminAPI;
 window.authAPI = authAPI;
 window.doctorAPI = doctorAPI;
 window.appointmentAPI = appointmentAPI;
@@ -587,4 +779,6 @@ async function loadSidebarUserData() {
 if (typeof document !== 'undefined') {
   document.addEventListener('DOMContentLoaded', loadSidebarUserData);
 }
+window.showConfirmModal = showConfirmModal;
+window.showPromptModal = showPromptModal;
 window.loadSidebarUserData = loadSidebarUserData;

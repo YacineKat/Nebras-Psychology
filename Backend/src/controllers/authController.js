@@ -63,6 +63,10 @@ exports.register = async (req, res) => {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Determine initial status
+    // Patients are active immediately, professionals require admin approval
+    const initialStatus = (userType === 'psychologue' || userType === 'counselor') ? 'pending' : 'active';
+
     // Create user with profile
     const user = await prisma.user.create({
       data: {
@@ -70,6 +74,7 @@ exports.register = async (req, res) => {
         password: hashedPassword,
         fullname,
         userType: userType || 'patient',
+        status: initialStatus,
         profile: {
           create: {} // Empty profile initially
         }
@@ -78,6 +83,16 @@ exports.register = async (req, res) => {
         profile: true
       }
     });
+
+    // Create validation request for professionals
+    if (userType === 'psychologue' || userType === 'counselor') {
+      await prisma.validationRequest.create({
+        data: {
+          userId: user.id,
+          type: userType
+        }
+      });
+    }
 
     // Return success (don't send password)
     res.status(201).json({
@@ -116,6 +131,11 @@ exports.login = async (req, res) => {
 
     if (!user) {
       return res.status(401).json({ error: 'Invalid email or password' });
+    }
+
+    // Check if user is rejected
+    if (user.status === 'rejected') {
+      return res.status(403).json({ error: 'Your account has been rejected. Contact support for more information.' });
     }
 
     // Check password

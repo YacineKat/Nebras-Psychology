@@ -4,6 +4,7 @@
 
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const http = require('http');
 const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
@@ -16,6 +17,7 @@ const appointmentRoutes = require('./routes/appointmentRoutes');
 const messageRoutes = require('./routes/messageRoutes');
 const therapyGroupRoutes = require('./routes/therapyGroupRoutes');
 const reviewRoutes = require('./routes/reviewRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 const { createMessageRecord } = require('./controllers/messageController');
 
 const app = express();
@@ -53,6 +55,14 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' })); // Parse JSON bodies (increased for avatar uploads)
 
 // ============================================
+// SERVE FRONTEND STATIC FILES
+// ============================================
+// Serves from: C:\Dev Env\Web Project\Nebras\Frontend\
+// This avoids file:// protocol CORS issues when the frontend
+// calls the API from the same origin (http://localhost:3000)
+app.use(express.static(path.join(__dirname, '../../Frontend')));
+
+// ============================================
 // API ROUTES
 // ============================================
 
@@ -77,6 +87,11 @@ app.use('/api/appointments', appointmentRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api', therapyGroupRoutes);
 app.use('/api/reviews', reviewRoutes);
+app.use('/api/admin', adminRoutes);
+
+// Public settings endpoint (no auth required)
+const adminController = require('./controllers/adminController');
+app.get('/api/settings', adminController.getSettings);
 
 // ============================================
 // SOCKET.IO - Real-time Session Events
@@ -160,11 +175,13 @@ app.use((err, req, res, next) => {
 // ============================================
 const PORT = process.env.PORT || 3000;
 
-server.listen(PORT, () => {
-  console.log(`
-  | NEBRAS SERVER RUNNING ON PORT ${PORT}   
-  | Visit: http://localhost:${PORT}         
-  `);
-});
+if (require.main === module) {
+  server.listen(PORT, () => {
+    console.log(`
+    | NEBRAS SERVER RUNNING ON PORT ${PORT}   
+    | Visit: http://localhost:${PORT}         
+    `);
+  });
+}
 
 module.exports = app; // For testing

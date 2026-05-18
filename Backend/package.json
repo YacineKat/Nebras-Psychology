@@ -3,12 +3,16 @@
   "version": "1.0.0",
   "description": "Nebras MVP Backend",
   "main": "src/index.js",
+  "prisma": {
+    "seed": "node prisma/seed.js"
+  },
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
     "db:migrate": "prisma migrate dev",
-    "db:push": "prisma db push",
+    "db:push": "prisma db push --accept-data-loss",
     "db:generate": "prisma generate",
+    "db:seed": "node prisma/seed.js",
     "video": "node src/videoServer.js"
   },
   "keywords": [],

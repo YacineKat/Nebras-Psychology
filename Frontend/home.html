@@ -40,7 +40,7 @@
 
     <!-- Section Pourquoi nous choisir -->
     <section class="why-us">
-        <h2>Pourquoi choisir Nebras ?</h2>
+        <h2>Pourquoi choisir <span class="js-site-name">Nebras</span> ?</h2>
         <div class="why-container">
             <div class="why-card">
                 <div class="why-icon">
@@ -83,7 +83,7 @@
                     </svg>
                 </div>
                 <h3>Tarifs abordables</h3>
-                <p>Séance à partir de 1000 DA. Pas d'abonnement, pas d'engagement.</p>
+                <p>Séance à partir de <span id="whyConsultationPrice">1 000 DA</span>. Pas d'abonnement, pas d'engagement.</p>
             </div>
         </div>
     </section>
@@ -105,7 +105,7 @@
             <div class="etape-card">
                 <div class="etape-number">3</div>
                 <h3>make an appointment</h3>
-                <p class="etape-placeholder">Have you chosen your psychologist? Now choose a slot on their agenda and pre-pay for your session (45 minutes to 1 hour) at the flat rate of 1000 DA.</p>
+                <p class="etape-placeholder">Have you chosen your psychologist? Now choose a slot on their agenda and pre-pay for your session (45 minutes to 1 hour) at the flat rate of <span id="etapeConsultationPrice">1 000 DA</span>.</p>
             </div>
             <div class="etape-card">
                 <div class="etape-number">4</div>
@@ -157,7 +157,7 @@
         <h2>Ce que nos patients disent</h2>
         <div class="testimonials-container">
             <div class="testimonial-card">
-                <div class="testimonial-text">"Nebras m'a changé la vie. J'ai trouvé un psychologue qui me correspond parfaitement."</div>
+                <div class="testimonial-text">"<span class="js-site-name">Nebras</span> m'a changé la vie. J'ai trouvé un psychologue qui me correspond parfaitement."</div>
                 <div class="testimonial-author">- Amira B.</div>
                 <div class="testimonial-rating">★★★★★</div>
             </div>
@@ -167,7 +167,7 @@
                 <div class="testimonial-rating">★★★★★</div>
             </div>
             <div class="testimonial-card">
-                <div class="testimonial-text">"Enfin un service de qualité accessible à tous en Algérie. Merci Nebras."</div>
+                <div class="testimonial-text">"Enfin un service de qualité accessible à tous en Algérie. Merci <span class="js-site-name">Nebras</span>."</div>
                 <div class="testimonial-author">- Lina S.</div>
                 <div class="testimonial-rating">★★★★★</div>
             </div>
@@ -192,15 +192,15 @@
             <div class="offers-text-box">
                 <h3>Get Discovered & Secure Investments</h3>
                 <p>
-                     Sur Nebras, vous avez le choix entre deux types de psychologues. 
+                     Sur <span class="js-site-name">Nebras</span>, vous avez le choix entre deux types de psychologues. 
                      Le psychologue normal propose des séances classiques avec des règles claires à respecter. 
                      Le psychologue VIP offre les mêmes prestations, avec en plus un formulaire pré-rempli 
                      permettant au psychologue de mieux connaître le patient avant la séance.
                 </p>
                 
                 <ul class="offers-feature-list">
-                    <li>.....</li>
-                    <li>...</li>
+                    <li>Consultation standard: <strong id="offersConsultationPrice">1 000 DA</strong></li>
+                    <li>Option VIP: <strong id="offersVipPrice">5 000 DA / mois</strong></li>
                     <li>.....</li>
                 </ul>
                 
@@ -221,7 +221,7 @@
             </div>
             <div class="offers-text-box">
                 <h3>Find High-Potential Startups</h3>
-                <p>Chez Nebras, les patients bénéficient d'un accompagnement psychologique adapté à leurs besoins. 
+                     <p>Chez <span class="js-site-name">Nebras</span>, les patients bénéficient d'un accompagnement psychologique adapté à leurs besoins. 
                    Que vous optiez pour un psychologue normal ou VIP, vous aurez accès à des séances en ligne 
                    (visio, téléphone ou chat) avec des professionnels certifiés. Le service VIP vous permet en plus 
                    de gagner du temps grâce à un formulaire pré-rempli, pour une séance plus personnalisée et efficace.
@@ -271,7 +271,7 @@
     <section class="cta-banner">
         <div class="cta-content">
             <h2>Prêt à prendre soin de votre santé mentale ?</h2>
-            <p>Rejoignez plus de 5000 patients qui ont déjà fait confiance à Nebras.</p>
+            <p>Rejoignez plus de 5000 patients qui ont déjà fait confiance à <span class="js-site-name">Nebras</span>.</p>
             <a href="auth.html" class="cta-banner-btn">Créer un compte gratuit →</a>
         </div>
     </section>
@@ -281,8 +281,8 @@
         <div class="contact-container">
             <div class="contact-info">
                 <h3>Contactez-nous</h3>
-                <p><span class="contact-icon contact-email" aria-hidden="true"></span>contact@nebras.dz</p>
-                <p><span class="contact-icon contact-phone" aria-hidden="true"></span>+213 5XX XX XX XX</p>
+                <p><span class="contact-icon contact-email" aria-hidden="true"></span><span id="contactEmailValue">contact@nebras.dz</span></p>
+                <p><span class="contact-icon contact-phone" aria-hidden="true"></span><span id="contactPhoneValue">+213 5XX XX XX XX</span></p>
                 <p><span class="contact-icon contact-clock" aria-hidden="true"></span>24/24 7/7</p>
             </div>
             <div class="contact-form">
@@ -296,12 +296,63 @@
 
     <!-- Footer -->
     <footer>
-        <p>&copy; <span id="currentYear"></span> Nebras - Psychologie en ligne. Tous droits réservés.</p>
+        <p>&copy; <span id="currentYear"></span> <span id="footerSiteName" class="js-site-name">Nebras</span> - Psychologie en ligne. Tous droits réservés.</p>
     </footer>
 
     <script>
+        function formatDa(value) {
+            return Number(value).toLocaleString('fr-FR') + ' DA';
+        }
+
         document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+        (async function loadSettings() {
+            try {
+                var url = 'http://localhost:3000/api/settings';
+
+                var res = await fetch(url);
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+
+                var data = await res.json();
+                var s = data.settings || {};
+
+                var siteName = s.siteName || 'Nebras';
+                document.title = siteName + ' - Psychologie en ligne';
+                var siteEls = document.querySelectorAll('.js-site-name');
+                for (var i = 0; i < siteEls.length; i++) {
+                    siteEls[i].textContent = siteName;
+                }
+
+                if (s.contactEmail) {
+                    var el = document.getElementById('contactEmailValue');
+                    if (el) el.textContent = s.contactEmail;
+                }
+
+                if (s.phone) {
+                    var el = document.getElementById('contactPhoneValue');
+                    if (el) el.textContent = s.phone;
+                }
+
+                if (s.consultationPrice) {
+                    var text = formatDa(s.consultationPrice);
+                    var ids = ['whyConsultationPrice', 'etapeConsultationPrice', 'offersConsultationPrice'];
+                    for (var i = 0; i < ids.length; i++) {
+                        var el = document.getElementById(ids[i]);
+                        if (el) el.textContent = text;
+                    }
+                }
+
+                if (s.vipMonthlyPrice) {
+                    var el = document.getElementById('offersVipPrice');
+                    if (el) el.textContent = formatDa(s.vipMonthlyPrice) + ' / mois';
+                }
+
+            } catch (e) {
+                // Settings API unreachable — leaving hardcoded fallbacks in HTML
+            }
+        })();
     </script>
+    <script src="js/settings.js"></script>
     <script>
         // Make switchTab available immediately for tab buttons
         function switchTab(tabId, button) {

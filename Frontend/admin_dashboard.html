@@ -9,7 +9,6 @@
 </head>
 <body>
     <div class="container">
-        <!-- Sidebar -->
         <div class="sidebar">
             <div class="logo">
                 <img src="./assets/image/logo.png" alt="Nebras Logo">
@@ -22,21 +21,21 @@
                 <a href="admin_utilisateurs.html" class="nav-item">
                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                     <span>Utilisateurs</span>
-                    <span class="badge">1,247</span>
+                    <span class="badge" id="usersBadge"></span>
                 </a>
                 <a href="admin_validation.html" class="nav-item">
                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
                     <span>Validations</span>
-                    <span class="badge">3</span>
+                    <span class="badge" id="validationsBadge"></span>
                 </a>
                 <a href="admin_paiements.html" class="nav-item">
                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M16 8l-4 8-4-8"/></svg>
                     <span>Paiements</span>
-                    <span class="badge">5</span>
+                    <span class="badge" id="paymentsBadge"></span>
                 </a>
                 <a href="admin_statistiques.html" class="nav-item">
                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12v3a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4v-3"/><path d="M12 2v12m0 0l-3-3m3 3l3-3"/></svg>
-                    <span>statistiques</span>
+                    <span>Statistiques</span>
                 </a>
             </nav>
             <a href="admin.html" class="nav-item profile-link">
@@ -44,7 +43,6 @@
                 <div class="user-info"><span class="user-name">Admin</span></div>
                 <span class="settings-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H5.78a1.65 1.65 0 0 0-1.51 1 1.65 1.65 0 0 0 .33 1.82l.08.1A10 10 0 0 0 12 18a10 10 0 0 0 6.33-2.2z"/></svg></span>
             </a>
-            
             <a href="#" class="nav-item" onclick="logout()" style="color: #e74c3c;">
                 <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
                     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
@@ -55,7 +53,6 @@
             </a>
         </div>
 
-        <!-- Main Content -->
         <div class="main-content">
             <header class="page-header">
                 <div>
@@ -64,71 +61,245 @@
                 </div>
             </header>
 
-            <!-- Stats Cards -->
-            <div class="stats-grid">
-                <div class="stat-card"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div><div class="stat-info"><h3>1,199</h3><p>Patients actifs</p><div class="stat-trend up">↑ +120 ce mois</div></div></div>
-                <div class="stat-card"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></div><div class="stat-info"><h3>48</h3><p>Psychologues actifs</p><div class="stat-trend up">↑ +5 nouveaux</div></div></div>
-                <div class="stat-card"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></div><div class="stat-info"><h3>48</h3><p>Counselor actifs</p><div class="stat-trend up">↑ +5 nouveaux</div></div></div>
-                <div class="stat-card"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><div class="stat-info"><h3>1,247</h3><p>Utilisateurs totaux</p><div class="stat-trend up">↑ +125 ce mois</div></div></div>
-                <div class="stat-card"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><div class="stat-info"><h3>856</h3><p>RDV ce mois</p><div class="stat-trend up">↑ +12%</div></div></div>
-                <div class="stat-card"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M16 8l-4 8-4-8"/></svg></div><div class="stat-info"><h3>2.45M DA</h3><p>Revenus totaux</p><div class="stat-trend up">↑ +8%</div></div></div>
-                <div class="stat-card"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="12 2 15 9 22 9 16 14 19 22 12 17 5 22 8 14 2 9 9 9 12 2"/></svg></div><div class="stat-info"><h3>234</h3><p>Abonnements VIP</p><div class="stat-trend up">19% des utilisateurs</div></div></div>
+            <div class="stats-grid" id="statsGrid">
+                <div class="stat-card"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div><div class="stat-info"><h3 id="patientsCount">0</h3><p>Patients actifs</p></div></div>
+                <div class="stat-card"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></div><div class="stat-info"><h3 id="psychologuesCount">0</h3><p>Psychologues actifs</p></div></div>
+                <div class="stat-card"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></div><div class="stat-info"><h3 id="counselorsCount">0</h3><p>Counselors actifs</p></div></div>
+                <div class="stat-card"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><div class="stat-info"><h3 id="totalUsers">0</h3><p>Utilisateurs totaux</p></div></div>
+                <div class="stat-card"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><div class="stat-info"><h3 id="rdvCount">0</h3><p>RDV ce mois</p></div></div>
+                <div class="stat-card"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M16 8l-4 8-4-8"/></svg></div><div class="stat-info"><h3 id="revenueCount">0 DA</h3><p>Revenus totaux</p></div></div>
+                <div class="stat-card"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="12 2 15 9 22 9 16 14 19 22 12 17 5 22 8 14 2 9 9 9 12 2"/></svg></div><div class="stat-info"><h3 id="vipCount">0</h3><p>Abonnements VIP</p></div></div>
             </div>
 
-            <!-- Actions Rapides -->
             <div class="actions-rapides">
-                <h2>  Actions rapides</h2>
+                <h2>Actions rapides</h2>
                 <div class="actions-buttons">
-                    <button class="action-btn primary" onclick="alert('Ajouter utilisateur')"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Ajouter</button>
-                    <button class="action-btn secondary" onclick="window.location.href='admin_validation.html'"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Valider (3)</button>
-                    <button class="action-btn secondary" onclick="window.location.href='admin_paiements.html'"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M16 8l-4 8-4-8"/></svg> Paiements (5)</button>
+                    <button class="action-btn primary" onclick="openAddUserModal()"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Ajouter</button>
+                    <button class="action-btn secondary" onclick="window.location.href='admin_validation.html'"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Valider <span id="pendingValidationsCount">(0)</span></button>
+                    <button class="action-btn secondary" onclick="window.location.href='admin_paiements.html'"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M16 8l-4 8-4-8"/></svg> Paiements <span id="pendingPaymentsCount">(0)</span></button>
                 </div>
             </div>
 
-            <!-- Derniers utilisateurs -->
             <div class="admin-section">
                 <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Derniers utilisateurs</h2>
                 <div class="table-wrapper">
                     <table class="admin-table">
-                        <div><tr><th>Avatar</th><th>Nom</th><th>Email</th><th>Type</th><th>Statut</th><th>Actions</th></tr></div>
-                        <div>
-                            <tr><td><img src="./image/24d0759cbb02c3157112d0ef0f8463b1.jpg" class="user-avatar-img" alt="Photo"></td><td>Maria Benali</td><td>maria@email.com</td><td>Patient VIP</td><td><span class="status-badge status-active">Actif</span></td><td><div class="action-btns"><button class="icon-btn-small" onclick="alert('Voir')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="2"/><circle cx="12" cy="5" r="2"/><circle cx="12" cy="19" r="2"/></svg></button><button class="icon-btn-small" onclick="alert('Modifier')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3l4 4-7 7H10v-4l7-7z"/></svg></button><button class="icon-btn-small" onclick="alert('Supprimer')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></button></div></td></tr>
-                            <tr><td><img src="./image/24d0759cbb02c3157112d0ef0f8463b1.jpg" class="user-avatar-img" alt="Photo"></td><td>Dr. Ahmed Mansouri</td><td>ahmed@email.com</td><td>Psychologue</td><td><span class="status-badge status-pending">En attente</span></td><td><div class="action-btns"><button class="icon-btn-small" onclick="alert('Approuver')"><svg viewBox="0 0 24 24" fill="none" stroke="#27ae60" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></button><button class="icon-btn-small" onclick="alert('Refuser')"><svg viewBox="0 0 24 24" fill="none" stroke="#e74c3c" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div></td></tr>
-                            <tr><td><img src="./image/24d0759cbb02c3157112d0ef0f8463b1.jpg" class="user-avatar-img" alt="Photo"></td></td><td>Dr. Ahmed Mansouri</td><td>ahmed@email.com</td><td>Counselor</td><td><span class="status-badge status-pending">En attente</span></td><td><div class="action-btns"><button class="icon-btn-small" onclick="alert('Approuver')"><svg viewBox="0 0 24 24" fill="none" stroke="#27ae60" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></button><button class="icon-btn-small" onclick="alert('Refuser')"><svg viewBox="0 0 24 24" fill="none" stroke="#e74c3c" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div></td></tr>
-                            <tr><td><img src="./image/24d0759cbb02c3157112d0ef0f8463b1.jpg" class="user-avatar-img" alt="Photo"></td><td>Karim Zerouali</td><td>karim@email.com</td><td>Patient Normal</td><td><span class="status-badge status-active">Actif</span></td><td><div class="action-btns"><button class="icon-btn-small" onclick="alert('Voir')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="2"/><circle cx="12" cy="5" r="2"/><circle cx="12" cy="19" r="2"/></svg></button><button class="icon-btn-small" onclick="alert('Modifier')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3l4 4-7 7H10v-4l7-7z"/></svg></button></div></td></tr>
-                        </div>
+                        <thead><tr><th>Avatar</th><th>Nom</th><th>Email</th><th>Type</th><th>Statut</th><th>Inscription</th><th>Actions</th></tr></thead>
+                        <tbody id="recentUsersBody"></tbody>
                     </table>
                 </div>
             </div>
         </div>
     </div>
-    
+
 <script src="js/api.js"></script>
 <script>
-(function() {
-    var userStr = localStorage.getItem('nebras_user');
-    if (userStr) {
-        try {
-            var user = JSON.parse(userStr);
-            var name = user.fullname || user.email || '';
-            document.querySelectorAll('.user-name').forEach(function(el) { el.textContent = name; });
-        } catch(e) {}
+async function loadDashboard() {
+    try {
+        const data = await adminAPI.getDashboard();
+        const s = data.stats;
+
+        document.getElementById('patientsCount').textContent = s.patientsActifs;
+        document.getElementById('psychologuesCount').textContent = s.psychologuesActifs;
+        document.getElementById('counselorsCount').textContent = s.counselorsActifs;
+        document.getElementById('totalUsers').textContent = s.utilisateursTotaux;
+        document.getElementById('rdvCount').textContent = s.rdvCeMois;
+        document.getElementById('revenueCount').textContent = s.revenusTotaux.toLocaleString() + ' DA';
+        document.getElementById('vipCount').textContent = s.abonnementsVIP;
+
+        document.getElementById('validationsBadge').textContent = data.pendingValidations;
+        document.getElementById('paymentsBadge').textContent = data.pendingPayments;
+
+        const valSpan = document.getElementById('pendingValidationsCount');
+        if (valSpan) valSpan.textContent = '(' + data.pendingValidations + ')';
+        const paySpan = document.getElementById('pendingPaymentsCount');
+        if (paySpan) paySpan.textContent = '(' + data.pendingPayments + ')';
+
+        const tbody = document.getElementById('recentUsersBody');
+        tbody.innerHTML = '';
+        data.recentUsers.forEach(u => {
+            const typeLabel = { patient: 'Patient', psychologue: 'Psychologue', counselor: 'Counselor', admin: 'Admin' }[u.userType] || u.userType;
+            const statusClass = { active: 'status-active', pending: 'status-pending', rejected: 'status-inactive', suspended: 'status-inactive' }[u.status] || 'status-pending';
+            const statusLabel = { active: 'Actif', pending: 'En attente', rejected: 'Rejeté', suspended: 'Suspendu' }[u.status] || u.status;
+            const avatarHtml = u.avatar ? `<img src="${u.avatar}" class="user-avatar-img">` : `<div class="user-avatar-img" style="background:#e8f4ee;display:flex;align-items:center;justify-content:center;font-weight:bold;color:#44AA99">${u.fullname.charAt(0)}</div>`;
+            const dateStr = u.createdAt ? new Date(u.createdAt).toLocaleDateString('fr-FR') : '-';
+
+            let actionsHtml = '';
+            if (u.status === 'pending') {
+                actionsHtml = `
+                    <button class="icon-btn-small" onclick="openApproveModal('${u.id}','${escapeHtml(u.fullname)}')"><svg viewBox="0 0 24 24" fill="none" stroke="#27ae60" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></button>
+                    <button class="icon-btn-small" onclick="openRejectModal('${u.id}','${escapeHtml(u.fullname)}')"><svg viewBox="0 0 24 24" fill="none" stroke="#e74c3c" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
+            } else {
+                actionsHtml = `
+                    <button class="icon-btn-small" onclick="openViewUserModal('${u.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="2"/><circle cx="12" cy="5" r="2"/><circle cx="12" cy="19" r="2"/></svg></button>
+                    <button class="icon-btn-small" onclick="openEditUserModal('${u.id}','${escapeHtml(u.fullname)}','${escapeHtml(u.email)}','${u.userType}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3l4 4-7 7H10v-4l7-7z"/></svg></button>
+                    <button class="icon-btn-small" onclick="openDeleteModal('${u.id}','${escapeHtml(u.fullname)}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></button>`;
+            }
+
+            tbody.innerHTML += `<tr>
+                <td>${avatarHtml}</td>
+                <td>${escapeHtml(u.fullname)}</td>
+                <td>${escapeHtml(u.email)}</td>
+                <td>${typeLabel}</td>
+                <td><span class="status-badge ${statusClass}">${statusLabel}</span></td>
+                <td>${dateStr}</td>
+                <td><div class="action-btns">${actionsHtml}</div></td>
+            </tr>`;
+        });
+    } catch (e) {
+        showToast('Erreur chargement tableau de bord', 'error');
+        console.error(e);
     }
-})();
-function showToast(message, type = 'success') {
-    const container = document.querySelector('.toast-container') || (() => { const c = document.createElement('div'); c.className = 'toast-container'; document.body.appendChild(c); return c; })();
-    const toast = document.createElement('div');
-    toast.className = 'toast ' + type;
-    toast.textContent = message;
-    container.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
 }
-function logout() {
-    localStorage.removeItem('nebras_token');
-    localStorage.removeItem('nebras_user');
-    showToast('Déconnexion réussie', 'success');
-    setTimeout(() => window.location.href = 'home.html', 500);
+
+function openAddUserModal() {
+    showPromptModal({
+        title: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#091346" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Ajouter un utilisateur',
+        bodyHtml: `
+            <div class="modal-form-row"><label>Nom complet</label><input type="text" id="addFullname" placeholder="Nom et prénom"></div>
+            <div class="modal-form-row"><label>Email</label><input type="email" id="addEmail" placeholder="email@exemple.com"></div>
+            <div class="modal-form-row"><label>Mot de passe</label><input type="password" id="addPassword" placeholder="Mot de passe"></div>
+            <div class="modal-form-row"><label>Type</label><select id="addUserType"><option value="patient">Patient</option><option value="psychologue">Psychologue</option><option value="counselor">Counselor</option></select></div>
+        `,
+        confirmText: 'Créer',
+        confirmClass: 'primary',
+        onConfirm: async () => {
+            const fullname = document.getElementById('addFullname').value.trim();
+            const email = document.getElementById('addEmail').value.trim();
+            const password = document.getElementById('addPassword').value;
+            const userType = document.getElementById('addUserType').value;
+            if (!fullname || !email || !password) { showToast('Veuillez remplir tous les champs', 'error'); return; }
+            try {
+                await window.authAPI.register({ fullname, email, password, userType });
+                showToast('Utilisateur créé', 'success');
+                loadDashboard();
+            } catch(e) { showToast('Erreur création', 'error'); }
+        }
+    });
 }
-    </script>
+
+function openViewUserModal(userId) {
+    const modalRef = {};
+    const overlay = showPromptModal({
+        title: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#091346" stroke-width="2"><circle cx="12" cy="12" r="2"/><circle cx="12" cy="5" r="2"/><circle cx="12" cy="19" r="2"/></svg> Détails utilisateur',
+        bodyHtml: '<p style="text-align:center;color:#999;">Chargement...</p>',
+        confirmText: 'Fermer',
+        confirmClass: 'secondary',
+        width: '560px',
+        onConfirm: () => {}
+    });
+    modalRef.overlay = overlay;
+    adminAPI.getUser(userId).then(data => {
+        const u = data.user;
+        if (!modalRef.overlay || !modalRef.overlay.parentNode) return;
+        const body = modalRef.overlay.querySelector('.admin-modal-body');
+        if (!body) return;
+        const typeLabel = { patient: 'Patient', psychologue: 'Psychologue', counselor: 'Counselor', admin: 'Admin' }[u.userType] || u.userType;
+        const statusLabel = { active: 'Actif', pending: 'En attente', rejected: 'Rejeté', suspended: 'Suspendu' }[u.status] || u.status;
+        const avatarHtml = u.profile?.avatar ? `<img src="${u.profile.avatar}" style="width:60px;height:60px;border-radius:50%;object-fit:cover;display:block;margin:0 auto 12px;">` : '';
+        body.innerHTML = `
+            ${avatarHtml}
+            <div class="modal-info-row"><span class="modal-info-label">Avatar</span><span class="modal-info-value">${u.profile?.avatar ? 'Oui' : 'Non'}</span></div>
+            <div class="modal-info-row"><span class="modal-info-label">Nom</span><span class="modal-info-value">${escapeHtml(u.fullname)}</span></div>
+            <div class="modal-info-row"><span class="modal-info-label">Email</span><span class="modal-info-value">${escapeHtml(u.email)}</span></div>
+            <div class="modal-info-row"><span class="modal-info-label">Type</span><span class="modal-info-value">${typeLabel}</span></div>
+            <div class="modal-info-row"><span class="modal-info-label">Statut</span><span class="modal-info-value">${statusLabel}</span></div>
+            <div class="modal-info-row"><span class="modal-info-label">Téléphone</span><span class="modal-info-value">${escapeHtml(u.profile?.phone || '-')}</span></div>
+            <div class="modal-info-row"><span class="modal-info-label">Spécialité</span><span class="modal-info-value">${escapeHtml(u.profile?.specialite || '-')}</span></div>
+            <div class="modal-info-row"><span class="modal-info-label">Université</span><span class="modal-info-value">${escapeHtml(u.profile?.universite || '-')}</span></div>
+            <div class="modal-info-row"><span class="modal-info-label">Bio</span><span class="modal-info-value">${escapeHtml(u.profile?.bio || '-')}</span></div>
+            <div class="modal-info-row"><span class="modal-info-label">Inscription</span><span class="modal-info-value">${new Date(u.createdAt).toLocaleDateString('fr-FR')}</span></div>
+        `;
+    }).catch(() => {
+        if (modalRef.overlay && modalRef.overlay.parentNode) {
+            const body = modalRef.overlay.querySelector('.admin-modal-body');
+            if (body) body.innerHTML = '<p style="text-align:center;color:#e74c3c;">Erreur chargement des détails</p>';
+        }
+    });
+}
+
+function openEditUserModal(id, fullname, email, userType) {
+    showPromptModal({
+        title: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#091346" stroke-width="2"><path d="M17 3l4 4-7 7H10v-4l7-7z"/></svg> Modifier utilisateur',
+        bodyHtml: `
+            <div class="modal-form-row"><label>Nom complet</label><input type="text" id="editFullname" value="${escapeHtml(fullname)}"></div>
+            <div class="modal-form-row"><label>Email</label><input type="email" id="editEmail" value="${escapeHtml(email)}"></div>
+            <div class="modal-form-row"><label>Type</label><select id="editUserType">
+                <option value="patient" ${userType === 'patient' ? 'selected' : ''}>Patient</option>
+                <option value="psychologue" ${userType === 'psychologue' ? 'selected' : ''}>Psychologue</option>
+                <option value="counselor" ${userType === 'counselor' ? 'selected' : ''}>Counselor</option>
+            </select></div>
+        `,
+        confirmText: 'Enregistrer',
+        confirmClass: 'primary',
+        onConfirm: async () => {
+            const data = {
+                fullname: document.getElementById('editFullname').value.trim(),
+                email: document.getElementById('editEmail').value.trim(),
+                userType: document.getElementById('editUserType').value
+            };
+            if (!data.fullname || !data.email) { showToast('Veuillez remplir tous les champs', 'error'); return; }
+            try {
+                await adminAPI.updateUser(id, data);
+                showToast('Utilisateur modifié', 'success');
+                loadDashboard();
+            } catch(e) { showToast('Erreur modification', 'error'); }
+        }
+    });
+}
+
+function openDeleteModal(id, name) {
+    showConfirmModal({
+        title: 'Supprimer',
+        icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#e74c3c" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>',
+        message: `Êtes-vous sûr de vouloir supprimer <strong>${escapeHtml(name)}</strong> ? Cette action est irréversible.`,
+        confirmText: 'Supprimer',
+        confirmClass: 'danger',
+        onConfirm: async () => {
+            try {
+                await adminAPI.deleteUser(id);
+                showToast(name + ' supprimé', 'success');
+                loadDashboard();
+            } catch(e) { showToast('Erreur suppression', 'error'); }
+        }
+    });
+}
+
+function openApproveModal(id, name) {
+    showConfirmModal({
+        title: 'Approuver',
+        icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#27ae60" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>',
+        message: `Approuver <strong>${escapeHtml(name)}</strong> ? Son compte sera activé.`,
+        confirmText: 'Approuver',
+        confirmClass: 'primary',
+        onConfirm: async () => {
+            try {
+                await adminAPI.approveUser(id);
+                showToast(name + ' approuvé', 'success');
+                loadDashboard();
+            } catch(e) { showToast('Erreur approbation', 'error'); }
+        }
+    });
+}
+
+function openRejectModal(id, name) {
+    showPromptModal({
+        title: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#e74c3c" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Rejeter',
+        bodyHtml: `<p>Rejeter <strong>${escapeHtml(name)}</strong> ?</p><div class="modal-form-row"><label>Motif (optionnel)</label><textarea id="rejectReason" placeholder="Raison du rejet..."></textarea></div>`,
+        confirmText: 'Rejeter',
+        confirmClass: 'danger',
+        onConfirm: async () => {
+            const reason = document.getElementById('rejectReason')?.value || '';
+            try {
+                await adminAPI.rejectUser(id, reason);
+                showToast(name + ' rejeté', 'success');
+                loadDashboard();
+            } catch(e) { showToast('Erreur rejet', 'error'); }
+        }
+    });
+}
+
+loadDashboard();
+</script>
 </body>
 </html>

@@ -271,6 +271,19 @@
         document.getElementById('currentYear').textContent = new Date().getFullYear();
     </script>
 
+    <script src="js/settings.js"></script>
+    <script>
+        loadPublicSettings().then(s => {
+            if (s.consultationPrice) {
+                document.querySelectorAll('.rules-list li').forEach(li => {
+                    if (li.textContent.includes('1000 DA')) {
+                        li.innerHTML = li.innerHTML.replace('1000 DA', Number(s.consultationPrice).toLocaleString() + ' DA');
+                    }
+                });
+            }
+        });
+    </script>
+
     <script src="js/patient_inf.js" defer></script>
 </body>
 </html>

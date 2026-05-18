@@ -12,34 +12,19 @@
         <div class="sidebar">
             <div class="logo"><img src="./assets/image/logo.png" alt="Nebras Logo"></div>
             <nav class="nav-menu">
-                <a href="admin_dashboard.html" class="nav-item">
-                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2h-5v-7H9v7H5a2 2 0 0 1-2-2z"/></svg>
-                    <span>Tableau de bord</span>
-                </a>
-                <a href="admin_utilisateurs.html" class="nav-item">
-                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                    <span>Utilisateurs</span>
-                    <span class="badge">1,312</span>
-                </a>
-                <a href="admin_validation.html" class="nav-item active">
-                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                    <span>Validations</span>
-                    <span class="badge">5</span>
-                </a>
-                <a href="admin_paiements.html" class="nav-item">
-                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M16 8l-4 8-4-8"/></svg>
-                    <span>Paiements</span>
-                    <span class="badge">5</span>
-                </a>
+                <a href="admin_dashboard.html" class="nav-item"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2h-5v-7H9v7H5a2 2 0 0 1-2-2z"/></svg><span>Tableau de bord</span></a>
+                <a href="admin_utilisateurs.html" class="nav-item"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Utilisateurs</span><span class="badge" id="usersBadge"></span></a>
+                <a href="admin_validation.html" class="nav-item active"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>Validations</span><span class="badge" id="validationsBadge"></span></a>
+                <a href="admin_paiements.html" class="nav-item"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M16 8l-4 8-4-8"/></svg><span>Paiements</span><span class="badge" id="paymentsBadge"></span></a>
                 <a href="admin_statistiques.html" class="nav-item">
                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12v3a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4v-3"/><path d="M12 2v12m0 0l-3-3m3 3l3-3"/></svg>
                     <span>Statistiques</span>
                 </a>
             </nav>
-            <a href="admin.html" class="nav-item profile-link">
-                <div class="user-avatar">A</div>
-                <div class="user-info"><span class="user-name">Admin</span></div>
-                <span class="settings-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H5.78a1.65 1.65 0 0 0-1.51 1 1.65 1.65 0 0 0 .33 1.82l.08.1A10 10 0 0 0 12 18a10 10 0 0 0 6.33-2.2z"/></svg></span>
+            <a href="admin.html" class="nav-item profile-link"><div class="user-avatar">A</div><div class="user-info"><span class="user-name">Admin</span></div><span class="settings-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H5.78a1.65 1.65 0 0 0-1.51 1 1.65 1.65 0 0 0 .33 1.82l.08.1A10 10 0 0 0 12 18a10 10 0 0 0 6.33-2.2z"/></svg></span></a>
+            <a href="#" class="nav-item" onclick="logout()" style="color: #e74c3c;">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                <span>Déconnexion</span>
             </a>
         </div>
 
@@ -48,163 +33,147 @@
                 <div><h1>Validations</h1><p class="subtitle">Approuvez ou refusez les nouvelles inscriptions</p></div>
             </header>
 
-            <!-- Onglets pour séparer Psychologues et Counselors -->
             <div class="validation-tabs">
-                <button class="validation-tab active" onclick="showValidationTab('psychologues')">Psychologues</button>
-                <button class="validation-tab" onclick="showValidationTab('counselors')">Counselors</button>
+                <button class="validation-tab active" onclick="showTab('psychologue')">Psychologues</button>
+                <button class="validation-tab" onclick="showTab('counselor')">Counselors</button>
             </div>
 
-            <!-- SECTION PSYCHOLOGUES -->
-            <div id="psychologuesSection" class="validation-tab-content active">
-                <div class="validation-grid">
-                    <div class="validation-card">
-                        <div class="validation-header">
-                            <div ><img src="./image/24d0759cbb02c3157112d0ef0f8463b1.jpg" class="user-avatar-img" alt="Photo"></div>
-                            <div class="validation-info">
-                                <h4>Dr. Ahmed Mansouri <span class="psychologue-badge">Psychologue</span></h4>
-                                <p>Psychologie clinique - Université d'Alger</p>
-                                <p><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Demande: 15/04/2026</p>
-                            </div>
-                        </div>
-                        <div class="validation-docs">
-                            <a href="#" class="doc-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Diplôme (PDF)</a>
-                            <a href="#" class="doc-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> CV (PDF)</a>
-                            <a href="#" class="doc-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Carte pro (PDF)</a>
-                        </div>
-                        <div class="validation-actions">
-                            <button class="action-btn primary" onclick="alert('Psychologue approuvé')"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Approuver</button>
-                            <button class="action-btn danger" onclick="alert('Psychologue refusé')"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Rejeter</button>
-                            <button class="action-btn secondary" onclick="openDocumentsModal('psychologue', 'Ahmed Mansouri')"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="2"/><circle cx="12" cy="5" r="2"/><circle cx="12" cy="19" r="2"/></svg> Voir</button>
-                        </div>
-                    </div>
-                    <div class="validation-card">
-                        <div class="validation-header">
-                            <div ><img src="./image/24d0759cbb02c3157112d0ef0f8463b1.jpg" class="user-avatar-img" alt="Photo"></div>
-                            <div class="validation-info">
-                                <h4>Dr. Leila Zerouali <span class="psychologue-badge">Psychologue</span></h4>
-                                <p>TCC - Université d'Oran</p>
-                                <p><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Demande: 14/04/2026</p>
-                            </div>
-                        </div>
-                        <div class="validation-docs">
-                            <a href="#" class="doc-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Diplôme (PDF)</a>
-                            <a href="#" class="doc-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> CV (PDF)</a>
-                        </div>
-                        <div class="validation-actions">
-                            <button class="action-btn primary" onclick="alert('Psychologue approuvé')"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Approuver</button>
-                            <button class="action-btn danger" onclick="alert('Psychologue refusé')"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Rejeter</button>
-                            <button class="action-btn secondary" onclick="openDocumentsModal('psychologue', 'Leila Zerouali')"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="2"/><circle cx="12" cy="5" r="2"/><circle cx="12" cy="19" r="2"/></svg> Voir</button>
-                        </div>
-                    </div>
-                    <div class="validation-card">
-                        <div class="validation-header">
-                            <div ><img src="./image/24d0759cbb02c3157112d0ef0f8463b1.jpg" class="user-avatar-img" alt="Photo"></div>
-                            <div class="validation-info">
-                                <h4>Dr. Sofiane Hamdi <span class="psychologue-badge">Psychologue</span></h4>
-                                <p>Psychanalyse - Université de Constantine</p>
-                                <p><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Demande: 12/04/2026</p>
-                            </div>
-                        </div>
-                        <div class="validation-docs">
-                            <a href="#" class="doc-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Diplôme (PDF)</a>
-                            <a href="#" class="doc-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> CV (PDF)</a>
-                        </div>
-                        <div class="validation-actions">
-                            <button class="action-btn primary" onclick="alert('Psychologue approuvé')"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Approuver</button>
-                            <button class="action-btn danger" onclick="alert('Psychologue refusé')"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Rejeter</button>
-                            <button class="action-btn secondary" onclick="openDocumentsModal('psychologue', 'Sofiane Hamdi')"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="2"/><circle cx="12" cy="5" r="2"/><circle cx="12" cy="19" r="2"/></svg> Voir</button>
-                        </div>
-                    </div>
-                </div>
+            <div id="psychologueSection" class="validation-tab-content active">
+                <div class="validation-grid" id="psychologueGrid"></div>
             </div>
 
-            <!-- SECTION COUNSELORS -->
-            <div id="counselorsSection" class="validation-tab-content">
-                <div class="validation-grid">
-                    <div class="validation-card">
-                        <div class="validation-header">
-                            <div ><img src="./image/24d0759cbb02c3157112d0ef0f8463b1.jpg" class="user-avatar-img" alt="Photo"></div>
-                            <div class="validation-info">
-                                <h4>Sarah Mansouri <span class="counselor-badge">Counselor</span></h4>
-                                <p>Conseil en orientation - Université d'Alger</p>
-                                <p><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Demande: 16/04/2026</p>
-                            </div>
-                        </div>
-                        <div class="validation-docs">
-                            <a href="#" class="doc-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Diplôme (PDF)</a>
-                            <a href="#" class="doc-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Certification (PDF)</a>
-                            <a href="#" class="doc-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> CV (PDF)</a>
-                        </div>
-                        <div class="validation-actions">
-                            <button class="action-btn primary" onclick="alert('Counselor approuvé')"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Approuver</button>
-                            <button class="action-btn danger" onclick="alert('Counselor refusé')"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Rejeter</button>
-                            <button class="action-btn secondary" onclick="openDocumentsModal('counselor', 'Sarah Mansouri')"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="2"/><circle cx="12" cy="5" r="2"/><circle cx="12" cy="19" r="2"/></svg> Voir</button>
-                        </div>
-                    </div>
-                    <div class="validation-card">
-                        <div class="validation-header">
-                            <div ><img src="./image/24d0759cbb02c3157112d0ef0f8463b1.jpg" class="user-avatar-img" alt="Photo"></div>
-                            <div class="validation-info">
-                                <h4>Karim Boudiaf <span class="counselor-badge">Counselor</span></h4>
-                                <p>Psychologie sociale - Université d'Oran</p>
-                                <p><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Demande: 13/04/2026</p>
-                            </div>
-                        </div>
-                        <div class="validation-docs">
-                            <a href="#" class="doc-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Diplôme (PDF)</a>
-                            <a href="#" class="doc-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> CV (PDF)</a>
-                        </div>
-                        <div class="validation-actions">
-                            <button class="action-btn primary" onclick="alert('Counselor approuvé')"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Approuver</button>
-                            <button class="action-btn danger" onclick="alert('Counselor refusé')"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Rejeter</button>
-                            <button class="action-btn secondary" onclick="openDocumentsModal('counselor', 'Karim Boudiaf')"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="2"/><circle cx="12" cy="5" r="2"/><circle cx="12" cy="19" r="2"/></svg> Voir</button>
-                        </div>
-                    </div>
-                </div>
+            <div id="counselorSection" class="validation-tab-content">
+                <div class="validation-grid" id="counselorGrid"></div>
             </div>
         </div>
     </div>
 
-    <!-- MODAL DOCUMENTS -->
-    <div id="documentsModal" class="documents-modal">
-        <div class="documents-modal-content">
-            <div class="documents-modal-header">
-                <h2><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#091346" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Dossier complet</h2>
-                <button class="close-modal" onclick="closeDocumentsModal()">&times;</button>
-            </div>
-            <div class="documents-modal-body" id="documentsModalBody">
-                <!-- Le contenu sera généré par JavaScript -->
-            </div>
-</div>
-    </div>
-
 <script src="js/api.js"></script>
 <script>
-(function() {
-    var userStr = localStorage.getItem('nebras_user');
-    if (userStr) {
-        try {
-            var user = JSON.parse(userStr);
-            var name = user.fullname || user.email || '';
-            document.querySelectorAll('.user-name').forEach(function(el) { el.textContent = name; });
-        } catch(e) {}
+let allValidations = [];
+
+async function loadValidations() {
+    try {
+        const data = await adminAPI.getValidations();
+        allValidations = data.validations || [];
+        renderTab('psychologue');
+        renderTab('counselor');
+        document.getElementById('validationsBadge').textContent = allValidations.length || '';
+    } catch (e) {
+        showToast('Erreur chargement validations', 'error');
+        console.error(e);
     }
-})();
-function showToast(message, type = 'success') {
-    const container = document.querySelector('.toast-container') || (() => { const c = document.createElement('div'); c.className = 'toast-container'; document.body.appendChild(c); return c; })();
-    const toast = document.createElement('div');
-    toast.className = 'toast ' + type;
-    toast.textContent = message;
-    container.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
 }
-function logout() {
-    localStorage.removeItem('nebras_token');
-    localStorage.removeItem('nebras_user');
-    showToast('Déconnexion réussie', 'success');
-    setTimeout(() => window.location.href = 'home.html', 500);
+
+function renderTab(type) {
+    const grid = document.getElementById(type + 'Grid');
+    const items = allValidations.filter(v => v.type === type);
+    const badgeLabel = type === 'psychologue' ? 'Psychologue' : 'Counselor';
+
+    if (items.length === 0) {
+        grid.innerHTML = '<p style="text-align:center;padding:40px;color:#999;">Aucune demande en attente</p>';
+        return;
+    }
+
+    grid.innerHTML = items.map(v => {
+        const avatarHtml = v.avatar ? `<img src="${v.avatar}" class="user-avatar-img" style="width:50px;height:50px;">` : `<div class="user-avatar-img" style="width:50px;height:50px;background:#e8f4ee;display:flex;align-items:center;justify-content:center;font-weight:bold;color:#44AA99;border-radius:50%;font-size:20px;">${v.fullname.charAt(0)}</div>`;
+        const docsHtml = (v.documents || []).map(d => `<a href="${d.fileUrl}" class="doc-link" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> ${d.name}</a>`).join('');
+
+        return `<div class="validation-card">
+            <div class="validation-header">
+                <div>${avatarHtml}</div>
+                <div class="validation-info">
+                    <h4>${escapeHtml(v.fullname)} <span class="psychologue-badge">${badgeLabel}</span></h4>
+                    <p>${escapeHtml(v.specialite || '-')}${v.universite ? ' - ' + escapeHtml(v.universite) : ''}</p>
+                    <p><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Demande: ${new Date(v.requestDate).toLocaleDateString('fr-FR')}</p>
+                </div>
+            </div>
+            <div class="validation-docs">${docsHtml || '<span style="color:#999;font-size:12px;">Aucun document</span>'}</div>
+            <div class="validation-actions">
+                <button class="action-btn primary" onclick="approveValidation('${v.id}','${escapeHtml(v.fullname)}')"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Approuver</button>
+                <button class="action-btn danger" onclick="rejectValidation('${v.id}','${escapeHtml(v.fullname)}')"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Rejeter</button>
+                <button class="action-btn secondary" data-details='${encodeURIComponent(JSON.stringify(v))}' onclick="showDetails(this)"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="2"/><circle cx="12" cy="5" r="2"/><circle cx="12" cy="19" r="2"/></svg> Voir</button>
+            </div>
+        </div>`;
+    }).join('');
 }
+
+function showTab(type) {
+    document.querySelectorAll('.validation-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.validation-tab-content').forEach(t => t.classList.remove('active'));
+    event.target.classList.add('active');
+    document.getElementById(type + 'Section').classList.add('active');
+}
+
+function approveValidation(id, name) {
+    showConfirmModal({
+        title: 'Approuver',
+        icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#27ae60" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>',
+        message: `Approuver <strong>${escapeHtml(name)}</strong> ? Son compte sera activé.`,
+        confirmText: 'Approuver',
+        confirmClass: 'primary',
+        onConfirm: async () => {
+            try {
+                await adminAPI.approveValidation(id);
+                showToast(name + ' approuvé', 'success');
+                loadValidations();
+            } catch (e) {
+                showToast('Erreur approbation', 'error');
+            }
+        }
+    });
+}
+
+function rejectValidation(id, name) {
+    showPromptModal({
+        title: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#e74c3c" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Rejeter',
+        bodyHtml: `<p>Rejeter <strong>${escapeHtml(name)}</strong> ?</p><div class="modal-form-row"><label>Motif (optionnel)</label><textarea id="rejectReason" placeholder="Raison du rejet..."></textarea></div>`,
+        confirmText: 'Rejeter',
+        confirmClass: 'danger',
+        onConfirm: async () => {
+            const reason = document.getElementById('rejectReason')?.value || '';
+            try {
+                await adminAPI.rejectValidation(id, reason);
+                showToast(name + ' rejeté', 'success');
+                loadValidations();
+            } catch (e) {
+                showToast('Erreur rejet', 'error');
+            }
+        }
+    });
+}
+
+function showDetails(btn) {
+    const v = JSON.parse(decodeURIComponent(btn.dataset.details));
+    const docsHtml = (v.documents || []).map(d => `<div class="document-item"><span class="document-name"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> ${escapeHtml(d.name)}</span><a href="${d.fileUrl}" class="download-link" target="_blank">Télécharger</a></div>`).join('');
+
+    showPromptModal({
+        title: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#091346" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Dossier complet',
+        bodyHtml: `
+            <div class="info-section">
+                <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#091346" stroke-width="2"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4z"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg> Informations personnelles</h3>
+                <div class="modal-info-row"><span class="modal-info-label">Nom</span><span class="modal-info-value">${escapeHtml(v.fullname)}</span></div>
+                <div class="modal-info-row"><span class="modal-info-label">Email</span><span class="modal-info-value">${escapeHtml(v.email)}</span></div>
+                <div class="modal-info-row"><span class="modal-info-label">Téléphone</span><span class="modal-info-value">${escapeHtml(v.phone || '-')}</span></div>
+                <div class="modal-info-row"><span class="modal-info-label">Type</span><span class="modal-info-value">${v.type === 'psychologue' ? 'Psychologue' : 'Counselor'}</span></div>
+                <div class="modal-info-row"><span class="modal-info-label">Spécialité</span><span class="modal-info-value">${escapeHtml(v.specialite || '-')}</span></div>
+                <div class="modal-info-row"><span class="modal-info-label">Université</span><span class="modal-info-value">${escapeHtml(v.universite || '-')}</span></div>
+                <div class="modal-info-row"><span class="modal-info-label">Bio</span><span class="modal-info-value">${escapeHtml(v.bio || '-')}</span></div>
+            </div>
+            <div class="documents-list">
+                <h4 style="margin-bottom:10px;color:#091346;">Documents</h4>
+                ${docsHtml || '<p style="color:#999;">Aucun document</p>'}
+            </div>
+        `,
+        confirmText: 'Fermer',
+        confirmClass: 'secondary',
+        cancelText: '',
+        width: '580px',
+        onConfirm: () => {}
+    });
+}
+
+loadValidations();
 </script>
-<script src="js/admin_validation.js" defer></script>
 </body>
 </html>

@@ -195,7 +195,7 @@
                         <ul class="rules-list">
                             <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Séance de 45 minutes</li>
                             <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Consultation par visio, téléphone ou chat</li>
-                            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Tarif : 1000 DA par séance</li>
+                            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Tarif : <span id="normalConsultationPrice">1000</span> DA par séance</li>
                             <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Paiement avant la séance</li>
                         </ul>
 
@@ -230,7 +230,7 @@
                         <ul class="rules-list">
                             <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Séance de 45 minutes</li>
                             <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Consultation par visio, téléphone ou chat</li>
-                            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Tarif : 1000 DA par séance</li>
+                            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Tarif : <span id="vipConsultationPrice">1000</span> DA par séance</li>
                             <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#44AA99" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Paiement avant la séance</li>
                         </ul>
 
@@ -264,11 +264,42 @@
     </section>
 
     <footer>
-        <p>&copy; <span id="currentYear"></span> Nebras - Psychologie en ligne. Tous droits réservés.</p>
+        <p>&copy; <span id="currentYear"></span> <span class="js-site-name">Nebras</span> - Psychologie en ligne. Tous droits réservés.</p>
     </footer>
     
     <script>
+        function formatDa(value) {
+            return Number(value).toLocaleString('fr-FR') + ' DA';
+        }
+
         document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+        (async function loadSettings() {
+            try {
+                var res = await fetch('http://localhost:3000/api/settings');
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                var data = await res.json();
+                var s = data.settings || {};
+
+                var siteName = s.siteName || 'Nebras';
+                document.title = siteName + ' - Psychologie en ligne';
+                var siteEls = document.querySelectorAll('.js-site-name');
+                for (var i = 0; i < siteEls.length; i++) {
+                    siteEls[i].textContent = siteName;
+                }
+
+                if (s.consultationPrice) {
+                    var priceText = Number(s.consultationPrice).toLocaleString('fr-FR');
+                    var ids = ['normalConsultationPrice', 'vipConsultationPrice'];
+                    for (var i = 0; i < ids.length; i++) {
+                        var el = document.getElementById(ids[i]);
+                        if (el) el.textContent = priceText;
+                    }
+                }
+            } catch (e) {
+                // Settings API unreachable — leaving hardcoded fallbacks in HTML
+            }
+        })();
     </script>
 
     <script src="js/consultants_inf.js" defer></script>
