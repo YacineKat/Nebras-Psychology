@@ -105,7 +105,7 @@ function displayChatMessage(msg) {
     const messageText = msg.content || msg.text || '';
     const timestamp = msg.createdAt || msg.timestamp;
     const isSent = senderId === currentUserId;
-    const senderName = msg.fromName || (isSent ? 'Vous' : 'Participant');
+    const senderName = msg.fromName || (isSent ? 'Vous' : (otherParticipantName || 'Participant'));
 
     const msgDiv = document.createElement('div');
     msgDiv.className = `message ${isSent ? 'sent' : 'received'}`;

@@ -47,3 +47,14 @@ function escapeHtml(text) {
     div.textContent = text;
     return div.innerHTML;
 }
+
+function showToast(message, type) {
+    const existing = document.querySelector('.vc-toast');
+    if (existing) existing.remove();
+    const toast = document.createElement('div');
+    toast.className = 'vc-toast';
+    toast.style.cssText = 'position:fixed;bottom:30px;left:50%;transform:translateX(-50%);padding:14px 28px;border-radius:12px;color:#fff;font-weight:600;font-size:14px;z-index:999999;box-shadow:0 8px 30px rgba(0,0,0,0.15);background:' + (type === 'error' ? '#ef4444' : '#44AA99') + ';';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity 0.3s'; setTimeout(() => toast.remove(), 300); }, 3000);
+}

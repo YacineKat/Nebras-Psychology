@@ -3748,6 +3748,7 @@ input.chat-input::placeholder {
     width: 270px;
     box-shadow: 0 8px 30px rgba(9,19,70,0.15);
     z-index: 100;
+    overflow: hidden;
     border: 2px solid #091346;
     animation: emojiPickerFadeIn 0.2s ease;
 }
@@ -3777,7 +3778,7 @@ input.chat-input::placeholder {
 
 .emoji-picker-grid {
     display: grid;
-    grid-template-columns: repeat(9, 1fr);
+    grid-template-columns: repeat(6, 1fr);
     gap: 2px;
 }
 
