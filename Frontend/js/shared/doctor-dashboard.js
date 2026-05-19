@@ -288,8 +288,6 @@ async function startSession(appointmentId) {
             return;
         }
 
-        await doctorAPI.startVideoSession(appointmentId);
-
         currentVideoAppointment = {
             id: appointmentId,
             patientName: appointment.patientName,
@@ -460,8 +458,6 @@ async function endPrivateSession() {
     if (!currentVideoAppointment) return;
 
     try {
-        await doctorAPI.endVideoSession(currentVideoAppointment.id);
-
         try {
             await appointmentAPI.endCallState();
             localStorage.setItem('doctorInCall', 'false');

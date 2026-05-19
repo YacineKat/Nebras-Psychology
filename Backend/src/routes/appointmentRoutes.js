@@ -21,11 +21,6 @@ router.put('/urgent/:id/accept', appointmentController.acceptUrgentRequest);
 router.put('/urgent/:id/reject', appointmentController.rejectUrgentRequest);
 router.put('/urgent/:id/complete', appointmentController.completeUrgentRequest);
 
-// Video session routes
-router.post('/:id/video/start', appointmentController.startVideoSession);
-router.post('/:id/video/end', appointmentController.endVideoSession);
-router.get('/video/active', appointmentController.getActiveVideoSession);
-
 // Call state routes (real-time sync)
 router.post('/call/start', appointmentController.startCallState);
 router.post('/call/end', appointmentController.endCallState);

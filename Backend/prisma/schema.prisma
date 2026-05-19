@@ -120,11 +120,6 @@ model Appointment {
   notes            String?   // Session notes (doctor only)
   createdAt        DateTime  @default(now())
   
-  // Video session tracking
-  videoSessionActive    Boolean  @default(false)
-  videoSessionStartedAt DateTime?
-  videoSessionEndedAt   DateTime?
-
   // Review / rating
   review Review?
 
@@ -146,8 +141,7 @@ model UrgentRequest {
   status          String    @default("pending") // pending, accepted, rejected, completed
   notes           String?
   amount          Int       @default(1000) // 1000 DA
-  isVip           Boolean   @default(true) // VIP/URGENT flag
-  priority        Boolean   @default(true) // High priority flag
+  // VIP/URGENT flag (always true for now)
   appointmentTime String?   // Custom appointment time (HH:MM)
   appointmentDate DateTime? // Custom appointment date
   createdAt       DateTime  @default(now())
@@ -315,20 +309,16 @@ model ValidationRequest {
   rejectionReason String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
-  documents       Document[]
 }
 
 // ============== DOCUMENTS TABLE ==============
 model Document {
   id                  String   @id @default(uuid())
-  validationRequestId String?
-  validationRequest   ValidationRequest? @relation(fields: [validationRequestId], references: [id])
   userId              String?
   user                User?    @relation(fields: [userId], references: [id])
   name                String   // Display name
   type                String   // diplome, cv, carte_pro, certification
   fileUrl             String   // Path/URL to stored file
-  fileType            String   // pdf, jpg, png
   uploadedAt          DateTime @default(now())
 }
 
@@ -344,7 +334,6 @@ model Transaction {
   validatedBy     String?
   validatedAt     DateTime?
   appointmentId   String?
-  subscriptionId  String?
   notes           String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt

@@ -419,8 +419,6 @@ exports.cancelAppointment = async (req, res) => {
 };
 
 // ============================================
-// START VIDEO SESSION
-// ============================================
 exports.startVideoSession = async (req, res) => {
   try {
     const { id } = req.params;
@@ -581,8 +579,6 @@ exports.createUrgentRequest = async (req, res) => {
         status: 'pending',
         notes: notes || 'Urgent VIP consultation request',
         amount: 1000,
-        isVip: true,
-        priority: true,
         appointmentTime: appointmentTime || defaultTime,
         appointmentDate: new Date()
       },
@@ -1021,7 +1017,7 @@ exports.getCallStatus = async (req, res) => {
     }
 
     const inCall = doctor.currentCallId && doctor.currentCallPartnerId === patientId;
-    const isAvailable = !!doctor.currentCallId;
+    const isAvailable = !doctor.currentCallId;
 
     res.json({
       inCall: inCall,
