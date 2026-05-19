@@ -34,6 +34,36 @@ function sameDateKey(left, right) {
   return Boolean(leftKey && rightKey && leftKey === rightKey);
 }
 
+function normalizeTimeOnly(timeValue) {
+  if (!timeValue) return null;
+
+  const timeString = String(timeValue).trim();
+  if (!timeString) return null;
+
+  const directMatch = timeString.match(/^(\d{1,2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?$/);
+  if (directMatch) {
+    return `${pad(directMatch[1])}:${pad(directMatch[2])}`;
+  }
+
+  const parsed = new Date(timeString);
+  if (!Number.isNaN(parsed.getTime())) {
+    return `${pad(parsed.getHours())}:${pad(parsed.getMinutes())}`;
+  }
+
+  return null;
+}
+
+function buildTimeCandidates(timeValue) {
+  const normalizedTime = normalizeTimeOnly(timeValue);
+  if (!normalizedTime) return [];
+
+  const candidates = new Set([normalizedTime]);
+  const [hours, minutes] = normalizedTime.split(':');
+  candidates.add(`${hours}:${minutes}:00`);
+
+  return Array.from(candidates);
+}
+
 function isBlockingStatus(status) {
   return ['pending', 'confirmed', 'completed'].includes(String(status || '').toLowerCase());
 }
@@ -67,9 +97,12 @@ function buildAvailabilityForDate({ slots = [], appointments = [], date }) {
   const slotMap = new Map();
 
   weeklySlots.forEach(slot => {
-    if (!slot?.startTime) return;
-    slotMap.set(slot.startTime, {
+    const timeKey = normalizeTimeOnly(slot?.startTime);
+    if (!timeKey) return;
+
+    slotMap.set(timeKey, {
       ...slot,
+      timeKey,
       status: slot.isBlocked ? 'blocked' : slot.isBooked ? 'booked' : 'available',
       source: 'weekly',
       selectable: !slot.isBlocked && !slot.isBooked
@@ -77,9 +110,12 @@ function buildAvailabilityForDate({ slots = [], appointments = [], date }) {
   });
 
   exactDateSlots.forEach(slot => {
-    if (!slot?.startTime) return;
-    slotMap.set(slot.startTime, {
+    const timeKey = normalizeTimeOnly(slot?.startTime);
+    if (!timeKey) return;
+
+    slotMap.set(timeKey, {
       ...slot,
+      timeKey,
       status: slot.isBlocked ? 'blocked' : slot.isBooked ? 'booked' : 'available',
       source: 'specificDate',
       selectable: !slot.isBlocked && !slot.isBooked
@@ -89,13 +125,13 @@ function buildAvailabilityForDate({ slots = [], appointments = [], date }) {
   const appointmentTimes = new Set(
     appointments
       .filter(appointment => isBlockingStatus(appointment.status) && sameDateKey(appointment.appointmentDate, targetDate))
-      .map(appointment => appointment.appointmentTime)
+      .map(appointment => normalizeTimeOnly(appointment.appointmentTime))
       .filter(Boolean)
   );
 
   const finalSlots = Array.from(slotMap.values())
     .map(slot => {
-      const hasAppointment = appointmentTimes.has(slot.startTime);
+      const hasAppointment = appointmentTimes.has(slot.timeKey);
       const status = hasAppointment ? 'booked' : slot.status;
 
       return {
@@ -112,27 +148,39 @@ function buildAvailabilityForDate({ slots = [], appointments = [], date }) {
         source: hasAppointment ? 'appointment' : slot.source
       };
     })
-    .sort((left, right) => left.startTime.localeCompare(right.startTime));
+    .sort((left, right) => (normalizeTimeOnly(left.startTime) || '').localeCompare(normalizeTimeOnly(right.startTime) || ''));
+
+  const availableSlots = [];
+  const blockedSlots = [];
+  const bookedSlots = [];
+  for (let i = 0; i < finalSlots.length; i++) {
+    const slot = finalSlots[i];
+    if (slot.selectable) availableSlots.push(slot);
+    else if (slot.status === 'blocked') blockedSlots.push(slot);
+    else if (slot.status === 'booked') bookedSlots.push(slot);
+  }
 
   return {
     date: targetDateKey,
     dayOfWeek,
     slots: finalSlots,
-    availableSlots: finalSlots.filter(slot => slot.selectable),
-    blockedSlots: finalSlots.filter(slot => slot.status === 'blocked'),
-    bookedSlots: finalSlots.filter(slot => slot.status === 'booked'),
+    availableSlots,
+    blockedSlots,
+    bookedSlots,
     summary: {
       total: finalSlots.length,
-      available: finalSlots.filter(slot => slot.selectable).length,
-      blocked: finalSlots.filter(slot => slot.status === 'blocked').length,
-      booked: finalSlots.filter(slot => slot.status === 'booked').length
+      available: availableSlots.length,
+      blocked: blockedSlots.length,
+      booked: bookedSlots.length
     }
   };
 }
 
 module.exports = {
   buildAvailabilityForDate,
+  buildTimeCandidates,
   formatDateKey,
   normalizeDateOnly,
+  normalizeTimeOnly,
   sameDateKey
 };

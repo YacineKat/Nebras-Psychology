@@ -53,7 +53,10 @@ exports.createReview = async (req, res) => {
 
     await prisma.profile.updateMany({
       where: { userId: doctorId },
-      data: { rating: Math.round(avgRating * 100) / 100 }
+      data: {
+        rating: Math.round(avgRating * 100) / 100,
+        reviewsCount: stats._count
+      }
     });
 
     res.status(201).json({ message: 'Évaluation enregistrée', review });

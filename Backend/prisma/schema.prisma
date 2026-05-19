@@ -88,6 +88,11 @@ model Profile {
   agrement    String?
   tarif       Int?
   
+  // Denormalized counters (cached aggregates for performance)
+  sessionsCompleted Int    @default(0)
+  patientsCount     Int    @default(0)
+  reviewsCount      Int    @default(0)
+
   // Therapeutic preferences
   language    String?  // langue preferree
   motifs      String?  // motifs de consultation (stored as comma-separated)
@@ -116,6 +121,12 @@ model Appointment {
 
   // Review / rating
   review Review?
+
+  @@index([doctorId])
+  @@index([doctorId, status])
+  @@index([doctorId, patientId])
+  @@index([patientId])
+  @@index([doctorId, appointmentDate, status])
 }
 
 // ============== URGENT REQUESTS TABLE ==============

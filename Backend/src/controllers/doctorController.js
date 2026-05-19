@@ -159,7 +159,10 @@ exports.getDoctorById = async (req, res) => {
             agrement: true,
             avatar: true,
             adresse: true,
-            specialite: true
+            specialite: true,
+            sessionsCompleted: true,
+            patientsCount: true,
+            reviewsCount: true
           }
         },
         timeSlots: {
@@ -182,19 +185,6 @@ exports.getDoctorById = async (req, res) => {
       return res.status(404).json({ error: 'Doctor not found' });
     }
 
-    // Get additional metrics
-    const completedAppointments = await prisma.appointment.count({
-      where: { doctorId: id, status: 'completed' }
-    });
-    const uniquePatients = await prisma.appointment.groupBy({
-      by: ['patientId'],
-      where: { doctorId: id, status: { in: ['completed', 'confirmed'] } },
-      _count: true
-    });
-    const reviewCount = await prisma.review.count({
-      where: { doctorId: id }
-    });
-
     res.json({
       id: doctor.id,
       fullname: doctor.fullname,
@@ -209,9 +199,9 @@ exports.getDoctorById = async (req, res) => {
       avatar: doctor.profile?.avatar || null,
       isAvailable: doctor.profile?.isAvailable,
       rating: Number(doctor.profile?.rating) || 0,
-      reviewsCount: reviewCount,
-      patientsCount: uniquePatients.length,
-      sessionsCompleted: completedAppointments,
+      reviewsCount: doctor.profile?.reviewsCount || 0,
+      patientsCount: doctor.profile?.patientsCount || 0,
+      sessionsCompleted: doctor.profile?.sessionsCompleted || 0,
       availableSlots: doctor.timeSlots
     });
 

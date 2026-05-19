@@ -2,6 +2,14 @@
 // PATIENT PSYCHOLOGUE PAGE - Fetch & Display Doctors from Backend
 // ============================================
 
+function debounce(fn, delay) {
+    let timer;
+    return function (...args) {
+        clearTimeout(timer);
+        timer = setTimeout(() => fn.apply(this, args), delay);
+    };
+}
+
 let doctors = [];
 let userPreferences = null;
 let selectedDoctor = null;
@@ -55,9 +63,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    await loadUserPreferences();
-    await fetchDoctors();
-    await checkUrgentAccessStatus();
+    const [userPrefsResult] = await Promise.all([
+        loadUserPreferences(),
+        fetchDoctors(),
+        checkUrgentAccessStatus()
+    ]);
     highlightCurrentSidebarLink();
     
     // Check URL for joining a call
@@ -109,8 +119,6 @@ async function fetchDoctors() {
         const counselors = (counselorResult || []).map(c => ({ ...c, role: 'counselor' }));
 
         doctors = [...psychologues, ...counselors];
-
-        doctorCache.clear();
 
         let filtered = doctors;
         if (userPreferences && userPreferences.prefGender) {
@@ -448,113 +456,110 @@ async function refreshBookingAvailability() {
 
 async function viewDoctor(doctorId) {
     try {
-        // Check cache first
         const cachedDoctor = doctorCache.get(doctorId);
         let doctor;
-        
+
         if (cachedDoctor && (Date.now() - cachedDoctor._cachedAt) < CACHE_DURATION) {
             doctor = cachedDoctor;
-        } else {
-            // Fetch from API and cache
-            doctor = await doctorAPI.getById(doctorId);
-            doctor._cachedAt = Date.now();
-            doctorCache.set(doctorId, doctor);
-        }
-        
-        selectedDoctor = doctor;
-
-        // Avatar with default fallback
-        const avatarImg = document.querySelector('.psy-detail-avatar');
-        const avatarDefault = document.querySelector('.psy-detail-avatar-default');
-        if (avatarImg && avatarDefault) {
-            if (doctor.avatar) {
-                avatarImg.src = doctor.avatar;
-                avatarImg.style.display = 'block';
-                avatarDefault.style.display = 'none';
-            } else {
-                avatarImg.style.display = 'none';
-                avatarDefault.style.display = 'flex';
-            }
+            renderDetailPanel(doctor);
+            return;
         }
 
-        // Name
-        document.getElementById('detailName').textContent = doctor.fullname || 'Psychologue';
-        
-        // Specialité (was missing - BUG FIX)
-        const specialiteSpan = document.getElementById('detailSpecialite');
-        if (specialiteSpan) {
-            specialiteSpan.textContent = doctor.specialite || 'Psychologie';
+        const listDoctor = doctors.find(d => d.id === doctorId);
+        if (listDoctor) {
+            renderDetailPanel(listDoctor, true);
         }
 
-        // Role badge
-        const roleBadge = document.getElementById('detailRoleBadge');
-        if (roleBadge) {
-            const isCounselor = doctor.userType === 'counselor';
-            roleBadge.textContent = isCounselor ? 'Conseiller' : 'Psychologue';
-            roleBadge.className = 'detail-role-badge ' + (isCounselor ? 'counselor' : 'psy');
-        }
-
-        // Rating with stars (NEW)
-        const rating = doctor.rating || 0;
-        const starsEl = document.getElementById('detailStars');
-        if (starsEl) {
-            starsEl.innerHTML = 
-                '<span class="star filled">★</span>'.repeat(Math.floor(rating)) +
-                '<span class="star">★</span>'.repeat(5 - Math.floor(rating));
-        }
-        
-        const ratingValueEl = document.getElementById('detailRating');
-        if (ratingValueEl) {
-            ratingValueEl.textContent = rating.toFixed(1);
-        }
-
-        // System metrics (NEW)
-        const patientsCountEl = document.getElementById('detailPatientsCount');
-        if (patientsCountEl) {
-            patientsCountEl.textContent = doctor.patientsCount || 0;
-        }
-
-        const sessionsEl = document.getElementById('detailSessionsCompleted');
-        if (sessionsEl) {
-            sessionsEl.textContent = doctor.sessionsCompleted || 0;
-        }
-
-        // Phone
-        const phoneEl = document.getElementById('detailPhone');
-        if (phoneEl) {
-            phoneEl.textContent = doctor.phone || 'Non spécifié';
-        }
-
-        // Adresse
-        const adresseEl = document.getElementById('detailAdresse');
-        if (adresseEl) {
-            adresseEl.textContent = doctor.adresse || 'Non spécifié';
-        }
-
-        // Numéro d'agrément
-        const agrementEl = document.getElementById('detailAgrement');
-        if (agrementEl) {
-            agrementEl.textContent = doctor.agrement || 'Non spécifié';
-        }
-
-        // Diplômes
-        const diplomesEl = document.getElementById('detailDiplomes');
-        if (diplomesEl) {
-            diplomesEl.textContent = doctor.diplomes || 'Non spécifié';
-        }
-
-        // Bio/Description
-        const bioEl = document.getElementById('detailBio');
-        if (bioEl) {
-            bioEl.textContent = doctor.bio || 'Aucune description disponible.';
-        }
-
-        document.getElementById('psyDetailPanel').classList.add('active');
-        document.body.style.overflow = 'hidden';
+        doctor = await doctorAPI.getById(doctorId);
+        doctor._cachedAt = Date.now();
+        doctorCache.set(doctorId, doctor);
+        renderDetailPanel(doctor);
 
     } catch (error) {
         showToast('Erreur: ' + error.message, 'error');
     }
+}
+
+function renderDetailPanel(doctor, isPartial) {
+    selectedDoctor = doctor;
+
+    const avatarImg = document.querySelector('.psy-detail-avatar');
+    const avatarDefault = document.querySelector('.psy-detail-avatar-default');
+    if (avatarImg && avatarDefault) {
+        if (doctor.avatar) {
+            avatarImg.src = doctor.avatar;
+            avatarImg.style.display = 'block';
+            avatarDefault.style.display = 'none';
+        } else {
+            avatarImg.style.display = 'none';
+            avatarDefault.style.display = 'flex';
+        }
+    }
+
+    document.getElementById('detailName').textContent = doctor.fullname || 'Psychologue';
+
+    const specialiteSpan = document.getElementById('detailSpecialite');
+    if (specialiteSpan) {
+        specialiteSpan.textContent = doctor.specialite || 'Psychologie';
+    }
+
+    const roleBadge = document.getElementById('detailRoleBadge');
+    if (roleBadge) {
+        const isCounselor = doctor.userType === 'counselor';
+        roleBadge.textContent = isCounselor ? 'Conseiller' : 'Psychologue';
+        roleBadge.className = 'detail-role-badge ' + (isCounselor ? 'counselor' : 'psy');
+    }
+
+    const rating = doctor.rating || 0;
+    const starsEl = document.getElementById('detailStars');
+    if (starsEl) {
+        starsEl.innerHTML =
+            '<span class="star filled">★</span>'.repeat(Math.floor(rating)) +
+            '<span class="star">★</span>'.repeat(5 - Math.floor(rating));
+    }
+
+    const ratingValueEl = document.getElementById('detailRating');
+    if (ratingValueEl) {
+        ratingValueEl.textContent = rating.toFixed(1);
+    }
+
+    const patientsCountEl = document.getElementById('detailPatientsCount');
+    if (patientsCountEl) {
+        patientsCountEl.textContent = doctor.patientsCount || 0;
+    }
+
+    const sessionsEl = document.getElementById('detailSessionsCompleted');
+    if (sessionsEl) {
+        sessionsEl.textContent = doctor.sessionsCompleted || 0;
+    }
+
+    const phoneEl = document.getElementById('detailPhone');
+    if (phoneEl) {
+        phoneEl.textContent = (isPartial && !doctor.phone) ? 'Chargement...' : (doctor.phone || 'Non spécifié');
+    }
+
+    const adresseEl = document.getElementById('detailAdresse');
+    if (adresseEl) {
+        adresseEl.textContent = (isPartial && !doctor.adresse) ? 'Chargement...' : (doctor.adresse || 'Non spécifié');
+    }
+
+    const agrementEl = document.getElementById('detailAgrement');
+    if (agrementEl) {
+        agrementEl.textContent = (isPartial && !doctor.agrement) ? 'Chargement...' : (doctor.agrement || 'Non spécifié');
+    }
+
+    const diplomesEl = document.getElementById('detailDiplomes');
+    if (diplomesEl) {
+        diplomesEl.textContent = (isPartial && !doctor.diplomes) ? 'Chargement...' : (doctor.diplomes || 'Non spécifié');
+    }
+
+    const bioEl = document.getElementById('detailBio');
+    if (bioEl) {
+        bioEl.textContent = (isPartial && !doctor.bio) ? 'Chargement...' : (doctor.bio || 'Aucune description disponible.');
+    }
+
+    document.getElementById('psyDetailPanel').classList.add('active');
+    document.body.style.overflow = 'hidden';
 }
 
 function closePsyDetail() {
@@ -775,32 +780,32 @@ async function activateUrgentNoPayment() {
 }
 
 async function sendUrgentToAllProviders(appointmentTime) {
-    // Send urgent requests to all available psychologists and counselors
     const availableDoctors = doctors.filter(d => d.isAvailable && d.role === 'psychologue');
     const availableCounselors = doctors.filter(d => d.isAvailable && d.role === 'counselor');
     const allProviders = [...availableDoctors, ...availableCounselors];
-    
+
     if (allProviders.length === 0) {
         showToast('Aucun professionnel disponible en ce moment', 'error');
         return false;
     }
-    
+
     try {
-        // Send urgent requests to all available providers in parallel
-        const urgentPromises = allProviders.map(provider =>
-            appointmentAPI.createUrgent(
-                provider.id,
-                'Patient requested URGENT VIP consultation',
-                appointmentTime || undefined
-            ).catch(e => {
-                console.log(`Failed to send urgent to ${provider.fullname}:`, e);
-                return null;
-            })
-        );
-        
-        const results = await Promise.all(urgentPromises);
-        const successCount = results.filter(r => r !== null).length;
-        
+        let successCount = 0;
+        for (let i = 0; i < allProviders.length; i += 5) {
+            const batch = allProviders.slice(i, i + 5);
+            const batchResults = await Promise.all(batch.map(provider =>
+                appointmentAPI.createUrgent(
+                    provider.id,
+                    'Patient requested URGENT VIP consultation',
+                    appointmentTime || undefined
+                ).catch(e => {
+                    console.log(`Failed to send urgent to ${provider.fullname}:`, e);
+                    return null;
+                })
+            ));
+            successCount += batchResults.filter(r => r !== null).length;
+        }
+
         if (successCount > 0) {
             return true;
         } else {
@@ -907,7 +912,8 @@ document.getElementById('bookingDate')?.addEventListener('change', () => {
     }
 });
 
-document.getElementById('searchInput')?.addEventListener('keyup', filterPsychologues);
+const debouncedFilter = debounce(filterPsychologues, 200);
+document.getElementById('searchInput')?.addEventListener('keyup', debouncedFilter);
 
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
