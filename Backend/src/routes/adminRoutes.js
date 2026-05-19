@@ -6,6 +6,9 @@ const { authMiddleware, requireRole } = require('../middleware/authMiddleware');
 // All admin routes require auth + admin role
 router.use(authMiddleware, requireRole('admin'));
 
+// Badges (lightweight sidebar counts)
+router.get('/badges', adminController.getBadges);
+
 // Dashboard
 router.get('/dashboard', adminController.getDashboard);
 

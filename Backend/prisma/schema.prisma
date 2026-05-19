@@ -59,6 +59,10 @@ model User {
   adminValidations      ValidationRequest[] @relation("AdminValidationActions")
   documents             Document[]
   transactions          Transaction[]
+
+  @@index([userType, status])
+  @@index([createdAt])
+  @@index([status])
 }
 
 // ============== PROFILES TABLE ==============
@@ -98,6 +102,8 @@ model Profile {
   motifs      String?  // motifs de consultation (stored as comma-separated)
   prefGender  String?  // preference genre psychologue
   prefType    String?  // preference type consultation
+
+  @@index([rating])
 }
 
 // ============== APPOINTMENTS TABLE ==============
@@ -126,6 +132,7 @@ model Appointment {
   @@index([doctorId, status])
   @@index([doctorId, patientId])
   @@index([patientId])
+  @@index([appointmentDate])
   @@index([doctorId, appointmentDate, status])
 }
 
@@ -261,6 +268,8 @@ model VIPSubscription {
   endDate       DateTime
   isActive      Boolean  @default(true)
   createdAt     DateTime @default(now())
+
+  @@index([isActive])
 }
 
 // ============== VIP FORM TABLE ==============
@@ -339,6 +348,10 @@ model Transaction {
   notes           String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+  @@index([status, createdAt])
 }
 
 // ============== PLATFORM SETTINGS TABLE ==============

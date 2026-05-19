@@ -1,6 +1,23 @@
 const prisma = require('../prisma');
 
 // ============================================
+// SIDEBAR BADGES (lightweight, used on every page)
+// ============================================
+exports.getBadges = async (req, res) => {
+  try {
+    const [pendingUsers, pendingValidations, pendingPayments] = await Promise.all([
+      prisma.user.count({ where: { status: 'pending' } }),
+      prisma.validationRequest.count({ where: { status: 'pending' } }),
+      prisma.transaction.count({ where: { status: 'pending' } })
+    ]);
+    res.json({ pendingUsers, pendingValidations, pendingPayments });
+  } catch (error) {
+    console.error('Badges error:', error);
+    res.status(500).json({ error: 'Failed to load badges' });
+  }
+};
+
+// ============================================
 // DASHBOARD
 // ============================================
 exports.getDashboard = async (req, res) => {
@@ -18,7 +35,8 @@ exports.getDashboard = async (req, res) => {
       pendingValidations,
       pendingPayments,
       recentUsers,
-      totalRevenue
+      totalRevenue,
+      usersThisMonth
     ] = await Promise.all([
       prisma.user.count(),
       prisma.user.count({ where: { userType: 'patient', status: 'active' } }),
@@ -31,24 +49,22 @@ exports.getDashboard = async (req, res) => {
       prisma.user.findMany({
         take: 5,
         orderBy: { createdAt: 'desc' },
-        include: { profile: true }
+        select: {
+          id: true,
+          fullname: true,
+          email: true,
+          userType: true,
+          status: true,
+          createdAt: true,
+          profile: { select: { avatar: true } }
+        }
       }),
       prisma.transaction.aggregate({
         _sum: { amount: true },
         where: { status: 'validated' }
-      })
+      }),
+      prisma.user.count({ where: { createdAt: { gte: startOfMonth } } })
     ]);
-
-    // Get monthly trends (users created this month)
-    const usersThisMonth = await prisma.user.count({
-      where: { createdAt: { gte: startOfMonth } }
-    });
-
-    // Count VIP users (patients with VIP subscription)
-    // Since VIP subscriptions are for psychologues, count them separately
-    const vipUserCount = await prisma.vIPSubscription.count({
-      where: { isActive: true }
-    });
 
     res.json({
       stats: {
@@ -58,7 +74,7 @@ exports.getDashboard = async (req, res) => {
         utilisateursTotaux: totalUsers,
         rdvCeMois: appointmentsThisMonth,
         revenusTotaux: totalRevenue._sum.amount || 0,
-        abonnementsVIP: vipUserCount,
+        abonnementsVIP: vipSubscriptions,
         nouveauxCeMois: usersThisMonth
       },
       pendingValidations,
@@ -417,119 +433,152 @@ exports.rejectPayment = async (req, res) => {
 };
 
 // ============================================
-// STATISTICS
+// STATISTICS (optimized — GROUP BY instead of N+1 loops)
 // ============================================
 exports.getStatistics = async (req, res) => {
   try {
     const { period = '30d' } = req.query;
     const now = new Date();
-    let startDate;
 
+    // Determine how many months back to look for registrations/revenue
+    let registrationMonths = 6;
     switch (period) {
-      case '7d': startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000); break;
-      case '30d': startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000); break;
-      case '3m': startDate = new Date(now.getFullYear(), now.getMonth() - 3, 1); break;
-      case '12m': startDate = new Date(now.getFullYear(), now.getMonth() - 12, 1); break;
-      default: startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      case '7d': registrationMonths = 1; break;
+      case '3m': registrationMonths = 3; break;
+      case '12m': registrationMonths = 12; break;
     }
 
-    // User distribution
-    const [patientCount, vipPatientCount, psychologueCount, counselorCount] = await Promise.all([
+    const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - registrationMonths, 1);
+
+    // Phase 1 — user distribution (4 queries, parallel)
+    const [patientCount, psychologueCount, counselorCount, vipCount] = await Promise.all([
       prisma.user.count({ where: { userType: 'patient', status: 'active' } }),
-      prisma.vIPSubscription.count({ where: { isActive: true } }),
       prisma.user.count({ where: { userType: 'psychologue', status: 'active' } }),
-      prisma.user.count({ where: { userType: 'counselor', status: 'active' } })
+      prisma.user.count({ where: { userType: 'counselor', status: 'active' } }),
+      prisma.vIPSubscription.count({ where: { isActive: true } })
     ]);
 
     const total = patientCount + psychologueCount + counselorCount;
 
-    // Monthly registrations (last 6 months)
+    // Phase 2 — monthly registrations via raw GROUP BY (1 query)
+    const rawRegistrations = await prisma.$queryRawUnsafe(`
+      SELECT
+        date_trunc('month', "createdAt") AS month,
+        "userType",
+        COUNT(*)::int AS count
+      FROM "User"
+      WHERE "createdAt" >= $1
+      GROUP BY date_trunc('month', "createdAt"), "userType"
+      ORDER BY month ASC
+    `, sixMonthsAgo);
+
+    // Phase 3 — monthly revenue via raw GROUP BY (1 query)
+    const rawRevenue = await prisma.$queryRawUnsafe(`
+      SELECT
+        date_trunc('month', "createdAt") AS month,
+        SUM("amount")::int AS revenue
+      FROM "Transaction"
+      WHERE "status" = 'validated' AND "createdAt" >= $1
+      GROUP BY date_trunc('month', "createdAt")
+      ORDER BY month ASC
+    `, sixMonthsAgo);
+
+    // Phase 4 — daily appointments via raw GROUP BY (1 query)
+    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const rawAppointments = await prisma.$queryRawUnsafe(`
+      SELECT
+        DATE("appointmentDate") AS day,
+        COUNT(*)::int AS count
+      FROM "Appointment"
+      WHERE "appointmentDate" >= $1
+      GROUP BY DATE("appointmentDate")
+      ORDER BY day ASC
+    `, weekAgo);
+
+    // Phase 5 — top 5 professionals via optimised query (1 query, no N+1)
+    const rawTop = await prisma.$queryRawUnsafe(`
+      SELECT
+        u.id,
+        u.fullname,
+        u."userType",
+        COALESCE(p.specialite, '-') AS specialite,
+        COALESCE(p.rating, 0)::float AS rating,
+        COALESCE(p.tarif, 0) AS tarif,
+        COUNT(a.id)::int AS "patientCount",
+        COUNT(a.id) * COALESCE(p.tarif, 0) AS revenue
+      FROM "User" u
+      LEFT JOIN "Profile" p ON p."userId" = u.id
+      LEFT JOIN "Appointment" a ON a."doctorId" = u.id AND a.status = 'completed'
+      WHERE u."userType" IN ('psychologue', 'counselor') AND u.status = 'active'
+      GROUP BY u.id, u.fullname, u."userType", p.specialite, p.rating, p.tarif
+      ORDER BY p.rating DESC NULLS LAST
+      LIMIT 5
+    `);
+
+    // Build month labels in French
+    const monthNames = ['janv', 'févr', 'mars', 'avr', 'mai', 'juin', 'juill', 'août', 'sept', 'oct', 'nov', 'déc'];
+
     const registrationData = [];
-    for (let i = 5; i >= 0; i--) {
-      const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const monthEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
-      const monthLabel = monthStart.toLocaleString('fr-FR', { month: 'short' });
-
-      const [p, psy, c] = await Promise.all([
-        prisma.user.count({ where: { userType: 'patient', createdAt: { gte: monthStart, lt: monthEnd } } }),
-        prisma.user.count({ where: { userType: 'psychologue', createdAt: { gte: monthStart, lt: monthEnd } } }),
-        prisma.user.count({ where: { userType: 'counselor', createdAt: { gte: monthStart, lt: monthEnd } } })
-      ]);
-
-      registrationData.push({ month: monthLabel, patients: p, psychologues: psy, counselors: c });
-    }
-
-    // Monthly revenue (last 6 months)
     const revenueData = [];
-    for (let i = 5; i >= 0; i--) {
-      const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const monthEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
-      const monthLabel = monthStart.toLocaleString('fr-FR', { month: 'short' });
+    for (let i = 0; i < registrationMonths; i++) {
+      const m = new Date(sixMonthsAgo.getFullYear(), sixMonthsAgo.getMonth() + i, 1);
+      const monthLabel = monthNames[m.getMonth()];
+      const monthKey = `${m.getFullYear()}-${String(m.getMonth() + 1).padStart(2, '0')}-01`;
 
-      const agg = await prisma.transaction.aggregate({
-        _sum: { amount: true },
-        where: {
-          status: 'validated',
-          createdAt: { gte: monthStart, lt: monthEnd }
-        }
+      const monthRegs = rawRegistrations.filter(r =>
+        r.month instanceof Date
+          ? r.month.getMonth() === m.getMonth() && r.month.getFullYear() === m.getFullYear()
+          : String(r.month).startsWith(monthKey)
+      );
+
+      registrationData.push({
+        month: monthLabel,
+        patients: monthRegs.filter(r => r.userType === 'patient').reduce((s, r) => s + r.count, 0),
+        psychologues: monthRegs.filter(r => r.userType === 'psychologue').reduce((s, r) => s + r.count, 0),
+        counselors: monthRegs.filter(r => r.userType === 'counselor').reduce((s, r) => s + r.count, 0)
       });
 
-      revenueData.push({ month: monthLabel, revenue: agg._sum.amount || 0 });
+      const monthRev = rawRevenue.find(r =>
+        r.month instanceof Date
+          ? r.month.getMonth() === m.getMonth() && r.month.getFullYear() === m.getFullYear()
+          : String(r.month).startsWith(monthKey)
+      );
+      revenueData.push({ month: monthLabel, revenue: monthRev ? monthRev.revenue : 0 });
     }
 
-    // Daily appointments (last 7 days)
+    // Build daily appointments
     const dayNames = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
     const appointmentsByDay = [];
     for (let i = 6; i >= 0; i--) {
-      const day = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
-      const dayStart = new Date(day.getFullYear(), day.getMonth(), day.getDate());
-      const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
-      const count = await prisma.appointment.count({
-        where: { appointmentDate: { gte: dayStart, lt: dayEnd } }
-      });
-      appointmentsByDay.push({ day: dayNames[day.getDay()], count });
+      const day = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+      const dayKey = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`;
+      const match = rawAppointments.find(r =>
+        r.day instanceof Date
+          ? r.day.getDate() === day.getDate() && r.day.getMonth() === day.getMonth() && r.day.getFullYear() === day.getFullYear()
+          : String(r.day).startsWith(dayKey)
+      );
+      appointmentsByDay.push({ day: dayNames[day.getDay()], count: match ? match.count : 0 });
     }
-
-    // Top 5 professionals
-    const topProfessionals = await prisma.user.findMany({
-      where: {
-        userType: { in: ['psychologue', 'counselor'] },
-        status: 'active'
-      },
-      include: {
-        profile: true,
-        appointmentsAsDoctor: {
-          where: { status: 'completed' }
-        }
-      },
-      take: 5,
-      orderBy: { profile: { rating: 'desc' } }
-    });
-
-    const top5 = topProfessionals.map(p => {
-      const totalRevenue = p.appointmentsAsDoctor.length * (p.profile?.tarif || 0);
-      return {
-        fullname: p.fullname,
-        type: p.userType,
-        specialite: p.profile?.specialite || '-',
-        patientCount: p.appointmentsAsDoctor.length,
-        revenue: totalRevenue,
-        rating: Number(p.profile?.rating || 0)
-      };
-    });
 
     res.json({
       period,
       distribution: {
-        patientsNormaux: total > 0 ? Math.round((patientCount - vipPatientCount) / total * 100) : 0,
-        patientsVip: total > 0 ? Math.round(vipPatientCount / total * 100) : 0,
+        patientsNormaux: total > 0 ? Math.round((patientCount - vipCount) / total * 100) : 0,
+        patientsVip: total > 0 ? Math.round(vipCount / total * 100) : 0,
         psychologues: total > 0 ? Math.round(psychologueCount / total * 100) : 0,
         counselors: total > 0 ? Math.round(counselorCount / total * 100) : 0
       },
       registrations: registrationData,
       revenue: revenueData,
       appointmentsByDay,
-      topProfessionals: top5
+      topProfessionals: rawTop.map(p => ({
+        fullname: p.fullname,
+        type: p.userType,
+        specialite: p.specialite,
+        patientCount: Number(p.patientCount),
+        revenue: Number(p.revenue),
+        rating: Number(p.rating)
+      }))
     });
   } catch (error) {
     console.error('Statistics error:', error);
