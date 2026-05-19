@@ -404,6 +404,10 @@ function doctorConnectGroupToVideoServer() {
 // ============================================
 
 function setupGroupPeerConnection(participant, shouldInitiate = false) {
+    if (videoSocket && (participant.id === videoSocket.id || participant.socketId === videoSocket.id)) {
+        console.log('[GroupCall] Skipping self-participant:', participant.name);
+        return;
+    }
     if (peerConnections[participant.id]) {
         otherParticipants[participant.id] = {
             ...(otherParticipants[participant.id] || {}),
@@ -512,9 +516,6 @@ function setupGroupPeerConnection(participant, shouldInitiate = false) {
     }
 }
 
-function createGroupPeerConnection(participant) {
-    setupGroupPeerConnection(participant, false);
-}
 
 function createAndSendGroupOffer(targetId) {
     const pc = peerConnections[targetId];

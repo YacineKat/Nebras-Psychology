@@ -5,19 +5,6 @@
 let currentUser = null;
 let activeProfileSummaryField = null;
 
-function highlightCurrentSidebarLink() {
-    const currentPage = window.location.pathname.split('/').pop().toLowerCase();
-    const navItems = document.querySelectorAll('.nav-item');
-    navItems.forEach(item => {
-        const href = item.getAttribute('href')?.split('/').pop().toLowerCase();
-        if (href && href === currentPage) {
-            item.classList.add('active');
-        } else {
-            item.classList.remove('active');
-        }
-    });
-}
-
 document.addEventListener('DOMContentLoaded', async () => {
     if (!isLoggedIn()) {
         window.location.href = 'auth.html';
@@ -700,7 +687,7 @@ window.showBesoinsSection = showBesoinsSection;
 window.nextStep = nextStep;
 window.prevStep = prevStep;
 window.submitNeeds = submitNeeds;
-window.highlightCurrentSidebarLink = highlightCurrentSidebarLink;
+// highlightCurrentSidebarLink removed — use global from api.js
 window.startProfileFieldEdit = startProfileFieldEdit;
 window.cancelProfileFieldEdit = closeProfileFieldEdit;
 window.saveProfileFieldEdit = saveProfileFieldEdit;
@@ -723,14 +710,13 @@ let currentVideoSession = null;
 
 async function checkActiveVideoSession() {
     try {
-        const response = await doctorAPI.getActiveVideoSession();
-        if (response && response.activeSession) {
-            const session = response.activeSession;
+        const status = await appointmentAPI.getMyCallStatus();
+        if (status?.inCall) {
             const sessionSection = document.getElementById('activeSessionSection');
             const sessionName = document.getElementById('sessionPsychologistName');
             
-            currentVideoSession = session;
-            sessionName.textContent = `avec ${session.doctorName || 'votre psychologue'}`;
+            currentVideoSession = status;
+            sessionName.textContent = `avec ${status.doctorName || 'votre psychologue'}`;
             sessionSection.style.display = 'block';
         } else {
             const sessionSection = document.getElementById('activeSessionSection');
@@ -773,9 +759,13 @@ async function handleJoinCallRequest() {
     }
 
     try {
-        const active = await doctorAPI.getActiveVideoSession();
-        if (active?.activeSession) {
-            showPatientVideoUI(active.activeSession);
+        const status = await appointmentAPI.getMyCallStatus();
+        if (status?.inCall) {
+            showPatientVideoUI({
+                id: status.appointmentId,
+                doctorId: status.doctorId,
+                doctorName: status.doctorName
+            });
             return;
         }
     } catch (error) {
@@ -1164,7 +1154,7 @@ function togglePatientChat() {
 
 async function loadPatientChatHistory(doctorId) {
     try {
-        const response = await fetch('http://localhost:3000/api/messages/with/' + doctorId, {
+        const response = await fetch(window.API_URL + '/messages/with/' + doctorId, {
             headers: { 'Authorization': 'Bearer ' + localStorage.getItem('nebras_token') }
         });
         const messages = await response.json();
@@ -1195,7 +1185,7 @@ async function sendPatientMessage() {
     if (!content || !window.PatientCallState.currentDoctorId) return;
     
     try {
-        const response = await fetch('http://localhost:3000/api/messages', {
+        const response = await fetch(window.API_URL + '/messages', {
             method: 'POST',
             headers: {
                 'Authorization': 'Bearer ' + localStorage.getItem('nebras_token'),
@@ -1292,9 +1282,9 @@ setTimeout(function() {
     if (typeof initPatientCallListener === 'function') {
         initPatientCallListener();
     }
-    var greetingTitle = document.getElementById('greetingTitle');
+    const greetingTitle = document.getElementById('greetingTitle');
     if (greetingTitle) {
-        var user = getCurrentUser();
+        const user = getCurrentUser();
         if (user) greetingTitle.textContent = 'Bonjour, ' + (user.fullname || '');
     }
 }, 500);

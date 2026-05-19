@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost:3000/api';
+const API_BASE = window.API_URL;
 
 // Catch unhandled promise rejections globally to identify source
 window.addEventListener('unhandledrejection', (event) => {
@@ -11,20 +11,6 @@ window.addEventListener('unhandledrejection', (event) => {
 let groups = [];
 let currentGroupId = null;
 let currentGroupDetails = null;
-
-function showToast(message, type = 'info') {
-    const container = document.querySelector('.toast-container') || (function() {
-        const c = document.createElement('div');
-        c.className = 'toast-container';
-        document.body.appendChild(c);
-        return c;
-    })();
-    const toast = document.createElement('div');
-    toast.className = 'toast ' + type;
-    toast.textContent = message;
-    container.appendChild(toast);
-    setTimeout(() => { toast.remove(); }, 3000);
-}
 
 // Main server socket connection for real-time events
 let mainSocket = null;
@@ -41,7 +27,7 @@ function initMainSocket() {
         return;
     }
 
-    mainSocket = io('http://localhost:3000', {
+    mainSocket = io(window.API_URL.replace('/api', ''), {
         transports: ['websocket', 'polling'],
         auth: { token },
         reconnection: true,
@@ -738,12 +724,6 @@ function switchGroupTab(tab) {
         document.querySelector('.group-detail-tab:last-child').classList.add('active');
         document.getElementById('participantsPanel').classList.add('active');
     }
-}
-
-function logout() {
-    localStorage.removeItem('nebras_token');
-    localStorage.removeItem('nebras_user');
-    window.location.href = 'home.html';
 }
 
 document.addEventListener('keydown', function(e) {

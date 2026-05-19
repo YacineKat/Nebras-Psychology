@@ -47,6 +47,9 @@ let groupCallDuration = 90; // minutes, used to start countdown on first partici
 // Pre-fetched participant avatars for group calls: { [userId]: avatarUrl }
 let participantAvatars = {};
 
+// Doctor/counselor distinction
+let isCounselor = false;
+
 // P2P Connection
 let peerConnection = null;
 const videoServerUrl = window.APP_CONFIG.videoServerUrl;

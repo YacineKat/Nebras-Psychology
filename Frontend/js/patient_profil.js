@@ -1,16 +1,3 @@
-function highlightCurrentSidebarLink() {
-    const currentPage = window.location.pathname.split('/').pop().toLowerCase();
-    const navItems = document.querySelectorAll('.nav-item');
-    navItems.forEach(item => {
-        const href = item.getAttribute('href')?.split('/').pop().toLowerCase();
-        if (href && href === currentPage) {
-            item.classList.add('active');
-        } else {
-            item.classList.remove('active');
-        }
-    });
-}
-
 function updateSidebarWithUserData() {
     const user = getCurrentUser();
     if (!user) return;
@@ -547,11 +534,11 @@ window.addEventListener('load', function() {
 });
 
 (function() {
-    var user = getCurrentUser();
+    const user = getCurrentUser();
     if (user) {
-        var profileName = document.getElementById('profileName');
+        const profileName = document.getElementById('profileName');
         if (profileName) profileName.textContent = user.fullname || user.email || '';
-        var profileEmail = document.getElementById('profileEmail');
+        const profileEmail = document.getElementById('profileEmail');
         if (profileEmail) profileEmail.textContent = user.email || '';
     }
 })();

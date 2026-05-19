@@ -69,6 +69,7 @@ async function startScreenShare() {
         const localVideo = document.getElementById('localVideo');
         if (localVideo) {
             console.debug('[vcc] startScreenShare: setting local preview to displayStream');
+            localVideo.style.transform = 'none';
             try {
                 localVideo.srcObject = displayStream;
                 await localVideo.play().catch(err => console.debug('[vcc] localVideo.play() rejected', err));
@@ -155,6 +156,7 @@ async function stopScreenShare() {
         const localVideo = document.getElementById('localVideo');
         if (localVideo) {
             console.debug('[vcc] stopScreenShare: restoring local preview to localStream', { hasLocalStream: !!localStream });
+            localVideo.style.transform = '';
             try {
                 localVideo.srcObject = localStream;
                 await localVideo.play().catch(err => console.debug('[vcc] localVideo.play() rejected during restore', err));

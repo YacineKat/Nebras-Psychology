@@ -92,7 +92,7 @@ window.submitGroupRating = async function() {
         const comment = document.getElementById('groupRatingComment')?.value?.trim() || '';
         const token = localStorage.getItem('nebras_token');
 
-        const response = await fetch(API_URL + '/groups/rate', {
+        const response = await fetch(window.API_URL + '/groups/rate', {
             method: 'POST',
             headers: {
                 'Authorization': 'Bearer ' + token,

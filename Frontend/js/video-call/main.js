@@ -222,15 +222,6 @@ async function initializeDoctorGroupCall() {
         await initializeMedia();
         attachLocalTracksToActivePeerConnections();
         hydrateGroupParticipantMetadata();
-        const participantGrid = document.getElementById('participantGrid');
-        if (participantGrid) {
-            participantGrid.className = participantGrid.className
-                .split(' ')
-                .filter((className) => !className.startsWith('count-'))
-                .join(' ')
-                .trim();
-            participantGrid.classList.add('count-2');
-        }
         await connectPromise;
         initDoctorMainSocket();
     } catch (error) {
@@ -243,11 +234,9 @@ async function initializeMedia() {
     try {
         localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         
-        // Attach raw stream to local video element for preview with CSS mirror
         const videoEl = document.getElementById('localVideo');
         if (videoEl) {
             videoEl.srcObject = localStream;
-            // Do not force a mirrored transform here â€” leave mirroring to explicit UI state
             videoEl.play().catch(e => console.log('Play error:', e));
         }
         
@@ -286,15 +275,6 @@ function attachLocalTracksToActivePeerConnections() {
         });
     }
 }
-
-// MOVED TO video-call-webrtc.js
-
-// Call controls
-// MOVED TO video-call-media.js
-
-// MOVED TO video-call-screen-share.js
-
-// MOVED TO video-call-doctor-actions.js and video-call-join-requests.js
 
 // End call
 async function endCall() {
@@ -420,8 +400,6 @@ window.closeEditCallModal = closeEditCallModal;
 window.saveCallDetails = saveCallDetails;
 window.openParticipantActions = openParticipantActions;
 window.closeParticipantActionsModal = closeParticipantActionsModal;
-window.toggleParticipantMute = toggleParticipantMute;
-window.toggleParticipantVideo = toggleParticipantVideo;
 window.removeParticipant = removeParticipant;
 window.toggleEmojiPicker = toggleEmojiPicker;
 window.insertEmoji = insertEmoji;

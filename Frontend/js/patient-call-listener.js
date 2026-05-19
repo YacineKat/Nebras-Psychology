@@ -15,7 +15,7 @@ let patientCallListenerInitialized = false;
 let sessionSocket = null;
 const callPollIntervalMs = 2000;
 let callStatusRequestInFlight = false;
-const socketUrl = 'http://localhost:3000';
+const socketUrl = window.API_URL.replace('/api', '');
 
 // Rating deduplication — prevents showing the group rating modal more than once per session
 function getSessionRatingKey(groupId, doctorId) {

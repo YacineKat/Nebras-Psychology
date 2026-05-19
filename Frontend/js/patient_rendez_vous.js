@@ -253,12 +253,6 @@ function getMediaIcon(mediaType) {
     return icons[mediaType] || '';
 }
 
-function formatDate(dateStr) {
-    if (!dateStr) return '-';
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
-}
-
 function updateBadge() {
     const pendingCount = appointments.filter(apt => apt.status === 'pending' && !isAppointmentInHistory(apt)).length;
     const badge = document.querySelector('.nav-item[href="patient_rendez_vous.html"] .badge');
@@ -279,22 +273,9 @@ async function cancelAppointment(appointmentId) {
     }
 }
 
-function highlightCurrentSidebarLink() {
-    const currentPage = window.location.pathname.split('/').pop().toLowerCase();
-    const navItems = document.querySelectorAll('.nav-item');
-    navItems.forEach(item => {
-        const href = item.getAttribute('href')?.split('/').pop().toLowerCase();
-        if (href && href === currentPage) {
-            item.classList.add('active');
-        } else {
-            item.classList.remove('active');
-        }
-    });
-}
-
 window.cancelAppointment = cancelAppointment;
-window.highlightCurrentSidebarLink = highlightCurrentSidebarLink;
-window.showToast = showToast;
+// highlightCurrentSidebarLink removed — use global from api.js
+
 
 const tabs = document.querySelectorAll('.rdv-tab');
 const contents = document.querySelectorAll('.rdv-tab-content');

@@ -2,10 +2,6 @@
 // VIDEO CALL TIMERS - Call duration and countdown
 // ============================================
 
-function startCallTimer() {
-    callStartTime = Date.now();
-    callTimerInterval = setInterval(updateCallDuration, 1000);
-}
 
 function updateCallDuration() {
     if (!callStartTime) return;

@@ -84,17 +84,6 @@ function closeParticipantActionsModal() {
     selectedParticipantId = null;
 }
 
-function toggleParticipantMute() {
-    if (!selectedParticipantId || !videoSocket?.connected) return;
-    showToast('Fonctionnalité non disponible pour le moment', 'info');
-    closeParticipantActionsModal();
-}
-
-function toggleParticipantVideo() {
-    if (!selectedParticipantId || !videoSocket?.connected) return;
-    showToast('Fonctionnalité non disponible pour le moment', 'info');
-    closeParticipantActionsModal();
-}
 
 function removeParticipant() {
     if (!selectedParticipantId || !videoSocket?.connected) return;

@@ -1,17 +1,19 @@
-// ============================================
-// PATIENT MESSAGERIE - Simple & Clean
-// ============================================
-
 let conversations = [];
 let currentChat = null;
 let conversationsSignature = '';
 let currentMessagesSignature = '';
-let currentMessages = [];
-let currentMessageIds = new Set();
-let patientMessagingSocket = null;
-let patientMessagingSocketBound = false;
+let isChatOpen = false;
+let messagingSocketBound = false;
 
 document.addEventListener('DOMContentLoaded', init);
+
+function getMessagingPage() {
+    return getUserType() === 'counselor' ? 'counselor_messagerie.html' : 'psychologue_messagerie.html';
+}
+
+function getMessagingBadgeSelector() {
+    return `.nav-item[href="${getMessagingPage()}"] .badge`;
+}
 
 async function init() {
     if (!isLoggedIn()) {
@@ -19,61 +21,44 @@ async function init() {
         return;
     }
 
-    if (getUserType() !== 'patient') {
+    if (getUserType() !== 'psychologue' && getUserType() !== 'counselor') {
         redirectByUserType(getUserType());
         return;
     }
 
-    // Load user name
     const user = getCurrentUser();
     if (user) {
         const name = user.fullname || user.email || '';
         document.querySelectorAll('.user-name').forEach(el => el.textContent = name);
     }
 
-    // Check for pre-selected doctor from psychologue page
-    const preSelectedId = localStorage.getItem('selectedDoctorId');
-    const preSelectedName = localStorage.getItem('selectedDoctorName');
-    localStorage.removeItem('selectedDoctorId');
-    localStorage.removeItem('selectedDoctorName');
-
-    // Load conversations
     await loadConversations();
-        updateUnreadBadgeFromState();
-
+    await updateUnreadBadge();
     connectMessagingRealtime();
-
-    // Open pre-selected conversation if exists
-    if (preSelectedId) {
-        const conv = conversations.find(c => c.partner?.id === preSelectedId);
-        if (conv) {
-            openChat(conv);
-        } else if (preSelectedName) {
-            startNewChat(preSelectedId, preSelectedName);
-        }
-    }
-
     highlightCurrentSidebarLink();
 }
 
-async function loadConversations() {
+async function loadConversations(silent = false) {
     const listEl = document.querySelector('.conversations-list');
-
-    try {
-        const nextConversations = await messageAPI.getConversations() || [];
-        const nextSignature = nextConversations.map(c => `${c.partner?.id}:${c.lastMessageTime || ''}:${c.lastMessage || ''}:${c.unreadCount || 0}`).join('|');
-        conversations = nextConversations;
-
-        if (nextSignature === conversationsSignature && listEl.dataset.loaded === '1') {
-            return false;
-        }
-
-        conversationsSignature = nextSignature;
-    } catch (e) {
-        console.error(e);
-        conversations = [];
-        conversationsSignature = '';
+    if (!silent && !listEl.dataset.loaded) {
+        listEl.innerHTML = '<div class="loading">Chargement...</div>';
     }
+
+    let nextConversations = [];
+    try {
+        nextConversations = await messageAPI.getConversations() || [];
+    } catch (e) {
+        nextConversations = [];
+    }
+
+    const nextSignature = nextConversations.map(c => `${c.partner?.id}:${c.lastMessageTime || ''}:${c.lastMessage || ''}:${c.unreadCount || 0}`).join('|');
+    conversations = nextConversations;
+
+    if (nextSignature === conversationsSignature && listEl.dataset.loaded === '1') {
+        return false;
+    }
+
+    conversationsSignature = nextSignature;
 
     if (conversations.length === 0) {
         listEl.innerHTML = `
@@ -103,23 +88,21 @@ function openChatById(userId) {
 
 async function openChat(conv) {
     currentChat = conv;
+    isChatOpen = true;
     currentMessagesSignature = '';
     currentMessages = [];
     currentMessageIds = new Set();
     const userId = conv.partner?.id;
-    const userName = conv.partner?.fullname || 'Utilisateur';
-    const avatarHtml = renderAvatarMarkup(conv.partner, 40, '18px');
+    const userName = conv.partner?.fullname || 'Patient';
 
-    // Update UI
-    document.querySelectorAll('.conversation-item').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.conversation-item')?.forEach(el => el.classList.remove('active'));
     document.querySelector(`.conversation-item[data-id="${userId}"]`)?.classList.add('active');
 
-    // Show chat area
     const area = document.querySelector('.conversation-area');
     area.innerHTML = `
         <div class="chat-header">
             <div class="chat-user">
-                ${avatarHtml}
+                ${renderAvatarMarkup(conv.partner, 40, '18px')}
                 <span class="name">${escapeHtml(userName)}</span>
             </div>
         </div>
@@ -128,20 +111,20 @@ async function openChat(conv) {
         </div>
         <div class="chat-input">
             <input type="text" id="msgInput" placeholder="Tapez votre message..." onkeypress="if(event.key==='Enter')sendMsg()">
-            <button class="send-btn" onclick="sendMsg()">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-            </button>
+            <button onclick="sendMsg()" class="send-btn">➤</button>
         </div>
     `;
 
-    // Load messages
     try {
         const messages = await messageAPI.getWithUser(userId) || [];
         renderMessages(messages, userId);
         markConversationRead(userId);
     } catch (e) {
         console.error(e);
-        document.getElementById('chatMessages').innerHTML = '<div class="empty-state" style="padding: 40px;">Erreur de chargement</div>';
+        const container = document.getElementById('chatMessages');
+        if (container) {
+            container.innerHTML = '<div style="text-align: center; color: var(--text-light); padding: 40px;">Erreur de chargement</div>';
+        }
     }
 }
 
@@ -158,9 +141,9 @@ function renderMessages(messages, partnerId) {
     currentMessagesSignature = nextSignature;
     currentMessages = messages.slice();
     currentMessageIds = new Set(messages.map(m => m.id));
-    
+
     if (!messages.length) {
-        container.innerHTML = '<div class="empty-state">Commencez la conversation !</div>';
+        container.innerHTML = '<div style="text-align: center; color: var(--text-light); padding: 40px;">Commencez la conversation !</div>';
         return;
     }
 
@@ -179,19 +162,19 @@ function renderMessages(messages, partnerId) {
 
 async function sendMsg() {
     const input = document.getElementById('msgInput');
-    const content = input.value.trim();
-    
+    const content = input?.value.trim();
+
     if (!content || !currentChat) return;
 
     input.value = '';
-    
+
     try {
         const socket = connectMessagingRealtime();
         if (socket) {
             await sendMessageRealtime(currentChat.partner?.id, content);
         } else {
             await messageAPI.send(currentChat.partner?.id, content);
-            await loadConversations();
+            await loadConversations(true);
         }
     } catch (e) {
         console.error(e);
@@ -199,46 +182,17 @@ async function sendMsg() {
     }
 }
 
-function startNewChat(doctorId, doctorName) {
-    currentChat = { partner: { id: doctorId, fullname: doctorName } };
-    
-    const area = document.querySelector('.conversation-area');
-    area.innerHTML = `
-        <div class="chat-header">
-            <div class="chat-user">
-                ${renderAvatarMarkup(currentChat.partner, 40, '18px')}
-                <span class="name">${escapeHtml(doctorName)}</span>
-            </div>
-        </div>
-        <div class="chat-messages" id="chatMessages">
-            <div class="empty-state">Nouvelle conversation avec ${escapeHtml(doctorName)}</div>
-        </div>
-        <div class="chat-input">
-            <input type="text" id="msgInput" placeholder="Tapez votre message..." onkeypress="if(event.key==='Enter')sendMsg()">
-            <button class="send-btn" onclick="sendMsg()">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-            </button>
-        </div>
-    `;
-}
-
-async function loadCurrentThread() {
-    if (!currentChat?.partner?.id) return;
-    const messages = await messageAPI.getWithUser(currentChat.partner.id) || [];
-    renderMessages(messages, currentChat.partner.id);
-}
-
 function connectMessagingRealtime() {
-    if (!patientMessagingSocket && typeof connectMessagingSocket === 'function') {
-        patientMessagingSocket = connectMessagingSocket();
+    if (!messagingSocket && typeof connectMessagingSocket === 'function') {
+        messagingSocket = connectMessagingSocket();
     }
 
-    if (patientMessagingSocket && !patientMessagingSocketBound) {
-        patientMessagingSocketBound = true;
-        patientMessagingSocket.on('message:new', handleRealtimeMessage);
+    if (messagingSocket && !messagingSocketBound) {
+        messagingSocketBound = true;
+        messagingSocket.on('message:new', handleRealtimeMessage);
     }
 
-    return patientMessagingSocket;
+    return messagingSocket;
 }
 
 function sendMessageRealtime(receiverId, content) {
@@ -266,13 +220,20 @@ function handleRealtimeMessage(payload) {
 
     const currentUserId = getCurrentUser()?.id;
     const partnerId = message.senderId === currentUserId ? message.receiverId : message.senderId;
+
     if (!partnerId) return;
 
     upsertConversationFromMessage(message, partnerId);
 
-    if (currentChat?.partner?.id === partnerId) {
+    const activePartnerId = currentChat?.partner?.id;
+    if (activePartnerId === partnerId) {
         appendMessageToThread(message);
         markConversationRead(partnerId);
+        return;
+    }
+
+    if (message.receiverId === currentUserId) {
+        incrementUnreadBadge();
     }
 }
 
@@ -293,8 +254,11 @@ function appendMessageToThread(message) {
         <div class="msg-time">${formatTime(message.createdAt)}</div>
     `;
 
+    const isNearBottom = (container.scrollHeight - container.scrollTop - container.clientHeight) < 80;
     container.appendChild(wrapper);
-    container.scrollTop = container.scrollHeight;
+    if (isNearBottom || isMe) {
+        container.scrollTop = container.scrollHeight;
+    }
 }
 
 function upsertConversationFromMessage(message, partnerId) {
@@ -315,7 +279,11 @@ function upsertConversationFromMessage(message, partnerId) {
         unreadCount: message.senderId === currentUserId ? 0 : (currentChat?.partner?.id === partnerId ? 0 : (existing?.unreadCount || 0) + 1)
     };
 
-    conversations = [nextConversation, ...conversations.filter(conv => conv.partner?.id !== partnerId)];
+    conversations = [
+        nextConversation,
+        ...conversations.filter(conv => conv.partner?.id !== partnerId)
+    ];
+
     renderOrMoveConversationItem(nextConversation, currentChat?.partner?.id === partnerId);
 }
 
@@ -323,14 +291,17 @@ function renderOrMoveConversationItem(conversation, isActive = false) {
     const listEl = document.querySelector('.conversations-list');
     if (!listEl || !conversation?.partner?.id) return;
 
+    const partnerId = conversation.partner.id;
     const temp = document.createElement('div');
     temp.innerHTML = renderConversationItem(conversation).trim();
     const item = temp.firstElementChild;
     if (!item) return;
 
-    if (isActive) item.classList.add('active');
+    if (isActive) {
+        item.classList.add('active');
+    }
 
-    const existing = listEl.querySelector(`.conversation-item[data-id="${conversation.partner.id}"]`);
+    const existing = listEl.querySelector(`.conversation-item[data-id="${partnerId}"]`);
     if (existing) {
         existing.replaceWith(item);
     } else {
@@ -340,15 +311,22 @@ function renderOrMoveConversationItem(conversation, isActive = false) {
 
 function markConversationRead(partnerId) {
     const conversation = conversations.find(conv => conv.partner?.id === partnerId);
-    if (!conversation) return;
+    if (!conversation || conversation.unreadCount === 0) return;
 
     conversation.unreadCount = 0;
     renderOrMoveConversationItem(conversation, true);
     updateUnreadBadgeFromState();
 }
 
+function incrementUnreadBadge() {
+    const badge = document.querySelector(getMessagingBadgeSelector());
+    if (!badge) return;
+    const current = parseInt(badge.textContent || '0', 10) || 0;
+    badge.textContent = String(current + 1);
+}
+
 function updateUnreadBadgeFromState() {
-    const badge = document.querySelector('.nav-item[href="patient_messagerie.html"] .badge');
+    const badge = document.querySelector(getMessagingBadgeSelector());
     if (!badge) return;
     const count = conversations.reduce((total, conv) => total + (conv.unreadCount || 0), 0);
     badge.textContent = String(count);
@@ -356,16 +334,18 @@ function updateUnreadBadgeFromState() {
 
 function renderConversationItem(c) {
     const partner = c.partner || {};
-    const name = partner.fullname || 'Utilisateur';
+    const name = partner.fullname || 'Patient';
 
     return `
         <div class="conversation-item" data-id="${partner.id}" onclick="openChatById('${partner.id}')">
-            <div class="conv-avatar">${renderAvatarMarkup(partner, 48, '20px')}</div>
-            <div class="conv-details">
-                <div class="conv-name">${escapeHtml(name)}</div>
-                <div class="conv-preview">${escapeHtml(c.lastMessage || 'Aucun message')}</div>
+            <div class="conv-avatar">
+                ${renderAvatarMarkup(partner, 48, '20px')}
             </div>
-            <div class="conv-time">${formatTime(c.lastMessageTime)}</div>
+            <div class="conv-details">
+                <div class="conv-name" style="font-weight: 600; color: var(--text-dark);">${escapeHtml(name)}</div>
+                <div style="font-size: 13px; color: var(--text-light); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(c.lastMessage || 'Aucun message')}</div>
+            </div>
+            <div class="conv-time" style="font-size: 12px; color: var(--text-light);">${formatTime(c.lastMessageTime)}</div>
         </div>
     `;
 }
@@ -391,7 +371,7 @@ function formatTime(dateStr) {
     const d = new Date(dateStr);
     const now = new Date();
     const diff = Math.floor((now - d) / (1000 * 60 * 60 * 24));
-    
+
     if (diff === 0) return d.toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'});
     if (diff === 1) return 'Hier';
     if (diff < 7) return d.toLocaleDateString('fr-FR', {weekday:'short'});
@@ -408,11 +388,13 @@ async function updateUnreadBadge() {
     try {
         const result = await messageAPI.getUnreadCount().catch(() => null);
         const count = result?.unreadCount || 0;
-        const badge = document.querySelector('.nav-item[href="patient_messagerie.html"] .badge');
+        const badge = document.querySelector(getMessagingBadgeSelector());
         if (badge) badge.textContent = count;
     } catch (e) {}
 }
 
-// Expose functions globally
+document.addEventListener('visibilitychange', () => {
+});
+
 window.openChatById = openChatById;
 window.sendMsg = sendMsg;

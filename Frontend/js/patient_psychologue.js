@@ -26,21 +26,6 @@ let bookingAvailability = null;
 let bookingAvailabilityRequestId = 0;
 let bookingSelectedTime = '';
 
-// Toast notification system
-function showToast(message, type = 'success') {
-    const container = document.querySelector('.toast-container') || (() => {
-        const c = document.createElement('div');
-        c.className = 'toast-container';
-        document.body.appendChild(c);
-        return c;
-    })();
-    const toast = document.createElement('div');
-    toast.className = 'toast ' + type;
-    toast.textContent = message;
-    container.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
-}
-
 document.addEventListener('DOMContentLoaded', async () => {
     if (!isLoggedIn()) {
         showToast('Veuillez vous connecter d\'abord', 'error');
@@ -877,19 +862,6 @@ function switchTab(tab) {
     }
 }
 
-function highlightCurrentSidebarLink() {
-    const currentPage = window.location.pathname.split('/').pop().toLowerCase();
-    const navItems = document.querySelectorAll('.nav-item');
-    navItems.forEach(item => {
-        const href = item.getAttribute('href')?.split('/').pop().toLowerCase();
-        if (href && href === currentPage) {
-            item.classList.add('active');
-        } else {
-            item.classList.remove('active');
-        }
-    });
-}
-
 window.viewDoctor = viewDoctor;
 window.closePsyDetail = closePsyDetail;
 window.bookAppointment = openBookingModal;
@@ -903,8 +875,8 @@ window.closeUrgentModal = closeUrgentModal;
 window.activateUrgent = activateUrgent;
 window.selectBookingTime = selectBookingTime;
 window.switchTab = switchTab;
-window.highlightCurrentSidebarLink = highlightCurrentSidebarLink;
-window.showToast = showToast;
+// highlightCurrentSidebarLink removed — use global from api.js
+
 
 document.getElementById('bookingDate')?.addEventListener('change', () => {
     if (document.getElementById('bookingModal')?.classList.contains('active')) {

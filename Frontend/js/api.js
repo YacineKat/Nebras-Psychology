@@ -5,6 +5,10 @@
 
 window.API_URL = 'http://localhost:3000/api';
 
+function setApiBaseUrl(url) {
+  window.API_URL = url.replace(/\/+$/, '') + '/api';
+}
+
 // ============================================
 // HELPER FUNCTION
 // ============================================
@@ -134,7 +138,7 @@ const doctorAPI = {
 
   unblockTimeSlot: async (slotId) => {
     return fetchAPI(`/doctors/schedule/${slotId}/unblock`, {
-      method: 'POST'
+      method: 'PUT'
     });
   },
 
@@ -202,33 +206,10 @@ const doctorAPI = {
     });
   },
 
-  endVideoSession: async (appointmentId) => {
-    return fetchAPI(`/appointments/${appointmentId}/video/end`, {
-      method: 'POST'
-    });
-  },
-
-  getActiveVideoSession: async () => {
-    return fetchAPI('/appointments/video/active');
-  },
-
-  // Call state (real-time sync)
-  startCallState: async (patientId, appointmentId) => {
-    return fetchAPI('/appointments/call/start', {
-      method: 'POST',
-      body: JSON.stringify({ patientId, appointmentId })
-    });
-  },
-
-  endCallState: async () => {
-    return fetchAPI('/appointments/call/end', {
-      method: 'POST'
-    });
-  },
-
   getCallStatus: async (doctorId) => {
     return fetchAPI(`/appointments/call/status/${doctorId}`);
-  }
+  },
+
 };
 
 // ============================================
@@ -306,7 +287,6 @@ const appointmentAPI = {
     });
   },
 
-  // Call state (real-time sync)
   startCallState: async (patientId, appointmentId) => {
     return fetchAPI('/appointments/call/start', {
       method: 'POST',
@@ -326,7 +306,8 @@ const appointmentAPI = {
 
   getMyCallStatus: async () => {
     return fetchAPI('/appointments/call/status');
-  }
+  },
+
 };
 
 // ============================================
@@ -356,7 +337,7 @@ const messageAPI = {
 // ============================================
 // MESSAGING SOCKET
 // ============================================
-const messagingSocketUrl = 'http://localhost:3000';
+const messagingSocketUrl = window.API_URL.replace('/api', '');
 let messagingSocket = null;
 
 function connectMessagingSocket() {
@@ -444,9 +425,6 @@ function formatDate(dateString) {
   return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-function formatTime(timeString) {
-  return timeString;
-}
 
 // ============================================
 // CENTRALIZED UI HELPERS
@@ -592,11 +570,15 @@ const adminAPI = {
     return fetchAPI(`/admin/statistics${queryString ? '?' + queryString : ''}`);
   },
 
-  getSettings: async () => {
-    return fetchAPI('/admin/settings');
-  },
+    getSettings: async () => {
+      return fetchAPI('/admin/settings');
+    },
 
-  updateSettings: async (data) => {
+    getBadges: async () => {
+      return fetchAPI('/admin/badges');
+    },
+
+    updateSettings: async (data) => {
     return fetchAPI('/admin/settings', {
       method: 'PUT',
       body: JSON.stringify(data)
@@ -720,7 +702,6 @@ window.getCurrentUser = getCurrentUser;
 window.getUserType = getUserType;
 window.redirectByUserType = redirectByUserType;
 window.formatDate = formatDate;
-window.formatTime = formatTime;
 window.showToast = showToast;
 window.logout = logout;
 window.escapeHtml = escapeHtml;

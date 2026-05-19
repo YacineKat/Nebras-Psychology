@@ -60,6 +60,10 @@ body {
     color: white;
 }
 
+#localVideo {
+    transform: scaleX(-1);
+}
+
 #remoteVideo {
     transform: none !important;
 }

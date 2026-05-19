@@ -1,7 +1,7 @@
 let settingsCache = null;
 
 function resolvePublicSettingsUrl() {
-  return 'http://localhost:3000/api/settings';
+  return window.API_URL + '/settings';
 }
 
 async function loadPublicSettings() {

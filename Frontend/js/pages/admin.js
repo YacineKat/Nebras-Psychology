@@ -79,11 +79,10 @@ async function saveSettings() {
 
 async function loadSidebarBadges() {
     try {
-        const data = await adminAPI.getDashboard();
-        const d = data.dashboard;
-        document.getElementById('usersBadge').textContent = d.pendingUsers || '';
-        document.getElementById('validationsBadge').textContent = d.pendingValidations || '';
-        document.getElementById('paymentsBadge').textContent = d.pendingPayments || '';
+        const data = await adminAPI.getBadges();
+        document.getElementById('usersBadge').textContent = data.pendingUsers || '';
+        document.getElementById('validationsBadge').textContent = data.pendingValidations || '';
+        document.getElementById('paymentsBadge').textContent = data.pendingPayments || '';
     } catch (e) {}
 }
 
@@ -167,7 +166,7 @@ function openAddUserModal() {
                 await window.authAPI.register({ fullname, email, password, userType });
                 showToast('Utilisateur créé', 'success');
                 loadDashboard();
-            } catch(e) { showToast('Erreur création', 'error'); }
+            } catch(e) { showToast(e.message || 'Erreur création', 'error'); }
         }
     });
 }
@@ -254,6 +253,7 @@ function openDeleteModal(id, name) {
                 await adminAPI.deleteUser(id);
                 showToast(name + ' supprimé', 'success');
                 loadDashboard();
+                if (document.getElementById('searchInput')) loadUsers();
             } catch(e) { showToast('Erreur suppression', 'error'); }
         }
     });
@@ -271,6 +271,7 @@ function openApproveModal(id, name) {
                 await adminAPI.approveUser(id);
                 showToast(name + ' approuvé', 'success');
                 loadDashboard();
+                if (document.getElementById('searchInput')) loadUsers();
             } catch(e) { showToast('Erreur approbation', 'error'); }
         }
     });
@@ -288,6 +289,7 @@ function openRejectModal(id, name) {
                 await adminAPI.rejectUser(id, reason);
                 showToast(name + ' rejeté', 'success');
                 loadDashboard();
+                if (document.getElementById('searchInput')) loadUsers();
             } catch(e) { showToast('Erreur rejet', 'error'); }
         }
     });
@@ -302,7 +304,9 @@ function debounceSearch() {
 }
 
 async function loadUsers() {
-    const search = document.getElementById('searchInput').value;
+    const searchInput = document.getElementById('searchInput');
+    if (!searchInput) return;
+    const search = searchInput.value;
     const type = document.getElementById('typeFilter').value;
     const status = document.getElementById('statusFilter').value;
 
@@ -427,58 +431,6 @@ function openEditModal(id, fullname, email, userType) {
                 showToast('Utilisateur modifié', 'success');
                 loadUsers();
             } catch(e) { showToast('Erreur modification', 'error'); }
-        }
-    });
-}
-
-// === admin_utilisateurs.html (same-named functions with different callbacks) ===
-function openDeleteModal(id, name) {
-    showConfirmModal({
-        title: 'Supprimer',
-        icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#e74c3c" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>',
-        message: `Êtes-vous sûr de vouloir supprimer <strong>${escapeHtml(name)}</strong> ? Cette action est irréversible.`,
-        confirmText: 'Supprimer',
-        confirmClass: 'danger',
-        onConfirm: async () => {
-            try {
-                await adminAPI.deleteUser(id);
-                showToast(name + ' supprimé', 'success');
-                loadUsers();
-            } catch(e) { showToast('Erreur suppression', 'error'); }
-        }
-    });
-}
-
-function openApproveModal(id, name) {
-    showConfirmModal({
-        title: 'Approuver',
-        icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#27ae60" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>',
-        message: `Approuver <strong>${escapeHtml(name)}</strong> ? Son compte sera activé.`,
-        confirmText: 'Approuver',
-        confirmClass: 'primary',
-        onConfirm: async () => {
-            try {
-                await adminAPI.approveUser(id);
-                showToast(name + ' approuvé', 'success');
-                loadUsers();
-            } catch(e) { showToast('Erreur approbation', 'error'); }
-        }
-    });
-}
-
-function openRejectModal(id, name) {
-    showPromptModal({
-        title: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#e74c3c" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Rejeter',
-        bodyHtml: `<p>Rejeter <strong>${escapeHtml(name)}</strong> ?</p><div class="modal-form-row"><label>Motif (optionnel)</label><textarea id="rejectReason" placeholder="Raison du rejet..."></textarea></div>`,
-        confirmText: 'Rejeter',
-        confirmClass: 'danger',
-        onConfirm: async () => {
-            const reason = document.getElementById('rejectReason')?.value || '';
-            try {
-                await adminAPI.rejectUser(id, reason);
-                showToast(name + ' rejeté', 'success');
-                loadUsers();
-            } catch(e) { showToast('Erreur rejet', 'error'); }
         }
     });
 }
@@ -922,11 +874,13 @@ function exportStats() {
     });
 }
 
-// === Page init calls ===
-loadSettings();
-loadSidebarBadges();
-loadDashboard();
-loadUsers();
-loadValidations();
-loadPayments();
-loadStats();
+// === Page init calls (parallelized) ===
+Promise.all([
+    loadSidebarBadges(),
+    ...(document.getElementById('patientsCount') ? [loadDashboard()] : []),
+    ...(document.getElementById('searchInput') ? [loadUsers()] : []),
+    ...(document.getElementById('psychologueGrid') ? [loadValidations()] : []),
+    ...(document.getElementById('totalRevenue') ? [loadPayments()] : []),
+    ...(document.getElementById('periodSelect') ? [loadStats()] : []),
+    ...(document.getElementById('siteName') ? [loadSettings()] : []),
+]).catch(e => console.warn('Admin init error:', e));
