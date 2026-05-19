@@ -136,7 +136,7 @@ function connectGroupToVideoServer() {
         videoSocket.on('connect', () => {
             console.log('Connected to video server for group call');
             const userName = currentUser.fullname || 'Patient';
-            const joinPayload = { roomId, userName, userId: currentUser.id };
+            const joinPayload = { roomId, userName, userId: currentUser.id, mode: 'group' };
             if (localAvatarUrl && !localAvatarUrl.startsWith('data:')) {
                 joinPayload.avatarUrl = localAvatarUrl;
             }
@@ -286,7 +286,7 @@ function doctorConnectGroupToVideoServer() {
         videoSocket.on('connect', () => {
             console.log('[DoctorGroup] Connected to video server');
             const userName = currentUser.fullname || 'Psychologue';
-            const joinPayload = { roomId, userName, userId: currentUser.id };
+            const joinPayload = { roomId, userName, userId: currentUser.id, mode: 'group' };
             if (localAvatarUrl && !localAvatarUrl.startsWith('data:')) {
                 joinPayload.avatarUrl = localAvatarUrl;
             }

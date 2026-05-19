@@ -86,20 +86,26 @@ app.delete('/api/rooms/:id', (req, res) => {
 io.on('connection', (socket) => {
     console.log(`Socket connected: ${socket.id}`);
 
-    socket.on('join-room', async ({ roomId, userName, avatarUrl, userId }, callback) => {
-        console.log('[Server] join-room userId:', userId, 'userName:', userName);
+    socket.on('join-room', async ({ roomId, userName, avatarUrl, userId, mode }, callback) => {
+        console.log('[Server] join-room userId:', userId, 'userName:', userName, 'mode:', mode);
         // Auto-create room if it doesn't exist
         if (!rooms.has(roomId)) {
+            // Rooms with "group_" prefix always default to group mode
+            const resolvedMode = mode || (roomId.startsWith('group_') ? 'group' : 'p2p');
             rooms.set(roomId, {
                 id: roomId,
                 name: roomId,
-                mode: 'p2p',
+                mode: resolvedMode,
                 participants: new Map(),
                 router: null,
                 transports: new Map(),
                 producers: new Map(),
                 consumers: new Map(),
             });
+        } else if (mode && mode !== 'p2p') {
+            // Upgrade existing room mode if caller specifies group
+            const existingRoom = rooms.get(roomId);
+            existingRoom.mode = mode;
         }
 
         const room = rooms.get(roomId);

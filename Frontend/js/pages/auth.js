@@ -26,7 +26,13 @@ window.handleLogin = async function() {
     
     try {
         const result = await authAPI.login({ email, password });
-        localStorage.setItem('nebras_token', result.token);
+        if (result.token) {
+            localStorage.setItem('nebras_token', result.token);
+        } else {
+            console.error('Login succeeded but no token returned');
+            alert('Erreur: Réponse de connexion invalide');
+            return;
+        }
         localStorage.setItem('nebras_user', JSON.stringify(result.user));
         setTimeout(() => redirectByUserType(result.user.userType), 300);
     } catch(e) {
@@ -57,9 +63,11 @@ window.handleRegister = async function() {
     
     try {
         const result = await authAPI.register({ email, password, fullname, userType });
-        localStorage.setItem('nebras_token', result.token || result.user?.token);
+        if (result.token) {
+            localStorage.setItem('nebras_token', result.token);
+        }
         localStorage.setItem('nebras_user', JSON.stringify(result.user));
-        setTimeout(() => redirectByUserType(userType), 300);
+        setTimeout(() => redirectByUserType(result.user?.userType || userType), 300);
     } catch(e) {
         alert('Erreur: ' + e.message);
     }

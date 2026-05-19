@@ -94,9 +94,17 @@ exports.register = async (req, res) => {
       });
     }
 
+    // Generate JWT token (match login endpoint)
+    const token = jwt.sign(
+      { id: user.id, userType: user.userType },
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
     // Return success (don't send password)
     res.status(201).json({
       message: 'Registration successful!',
+      token,
       user: {
         id: user.id,
         email: user.email,

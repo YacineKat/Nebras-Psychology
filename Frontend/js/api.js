@@ -29,6 +29,14 @@ async function fetchAPI(endpoint, options = {}) {
     const data = await response.json();
     
     if (!response.ok) {
+      // Centralized 401 handling: clear broken auth and redirect to login
+      if (response.status === 401 && endpoint !== '/auth/login') {
+        localStorage.removeItem('nebras_token');
+        localStorage.removeItem('nebras_user');
+        if (!window.location.pathname.includes('auth.html')) {
+          window.location.href = 'auth.html';
+        }
+      }
       throw new Error(data.error || 'Something went wrong');
     }
     
@@ -197,12 +205,6 @@ const doctorAPI = {
     return fetchAPI('/doctors/vip/form', {
       method: 'POST',
       body: JSON.stringify(formData)
-    });
-  },
-
-  startVideoSession: async (appointmentId) => {
-    return fetchAPI(`/appointments/${appointmentId}/video/start`, {
-      method: 'POST'
     });
   },
 

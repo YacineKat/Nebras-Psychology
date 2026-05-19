@@ -176,9 +176,11 @@ async function initializeGroupCall() {
     try {
         const connectPromise = connectGroupToVideoServer();
         await initializeMedia();
+        // Wait for socket connection + room join + PC creation first
+        await connectPromise;
+        // Now all peer connections exist — attach tracks to them
         attachLocalTracksToActivePeerConnections();
         hydrateGroupParticipantMetadata();
-        await connectPromise;
     } catch (error) {
         console.error('Group call init error:', error);
         showError('Erreur lors de l\'initialisation de l\'appel de groupe');
@@ -220,9 +222,9 @@ async function initializeDoctorGroupCall() {
     try {
         const connectPromise = doctorConnectGroupToVideoServer();
         await initializeMedia();
+        await connectPromise;
         attachLocalTracksToActivePeerConnections();
         hydrateGroupParticipantMetadata();
-        await connectPromise;
         initDoctorMainSocket();
     } catch (error) {
         console.error('Doctor group call init error:', error);
@@ -230,9 +232,32 @@ async function initializeDoctorGroupCall() {
     }
 }
 
+function releaseLocalStream() {
+    if (localStream) {
+        localStream.getTracks().forEach(t => { try { t.stop(); } catch (e) {} });
+        localStream = null;
+    }
+}
+
+async function tryGetUserMedia(constraints, retries = 2) {
+    for (let attempt = 0; attempt <= retries; attempt++) {
+        try {
+            releaseLocalStream();
+            return await navigator.mediaDevices.getUserMedia(constraints);
+        } catch (err) {
+            if (err.name === 'NotReadableError' && attempt < retries) {
+                console.log(`getUserMedia attempt ${attempt + 1} failed (device busy), retrying in 1.5s...`);
+                await new Promise(r => setTimeout(r, 1500));
+                continue;
+            }
+            throw err;
+        }
+    }
+}
+
 async function initializeMedia() {
     try {
-        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        localStream = await tryGetUserMedia({ video: true, audio: true });
         
         const videoEl = document.getElementById('localVideo');
         if (videoEl) {
@@ -252,7 +277,36 @@ async function initializeMedia() {
         
     } catch (error) {
         console.error('Media error:', error);
-        showError('Erreur d\'accÃ¨s Ã  la camÃ©ra/micro');
+        // Fallback: try audio-only if video+camera fails
+        try {
+            console.log('Trying audio-only fallback...');
+            localStream = await tryGetUserMedia({ video: false, audio: true });
+
+            const videoEl = document.getElementById('localVideo');
+            if (videoEl) {
+                videoEl.srcObject = localStream;
+            }
+
+            localStream.getAudioTracks()[0].enabled = false;
+            isMuted = true;
+            isVideoOff = true;
+            updateMuteButton();
+            updateVideoButton();
+            attachLocalTracksToActivePeerConnections();
+
+            showToast('Cam\u00e9ra indisponible - appel audio uniquement', 'info');
+        } catch (fallbackError) {
+            console.error('Audio fallback also failed:', fallbackError);
+            if (error.name === 'NotReadableError') {
+                showError(
+                    'Cam\u00e9ra/micro inaccessible. V\u00e9rifiez qu\'aucune autre application n\'utilise la cam\u00e9ra ' +
+                    '(Zoom, Teams, autre onglet). Dans Edge, d\u00e9sactivez "Efficiency mode" pour ce site ' +
+                    '(Param\u00e8tres > Syst\u00e8me et performances > Efficiency mode).'
+                );
+            } else {
+                showError('Erreur d\'acc\u00e8s \u00e0 la cam\u00e9ra/microphone');
+            }
+        }
     }
 }
 
@@ -355,8 +409,9 @@ async function endCall() {
 
 // MOVED TO video-call-ratings.js
 
-// Save pending rating on tab close (patient only)
+// Release camera + save pending rating on tab close
 window.addEventListener('beforeunload', function() {
+    releaseLocalStream();
     if (!(isDoctor || isCounselor) && sessionAppointmentId && doctorIdForRating) {
         try {
             sessionStorage.setItem('pendingRating', JSON.stringify({
