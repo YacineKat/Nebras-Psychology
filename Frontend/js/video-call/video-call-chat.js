@@ -52,12 +52,14 @@ function toggleChat() {
     const btn = document.getElementById('chatToggleBtn');
     if (chatSection.style.display === 'none') {
         chatSection.style.display = 'flex';
+        document.body.classList.add('video-chat-open');
         if (btn) btn.classList.add('active');
         if (!isGroupCall) {
             loadCallChatHistory();
         }
     } else {
         chatSection.style.display = 'none';
+        document.body.classList.remove('video-chat-open');
         if (btn) btn.classList.remove('active');
     }
 }

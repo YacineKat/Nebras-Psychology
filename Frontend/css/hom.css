@@ -517,6 +517,170 @@ a.btn-signin:hover, a.cta-button:hover, a.cta-banner-btn:hover, a[class*="btn"]:
     margin-right: 14px;
 }
 
+@media (max-width: 900px) {
+    .header {
+            display: flex !important;
+            flex-direction: row !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            padding: 0 16px !important;
+            height: 60px !important;
+            flex-wrap: nowrap !important;
+            gap: 0 !important;
+            background-color: #FAF7F2 !important;
+            border-bottom: 1px solid rgba(9, 19, 70, 0.08);
+        }
+
+        .logo img {
+            height: 44px !important;
+            padding-top: 0 !important;
+            display: block;
+        }
+
+        .nav-links {
+            display: none !important;
+        }
+
+        .button-group {
+            width: auto !important;
+            flex: 0 0 auto !important;
+            justify-content: flex-end !important;
+            gap: 8px !important;
+        }
+        .btn-signin {
+            width: auto !important;
+            padding: 9px 20px !important;
+            font-size: 14px !important;
+            border-radius: 50px !important;
+            white-space: nowrap;
+        }
+
+        .hero {
+            min-height: calc(100dvh - 60px) !important;
+            padding: 0 20px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+        .hero-content {
+            text-align: center;
+            padding: 40px 0;
+        }
+        .hero h1 {
+            font-size: 32px !important;
+            line-height: 1.25 !important;
+            margin-bottom: 18px !important;
+        }
+    
+        .hero p {
+            font-size: 17px !important;
+            line-height: 1.6 !important;
+            margin-bottom: 32px !important;
+            opacity: 0.92;
+        }
+        .cta-button,
+        a.cta-button {
+            width: auto !important;
+            padding: 16px 36px !important;
+            font-size: 17px !important;
+            border-radius: 50px !important;
+            display: inline-flex !important;
+        }
+
+    .etapes-section,
+    .rules-section,
+    .why-us,
+    .auth-box {
+        padding-left: 16px !important;
+        padding-right: 16px !important;
+    }
+
+    .etapes-container,
+    .why-container,
+    .rules-grid {
+        grid-template-columns: 1fr !important;
+        display: grid !important;
+    }
+
+    .etape-card,
+    .why-card,
+    .rule-card,
+    .auth-box {
+        border-radius: 18px !important;
+        box-shadow: none !important;
+    }
+
+    .rule-card {
+        flex-direction: column !important;
+        gap: 14px !important;
+    }
+
+    .rule-number {
+        min-width: 0 !important;
+        font-size: 36px !important;
+    }
+
+    .why-card,
+    .etape-card {
+        padding: 20px !important;
+    }
+
+    .featured-psychologists,
+    .testimonials,
+    .offers-section,
+    .faq-section,
+    footer {
+        padding-left: 16px !important;
+        padding-right: 16px !important;
+    }
+
+    .psycho-container,
+    .testimonials-container,
+    .offers-content-wrapper {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 14px !important;
+    }
+
+    .offers-tabs-buttons {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 8px !important;
+    }
+
+    .offers-tab-btn,
+    .offers-cta-btn,
+    .psycho-btn,
+    .btn,
+    .btn-signin {
+        width: 100% !important;
+        justify-content: center !important;
+    }
+
+    .auth-box {
+        margin: 18px 16px 90px !important;
+        max-width: none !important;
+        border-radius: 18px !important;
+        box-shadow: 0 10px 28px rgba(9, 19, 70, 0.1) !important;
+        padding: 22px 18px !important;
+    }
+
+    .auth-box .input,
+    .auth-box .btn {
+        border-radius: 12px !important;
+        min-height: 44px;
+    }
+
+    .check-box {
+        align-items: flex-start !important;
+    }
+
+    .form h2 {
+        font-size: 24px !important;
+        margin-bottom: 18px !important;
+    }
+}
+
 
 .why-card p {
     color: #666;
@@ -1349,4 +1513,14 @@ footer {
 .info-card select.input:focus {
     outline: none;
     border-color: #44AA99;
+}
+/* Home Page Mobile Polish */
+@media (max-width: 900px) {
+    header { padding: 15px; flex-wrap: wrap; justify-content: center; gap: 15px; }
+    header .header-buttons { flex-direction: column; width: 100%; gap: 10px; }
+    header .header-buttons a { width: 100%; text-align: center; }
+    .hero { padding: 40px 15px; text-align: center; }
+    .hero-content h1 { font-size: 2.2rem; line-height: 1.2; }
+    .hero-buttons { flex-direction: column; width: 100%; }
+    .hero-buttons a { width: 100%; margin-bottom: 10px; }
 }

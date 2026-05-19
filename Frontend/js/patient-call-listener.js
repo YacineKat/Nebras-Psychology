@@ -112,7 +112,7 @@ function initSessionSocket() {
         sessionSocket.on('group:join-accepted', (data) => {
             console.log('Group join accepted:', data);
             if (typeof showToast === 'function') {
-                showToast('Vous avez été accepté dans le groupe ! Cliquez sur "Appel de groupe" dans le menu pour rejoindre.', 'success');
+                showToast('Vous avez été accepté dans le groupe', 'success');
             }
             // Store session info
             sessionStorage.setItem('groupCallRoom', data.roomId);
@@ -334,60 +334,64 @@ function updateCallEntryContent(callEntry, status) {
 
 // ========== GROUP CALL SIDEBAR ENTRY ==========
 window.showGroupCallEntry = function(data) {
-    let entry = document.getElementById('patientGroupCallEntry');
-    if (entry) return;
+    window.removeGroupCallEntry();
 
-    entry = document.createElement('div');
-    entry.id = 'patientGroupCallEntry';
-    entry.className = 'call-entry-sidebar';
-    entry.setAttribute('role', 'button');
-    entry.setAttribute('tabindex', '0');
-    entry.setAttribute('data-room', data.roomId || '');
-    entry.setAttribute('data-groupid', data.groupId || '');
-    entry.setAttribute('data-doctorid', data.doctorId || '');
-    entry.setAttribute('data-doctorname', data.doctorName || 'Psychologue');
+    const safeDoctorName = (data.doctorName || 'Psychologue').replace(/[<>&"]/g, function(c) { return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]; });
+    const joinUrl = `video-call.html?room=${data.roomId || ''}&type=group&groupId=${data.groupId || ''}&doctorId=${data.doctorId || ''}`;
 
-    entry.innerHTML = `
-        <div class="call-entry-icon" aria-hidden="true">
-            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-            </svg>
+    const invite = document.createElement('div');
+    invite.id = 'patientGroupCallInvite';
+    invite.className = 'group-call-invite';
+    invite.innerHTML = `
+        <div class="group-call-invite-card">
+            <div class="group-call-invite-head">
+                <div class="group-call-dot"></div>
+                <strong>Invitation appel de groupe</strong>
+            </div>
+            <div class="group-call-invite-body">
+                <span>${safeDoctorName} vous invite à rejoindre la séance.</span>
+            </div>
+            <div class="group-call-invite-actions">
+                <button type="button" class="group-call-btn group-call-btn-secondary" id="dismissGroupInviteBtn">Plus tard</button>
+                <button type="button" class="group-call-btn group-call-btn-primary" id="joinGroupInviteBtn">Rejoindre</button>
+            </div>
         </div>
-        <div class="call-entry-content">
-            <span class="call-entry-title">Appel de groupe</span>
-            <span class="call-entry-doctor">avec ${(data.doctorName || 'Psychologue').replace(/[<>&"]/g, function(c) { return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]; })}</span>
-        </div>
-        <button class="call-entry-btn" type="button">Rejoindre</button>
     `;
 
-    entry.addEventListener('click', function(event) {
-        const btn = event.target.closest('.call-entry-btn');
-        if (btn || event.currentTarget === event.target) {
-            event.preventDefault();
-            const roomId = entry.dataset.room;
-            const groupId = entry.dataset.groupid;
-            const doctorId = entry.dataset.doctorid;
-            window.location.href = `video-call.html?room=${roomId}&type=group&groupId=${groupId}&doctorId=${doctorId}`;
+    document.body.appendChild(invite);
+    requestAnimationFrame(() => invite.classList.add('active'));
+
+    const showPill = function() {
+        let pill = document.getElementById('patientGroupCallPill');
+        if (!pill) {
+            pill = document.createElement('button');
+            pill.id = 'patientGroupCallPill';
+            pill.className = 'group-call-pill';
+            pill.type = 'button';
+            pill.innerHTML = '<span>Appel de groupe en attente</span>';
+            pill.addEventListener('click', function() {
+                window.location.href = joinUrl;
+            });
+            document.body.appendChild(pill);
         }
+    };
+
+    invite.querySelector('#joinGroupInviteBtn')?.addEventListener('click', function() {
+        window.location.href = joinUrl;
     });
 
-    const navMenu = document.querySelector('.nav-menu');
-    if (navMenu) {
-        const firstItem = navMenu.querySelector('.nav-item');
-        if (firstItem) {
-            navMenu.insertBefore(entry, firstItem);
-        } else {
-            navMenu.appendChild(entry);
-        }
-    } else {
-        const sidebar = document.querySelector('.sidebar');
-        if (sidebar) sidebar.appendChild(entry);
-    }
+    invite.querySelector('#dismissGroupInviteBtn')?.addEventListener('click', function() {
+        invite.classList.remove('active');
+        setTimeout(() => invite.remove(), 180);
+        showPill();
+    });
 };
 
 window.removeGroupCallEntry = function() {
-    const entry = document.getElementById('patientGroupCallEntry');
-    if (entry) entry.remove();
+    const invite = document.getElementById('patientGroupCallInvite');
+    const pill = document.getElementById('patientGroupCallPill');
+    if (invite) invite.remove();
+    if (pill) pill.remove();
 };
 
 window.joinDoctorCall = async function() {

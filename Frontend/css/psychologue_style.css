@@ -102,7 +102,7 @@ body {
 }
 
 .nav-item:hover {
-    background: rgba(255, 255, 255, 0.12);
+    /* background: rgba(255, 255, 255, 0.12); */
     color: white;
     transform: translateX(4px);
 }
@@ -400,6 +400,155 @@ body {
     font-size: 16px;
 }
 
+
+@media (max-width: 900px) {
+    .container {
+        flex-direction: column !important;
+        min-height: 100dvh !important;
+    }
+
+    .sidebar {
+        position: fixed !important;
+        left: 12px !important;
+        right: 12px !important;
+        bottom: 12px !important;
+        top: auto !important;
+        width: auto !important;
+        height: auto !important;
+        margin: 0 !important;
+        border-radius: 24px !important;
+        padding: 10px 12px calc(10px + env(safe-area-inset-bottom)) !important;
+        overflow: hidden !important;
+        z-index: 1000 !important;
+        box-shadow: 0 18px 40px rgba(9, 19, 70, 0.24) !important;
+    }
+
+    .sidebar .logo,
+    .sidebar .profile-link,
+    .sidebar > a[onclick*="logout"] {
+        display: none !important;
+    }
+
+    .nav-menu {
+        flex-direction: row !important;
+        gap: 8px !important;
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        padding: 0 !important;
+        scrollbar-width: none !important;
+    }
+
+    .nav-menu::-webkit-scrollbar {
+        display: none;
+    }
+
+    .nav-item {
+        min-width: 74px !important;
+        flex: 0 0 auto !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+        text-align: center !important;
+        gap: 4px !important;
+        padding: 10px 8px !important;
+        border-radius: 18px !important;
+        font-size: 11px !important;
+        line-height: 1.1 !important;
+    }
+
+    .nav-item .icon {
+        width: 20px !important;
+        height: 20px !important;
+    }
+
+    .nav-item .badge,
+    .vip-status-badge {
+        position: absolute !important;
+        top: 6px !important;
+        right: 6px !important;
+        margin-left: 0 !important;
+        padding: 2px 6px !important;
+        font-size: 10px !important;
+    }
+
+    .main-content {
+        margin-left: 0 !important;
+        padding: 16px 14px calc(110px + env(safe-area-inset-bottom)) !important;
+        min-height: 100dvh !important;
+        height: auto !important;
+        overflow: visible !important;
+    }
+
+    .page-header {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 6px !important;
+        margin-bottom: 16px !important;
+    }
+
+    .page-header h1 {
+        font-size: 24px !important;
+    }
+
+    .subtitle,
+    .breadcrumb {
+        font-size: 13px !important;
+    }
+
+    .stats-dashboard,
+    .stats-grid,
+    .validation-grid,
+    .psycho-cards-container,
+    .etapes-container,
+    .psychologues-grid,
+    .patients-grid,
+    .honoraires-summary {
+        grid-template-columns: 1fr !important;
+    }
+
+    .actions-buttons,
+    .filters-bar,
+    .header-actions,
+    .steps,
+    .search-section {
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+
+    .stat-card,
+    .dashboard-section,
+    .validation-card,
+    .profile-section,
+    .welcome-card,
+    .psycho-card,
+    .etape-card,
+    .info-card,
+    .admin-section,
+    .messagerie-layout,
+    .espace-vip-container,
+    .stats-chart,
+    .honoraire-card,
+    .patient-card {
+        border-radius: 18px !important;
+        box-shadow: none !important;
+    }
+
+    .action-btn,
+    .cta-button,
+    .btn-signin,
+    .btn-inscription,
+    .seance-btn,
+    .update-btn,
+    .delete-btn,
+    .save-form-btn,
+    .btn-next,
+    .btn-prev,
+    .contact-btn,
+    .appointment-btn,
+    .filter-button {
+        width: 100% !important;
+        justify-content: center !important;
+    }
+}
 /* Notification Styles */
 .notification-container {
     position: relative;
@@ -2849,7 +2998,6 @@ body {
 .reset-btn svg {
     stroke: currentColor;
 }
-}
 
 .search-btn:hover {
     background: #36897f;
@@ -4217,4 +4365,40 @@ input.chat-input::placeholder {
 }
 .profile-avatar-large.has-avatar img {
     display: block !important;
+}
+/* --- Global Mobile Polish --- */
+@media (max-width: 768px) {
+    .page-header {
+        display: none !important;
+    }
+    .main-content {
+        padding-top: 15px !important; /* Adjust if needed since header is gone */
+    }
+}
+
+/* --- Global Mobile Polish --- */
+@media (max-width: 768px) {
+    .page-header {
+        display: none !important;
+    }
+    .main-content {
+        padding-top: 15px !important;
+    }
+}
+
+/* --- Global Mobile Polish --- */
+@media (max-width: 768px) { .page-header { display: none !important; } .main-content { padding-top: 15px !important; } }
+
+/* Mobile Profile Polish */
+@media (max-width: 768px) {
+    .profile-header { flex-direction: column; text-align: center; padding: 20px 15px; }
+    .profile-info { margin-left: 0; margin-top: 15px; }
+    .profile-stats { flex-direction: column; gap: 10px; }
+    .stat-box { width: 100%; border-right: none; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+    .stat-box:last-child { border-bottom: none; padding-bottom: 0; }
+}
+
+/* Mobile Add Group Button */
+@media (max-width: 768px) {
+    .mobile-add-group-btn { display: flex !important; }
 }

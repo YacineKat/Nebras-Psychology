@@ -476,6 +476,239 @@ function highlightCurrentSidebarLink() {
   });
 }
 
+function ensureMobileNavStyles() {
+  if (document.getElementById('mobile-nav-enhancer-style')) return;
+
+  const style = document.createElement('style');
+  style.id = 'mobile-nav-enhancer-style';
+  style.textContent = `
+    @media (max-width: 900px) {
+      .nav-item.nav-item-secondary {
+        display: none !important;
+      }
+
+      .nav-item.mobile-more-trigger,
+      .nav-item.mobile-profile-shortcut {
+        min-width: 74px;
+      }
+
+      .nav-item.mobile-more-trigger {
+        border: none !important;
+        outline: none !important;
+        background: transparent !important;
+        font-family: inherit !important;
+        font-size: inherit !important;
+        cursor: pointer !important;
+        -webkit-tap-highlight-color: transparent !important;
+        user-select: none !important;
+        -webkit-appearance: none !important;
+        box-shadow: none !important;
+      }
+
+      .nav-item.mobile-more-trigger:focus,
+      .nav-item.mobile-more-trigger:focus-visible {
+        outline: none !important;
+        box-shadow: none !important;
+      }
+
+      .nav-item.mobile-more-trigger::-moz-focus-inner {
+        border: none !important;
+      }
+
+      .mobile-more-sheet {
+        position: fixed;
+        left: 12px;
+        right: 12px;
+        bottom: 98px;
+        max-height: 52dvh;
+        background: white;
+        border-radius: 18px;
+        padding: 12px;
+        box-shadow: 0 18px 40px rgba(9, 19, 70, 0.2);
+        overflow-y: auto;
+        z-index: 1010;
+        transform: translateY(18px);
+        opacity: 0;
+        pointer-events: none;
+        transition: transform 0.2s ease, opacity 0.2s ease;
+      }
+
+      .mobile-more-sheet.active {
+        transform: translateY(0);
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .mobile-more-sheet a,
+      .mobile-more-sheet button {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        border: none;
+        background: #f8fafc;
+        color: #091346;
+        border-radius: 12px;
+        padding: 12px 14px;
+        margin-bottom: 8px;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .mobile-more-sheet a:last-child,
+      .mobile-more-sheet button:last-child {
+        margin-bottom: 0;
+      }
+
+      .mobile-more-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(9, 19, 70, 0.22);
+        z-index: 1009;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s ease;
+      }
+
+      .mobile-more-overlay.active {
+        opacity: 1;
+        pointer-events: auto;
+      }
+    }
+  `;
+
+  document.head.appendChild(style);
+}
+
+function closeMobileMoreSheet() {
+  const sheet = document.querySelector('.mobile-more-sheet');
+  const overlay = document.querySelector('.mobile-more-overlay');
+  if (sheet) sheet.classList.remove('active');
+  if (overlay) overlay.classList.remove('active');
+}
+
+function initializeMobileBottomNav() {
+  const isMobile = window.matchMedia('(max-width: 900px)').matches;
+  const navMenu = document.querySelector('.sidebar .nav-menu');
+  if (!navMenu) return;
+
+  ensureMobileNavStyles();
+
+  let overlay = document.querySelector('.mobile-more-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.className = 'mobile-more-overlay';
+    overlay.addEventListener('click', closeMobileMoreSheet);
+    document.body.appendChild(overlay);
+  }
+
+  let sheet = document.querySelector('.mobile-more-sheet');
+  if (!sheet) {
+    sheet = document.createElement('div');
+    sheet.className = 'mobile-more-sheet';
+    document.body.appendChild(sheet);
+  }
+
+  const existingProfileShortcut = navMenu.querySelector('.mobile-profile-shortcut');
+  if (!isMobile) {
+    navMenu.querySelectorAll('.nav-item').forEach((item) => {
+      item.classList.remove('nav-item-secondary');
+    });
+    if (existingProfileShortcut) existingProfileShortcut.remove();
+    const trigger = navMenu.querySelector('.mobile-more-trigger');
+    if (trigger) trigger.remove();
+    closeMobileMoreSheet();
+    return;
+  }
+
+  const navItems = Array.from(navMenu.querySelectorAll('.nav-item:not(.mobile-more-trigger):not(.mobile-profile-shortcut)'));
+  if (!navItems.length) return;
+
+  const dashboardItem = navItems.find((item) => (item.getAttribute('href') || '').toLowerCase().includes('dashboard'));
+  const chatItem = navItems.find((item) => (item.getAttribute('href') || '').toLowerCase().includes('messagerie'));
+
+  let profileItem = navItems.find((item) => {
+    const href = (item.getAttribute('href') || '').toLowerCase();
+    return href.includes('profil') || href === 'admin.html';
+  });
+
+  if (!profileItem) {
+    const profileLink = document.querySelector('.profile-link[href]');
+    if (profileLink && !existingProfileShortcut) {
+      const profileShortcut = document.createElement('a');
+      profileShortcut.className = 'nav-item mobile-profile-shortcut';
+      profileShortcut.href = profileLink.getAttribute('href');
+      profileShortcut.innerHTML = '<svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M12 12c2.21 0 4-1.79 4-4S14.21 4 12 4 8 5.79 8 8s1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" fill="currentColor"/></svg><span>Profil</span>';
+      navMenu.appendChild(profileShortcut);
+      profileItem = profileShortcut;
+    } else if (existingProfileShortcut) {
+      profileItem = existingProfileShortcut;
+    }
+  }
+
+  const primary = [];
+  if (dashboardItem) primary.push(dashboardItem);
+  if (chatItem && !primary.includes(chatItem)) primary.push(chatItem);
+  if (profileItem && !primary.includes(profileItem)) primary.push(profileItem);
+
+  navItems.forEach((item) => {
+    if (primary.includes(item)) {
+      item.classList.remove('nav-item-secondary');
+    } else {
+      item.classList.add('nav-item-secondary');
+    }
+  });
+
+  if (profileItem) {
+    profileItem.classList.remove('nav-item-secondary');
+  }
+
+  const secondaryItems = navItems.filter((item) => !primary.includes(item));
+
+  let trigger = navMenu.querySelector('.mobile-more-trigger');
+  if (secondaryItems.length) {
+    if (!trigger) {
+      trigger = document.createElement('button');
+      trigger.type = 'button';
+      trigger.className = 'nav-item mobile-more-trigger';
+      trigger.innerHTML = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Plus</span>';
+      trigger.addEventListener('click', () => {
+        const willOpen = !sheet.classList.contains('active');
+        sheet.classList.toggle('active', willOpen);
+        overlay.classList.toggle('active', willOpen);
+      });
+      navMenu.appendChild(trigger);
+    }
+
+    const logoutLink = document.querySelector('.sidebar > a[onclick*="logout"]');
+    const secondaryHtml = secondaryItems.map((item) => {
+      const href = item.getAttribute('href');
+      const text = item.querySelector('span')?.textContent?.trim() || 'Menu';
+      if (href) {
+        return `<a href="${href}">${escapeHtml(text)}<span>›</span></a>`;
+      }
+
+      const onclick = item.getAttribute('onclick') || '';
+      return `<button type="button" onclick="${escapeHtml(onclick)}">${escapeHtml(text)}<span>›</span></button>`;
+    }).join('');
+
+    const logoutHtml = logoutLink
+      ? '<button type="button" onclick="logout()" style="background:#fee2e2;color:#b91c1c;">Déconnexion</button>'
+      : '';
+
+    sheet.innerHTML = secondaryHtml + logoutHtml;
+    sheet.querySelectorAll('a,button').forEach((el) => {
+      el.addEventListener('click', () => closeMobileMoreSheet());
+    });
+  } else if (trigger) {
+    trigger.remove();
+    closeMobileMoreSheet();
+  }
+}
+
 // ============================================
 // REVIEWS / RATINGS API
 // ============================================
@@ -760,8 +993,13 @@ async function loadSidebarUserData() {
 
 // Auto-load sidebar data when api.js is loaded
 if (typeof document !== 'undefined') {
-  document.addEventListener('DOMContentLoaded', loadSidebarUserData);
+  document.addEventListener('DOMContentLoaded', () => {
+    loadSidebarUserData();
+    initializeMobileBottomNav();
+  });
+  window.addEventListener('resize', initializeMobileBottomNav);
 }
 window.showConfirmModal = showConfirmModal;
 window.showPromptModal = showPromptModal;
 window.loadSidebarUserData = loadSidebarUserData;
+window.initializeMobileBottomNav = initializeMobileBottomNav;
