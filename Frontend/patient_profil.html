@@ -257,42 +257,6 @@
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script src="js/api.js"></script>
 <script src="js/patient-call-listener.js"></script>
-<script>
-    // Run immediately to update sidebar before page loads
-    (function() {
-        var userStr = localStorage.getItem('nebras_user');
-        if (userStr) {
-            try {
-                var user = JSON.parse(userStr);
-                var name = user.fullname || user.email || '';
-                document.querySelectorAll('.user-name').forEach(function(el) {
-                    el.textContent = name;
-                });
-                var profileName = document.getElementById('profileName');
-                if (profileName) profileName.textContent = user.fullname || user.email || '';
-                var profileEmail = document.getElementById('profileEmail');
-                if (profileEmail) profileEmail.textContent = user.email || '';
-            } catch(e) {
-                console.log('Error parsing user:', e);
-            }
-        }
-    })();
-
-function showToast(message, type = 'success') {
-    const container = document.querySelector('.toast-container') || (() => { const c = document.createElement('div'); c.className = 'toast-container'; document.body.appendChild(c); return c; })();
-    const toast = document.createElement('div');
-    toast.className = 'toast ' + type;
-    toast.textContent = message;
-    container.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
-}
-function logout() {
-    localStorage.removeItem('nebras_token');
-    localStorage.removeItem('nebras_user');
-    showToast('Déconnexion réussie', 'success');
-    setTimeout(() => window.location.href = 'home.html', 500);
-}
-</script>
 <script src="js/patient_profil.js" defer></script>
 </body>
 </html>

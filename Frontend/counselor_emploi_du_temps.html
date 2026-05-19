@@ -116,22 +116,6 @@
         </div>
     </div>
     <script src="js/api.js"></script>
-    <script>
-function selectSlot(cell) {
-    if (cell.classList.contains('available')) {
-        cell.classList.remove('available');
-        cell.classList.add('selected');
-        cell.textContent = 'Sélectionné';
-    } else if (cell.classList.contains('selected')) {
-        cell.classList.remove('selected');
-        cell.classList.add('available');
-        cell.textContent = 'Disponible';
-    }
-}
-function previousWeek() { showToast('Navigation semaine précédente', 'info'); }
-function nextWeek() { showToast('Navigation semaine suivante', 'info'); }
-    </script>
-
     <!-- Patient Profile Modal -->
     <div id="patientProfileModal" class="notes-modal">
         <div class="notes-modal-content" style="max-width: 600px;" onclick="event.stopPropagation()">

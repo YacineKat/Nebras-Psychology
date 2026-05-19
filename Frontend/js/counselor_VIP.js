@@ -153,3 +153,12 @@ window.addEventListener('load', function() {
         document.querySelector('.nav-menu').scrollTop = scrollPos;
     }
 });
+
+loadPublicSettings().then(s => {
+    if (s.vipMonthlyPrice) {
+        const monthly = document.querySelector('.vip-offer:first-child .price');
+        const annual = document.querySelector('.vip-offer:last-child .price');
+        if (monthly) monthly.textContent = Number(s.vipMonthlyPrice).toLocaleString() + ' DA';
+        if (annual) annual.textContent = Number(s.vipMonthlyPrice * 12 * 0.833).toLocaleString() + ' DA';
+    }
+});

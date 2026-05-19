@@ -545,3 +545,13 @@ window.addEventListener('load', function() {
         document.querySelector('.nav-menu').scrollTop = scrollPos;
     }
 });
+
+(function() {
+    var user = getCurrentUser();
+    if (user) {
+        var profileName = document.getElementById('profileName');
+        if (profileName) profileName.textContent = user.fullname || user.email || '';
+        var profileEmail = document.getElementById('profileEmail');
+        if (profileEmail) profileEmail.textContent = user.email || '';
+    }
+})();

@@ -894,3 +894,28 @@ window.addEventListener('load', function() {
 window.addEventListener('beforeunload', function() {
     disconnectSocket();
 });
+
+function toggleNotifications(event) {
+    event.stopPropagation();
+    const dropdown = document.getElementById('notificationDropdown');
+    if (!dropdown) return;
+    if (dropdown.classList.contains('show')) {
+        dropdown.classList.remove('show');
+    } else {
+        dropdown.classList.add('show');
+        if (typeof loadNotificationsFromDashboard === 'function') {
+            loadNotificationsFromDashboard();
+        }
+    }
+}
+window.toggleNotifications = toggleNotifications;
+document.getElementById('notificationBtn').addEventListener('click', function(e) {
+    toggleNotifications(e);
+});
+document.addEventListener('click', function(event) {
+    const dropdown = document.getElementById('notificationDropdown');
+    const container = document.querySelector('.notification-container');
+    if (container && !container.contains(event.target)) {
+        dropdown.classList.remove('show');
+    }
+});

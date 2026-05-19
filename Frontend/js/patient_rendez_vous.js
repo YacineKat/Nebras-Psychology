@@ -271,7 +271,7 @@ async function cancelAppointment(appointmentId) {
     if (!confirm('Êtes-vous sûr de vouloir annuler ce rendez-vous?')) return;
 
     try {
-        await appointmentAPI.updateStatus(appointmentId, { status: 'cancelled' });
+        await appointmentAPI.cancel(appointmentId);
         showToast('Rendez-vous annulé', 'success');
         await loadAppointments();
     } catch (error) {

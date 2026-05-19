@@ -1526,3 +1526,34 @@ body {
     color: #333;
     font-size: 13px;
 }
+
+/* ===== Inline styles moved from HTML ===== */
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.chart-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100px;
+    color: #999;
+    font-size: 13px;
+    gap: 8px;
+}
+.chart-loading::after {
+    content: '';
+    width: 16px; height: 16px;
+    border: 2px solid #e0e0e0;
+    border-top-color: #44AA99;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+}
+.top-rank { font-weight: 700; color: #091346; font-size: 15px; }
+.top-rank-1 { color: #f1c40f; }
+.top-rank-2 { color: #95a5a6; }
+.top-rank-3 { color: #cd7f32; }
+.data-empty { text-align:center;padding:30px;color:#999;font-size:13px; }
+.data-empty-icon { display:block;margin:0 auto 10px;width:40px;height:40px;opacity:0.3; }
+.prof-rating { display:inline-flex;align-items:center;gap:3px; }
+.legend-color.counselors { background: #9575CD; }
+.pie-segment.counselors { background: #9575CD; }

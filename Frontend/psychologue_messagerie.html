@@ -130,32 +130,6 @@
     </div>
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script src="js/api.js"></script>
-<script>
-(function() {
-    var userStr = localStorage.getItem('nebras_user');
-    if (userStr) {
-        try {
-            var user = JSON.parse(userStr);
-            var name = user.fullname || user.email || '';
-            document.querySelectorAll('.user-name').forEach(function(el) { el.textContent = name; });
-        } catch(e) {}
-    }
-})();
-function showToast(message, type = 'success') {
-    var container = document.querySelector('.toast-container') || (function() { var c = document.createElement('div'); c.className = 'toast-container'; document.body.appendChild(c); return c; })();
-    var toast = document.createElement('div');
-    toast.className = 'toast ' + type;
-    toast.textContent = message;
-    container.appendChild(toast);
-    setTimeout(function() { toast.remove(); }, 3000);
-}
-function logout() {
-    localStorage.removeItem('nebras_token');
-    localStorage.removeItem('nebras_user');
-    showToast('Déconnexion réussie', 'success');
-    setTimeout(function() { window.location.href = 'home.html'; }, 500);
-}
-</script>
 <script src="js/psychologue_messagerie.js" defer></script>
 </body>
 </html>

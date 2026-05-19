@@ -5,78 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Appel vidéo - Nebras</title>
     <link rel="stylesheet" href="./css/psychologue_style.css">
+    <link rel="stylesheet" href="./css/pages/video-call.css">
     <link rel="icon" type="image/png" href="./assets/image/logo.png">
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background: #F0F2F5;
-            overflow: hidden;
-        }
-        .video-page-container {
-            display: flex;
-            height: 100vh;
-            flex-direction: column;
-        }
-        .video-header {
-            background: #FFFFFF;
-            color: #1F2937;
-            padding: 12px 24px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid #E5E7EB;
-        }
-        .video-header-info {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        .video-header h2 {
-            margin: 0;
-            font-size: 15px;
-            font-weight: 600;
-            color: #1F2937;
-        }
-        .call-timer {
-            font-size: 13px;
-            color: #6B7280;
-            font-weight: 500;
-        }
-        .header-actions {
-            display: flex;
-            gap: 8px;
-        }
-        .header-btn {
-            background: #F3F4F6;
-            border: none;
-            color: #1F2937;
-            padding: 8px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 13px;
-            font-weight: 500;
-            transition: background 0.2s;
-        }
-        .header-btn:hover {
-            background: #E5E7EB;
-        }
-        .header-btn.active {
-            background: #091346;
-            color: white;
-        }
-
-        /* Remote video - NEVER mirror */
-        #remoteVideo {
-            transform: none !important;
-        }
-        .participant-tile:not(.mirrored) video {
-            transform: none !important;
-        }
-    </style>
 </head>
 <body>
     <div class="video-page-container">

@@ -1287,3 +1287,14 @@ function checkPendingRating() {
 
     document.body.appendChild(modal);
 }
+
+setTimeout(function() {
+    if (typeof initPatientCallListener === 'function') {
+        initPatientCallListener();
+    }
+    var greetingTitle = document.getElementById('greetingTitle');
+    if (greetingTitle) {
+        var user = getCurrentUser();
+        if (user) greetingTitle.textContent = 'Bonjour, ' + (user.fullname || '');
+    }
+}, 500);

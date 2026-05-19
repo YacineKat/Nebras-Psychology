@@ -14,6 +14,7 @@ let lastCallStatus = null;
 let patientCallListenerInitialized = false;
 let sessionSocket = null;
 const callPollIntervalMs = 2000;
+let callStatusRequestInFlight = false;
 const socketUrl = 'http://localhost:3000';
 
 // Rating deduplication — prevents showing the group rating modal more than once per session
@@ -190,7 +191,9 @@ function initSessionSocket() {
 
 function startCallPolling() {
     if (callCheckInterval) clearInterval(callCheckInterval);
-    callCheckInterval = setInterval(checkCallStatus, callPollIntervalMs);
+    callCheckInterval = setInterval(() => {
+        checkCallStatus();
+    }, 5000);
 }
 
 function handleStorageChange(event) {
@@ -200,7 +203,10 @@ function handleStorageChange(event) {
 }
 
 async function checkCallStatus() {
+    if (callStatusRequestInFlight) return;
+
     try {
+        callStatusRequestInFlight = true;
         let status = null;
 
         if (appointmentAPI?.getMyCallStatus) {
@@ -214,6 +220,8 @@ async function checkCallStatus() {
         if (status) updateCallEntryUI(status);
     } catch (error) {
         console.log('Call status check failed');
+    } finally {
+        callStatusRequestInFlight = false;
     }
 }
 
