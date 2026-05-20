@@ -14,7 +14,6 @@ router.get('/dashboard', adminController.getDashboard);
 
 // Users
 router.get('/users', adminController.getUsers);
-router.get('/users/recent', adminController.getDashboard); // Reuses dashboard for recent users
 router.get('/users/:id', adminController.getUserById);
 router.put('/users/:id', adminController.updateUser);
 router.delete('/users/:id', adminController.deleteUser);

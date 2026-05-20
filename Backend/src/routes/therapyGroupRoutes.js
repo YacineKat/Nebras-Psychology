@@ -38,13 +38,9 @@ router.get('/groups', authMiddleware, therapyGroupController.getGroups);
 
 // Protected routes - join/leave groups
 router.post('/groups/join', authMiddleware, therapyGroupController.joinGroup);
-router.post('/groups/leave', authMiddleware, therapyGroupController.leaveGroup);
 router.get('/my-groups', authMiddleware, therapyGroupController.getMyGroupsAsPatient);
 
 // Rate a group therapy session
 router.post('/groups/rate', authMiddleware, therapyGroupController.createGroupSessionRating);
-
-// Seed route (for development)
-router.post('/seed', therapyGroupController.seedGroups);
 
 module.exports = router;

@@ -5,6 +5,7 @@
 const express = require('express');
 const router = express.Router();
 const doctorController = require('../controllers/doctorController');
+const authController = require('../controllers/authController');
 const { authMiddleware, requireRole } = require('../middleware/authMiddleware');
 
 // Public routes (anyone can view doctors)
@@ -17,8 +18,7 @@ router.get('/patients/:patientId/notes', authMiddleware, requireRole('psychologu
 router.post('/patients/:patientId/notes', authMiddleware, requireRole('psychologue', 'counselor'), doctorController.savePatientNote);
 
 // Protected routes (must come before /:id)
-router.get('/profile/me', authMiddleware, doctorController.getMyProfile);
-router.put('/profile', authMiddleware, requireRole('psychologue', 'counselor'), doctorController.updateProfile);
+router.put('/profile', authMiddleware, requireRole('psychologue', 'counselor'), authController.updateProfile);
 router.post('/schedule', authMiddleware, requireRole('psychologue', 'counselor'), doctorController.addTimeSlot);
 router.post('/schedule/block', authMiddleware, requireRole('psychologue', 'counselor'), doctorController.blockTimeSlot);
 router.put('/schedule/:id/unblock', authMiddleware, requireRole('psychologue', 'counselor'), doctorController.unblockTimeSlot);

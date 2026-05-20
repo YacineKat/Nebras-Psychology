@@ -3,31 +3,31 @@
 // ============================================
 
 const prisma = require('../prisma');
+const asyncHandler = require('../utils/asyncHandler');
 const { buildAvailabilityForDate, normalizeDateOnly, normalizeTimeOnly } = require('../utils/availabilityService');
 
 // ============================================
 // CREATE APPOINTMENT (Patient books)
 // ============================================
-exports.createAppointment = async (req, res) => {
-  try {
-    const patientId = req.user.id;
-    const { doctorId, date, time, mediaType } = req.body;
-    const requestedTime = normalizeTimeOnly(time);
+exports.createAppointment = asyncHandler(async (req, res) => {
+  const patientId = req.user.id;
+  const { doctorId, date, time, mediaType } = req.body;
+  const requestedTime = normalizeTimeOnly(time);
 
-    if (!doctorId || !date || !time) {
-      return res.status(400).json({ error: 'Please provide doctor, date and time' });
-    }
+  if (!doctorId || !date || !time) {
+    return res.status(400).json({ error: 'Please provide doctor, date and time' });
+  }
 
-    if (!requestedTime) {
-      return res.status(400).json({ error: 'Invalid time format' });
-    }
+  if (!requestedTime) {
+    return res.status(400).json({ error: 'Invalid time format' });
+  }
 
-    const appointmentDate = normalizeDateOnly(date);
-    if (!appointmentDate) {
-      return res.status(400).json({ error: 'Invalid date format' });
-    }
+  const appointmentDate = normalizeDateOnly(date);
+  if (!appointmentDate) {
+    return res.status(400).json({ error: 'Invalid date format' });
+  }
 
-    const dayOfWeek = appointmentDate.getDay();
+  const dayOfWeek = appointmentDate.getDay();
     const dayStart = new Date(appointmentDate);
     dayStart.setHours(0, 0, 0, 0);
     const dayEnd = new Date(dayStart);
@@ -105,17 +105,12 @@ exports.createAppointment = async (req, res) => {
       appointment
     });
 
-  } catch (error) {
-    console.error('CreateAppointment error:', error);
-    res.status(500).json({ error: 'Failed to book appointment' });
-  }
-};
+});
 
 // ============================================
 // GET MY APPOINTMENTS (Patient or Doctor)
 // ============================================
-exports.getMyAppointments = async (req, res) => {
-  try {
+exports.getMyAppointments = asyncHandler(async (req, res) => {
     const userId = req.user.id;
     const userType = req.user.userType || 'patient';
     const { status, view } = req.query;
@@ -215,7 +210,6 @@ exports.getMyAppointments = async (req, res) => {
       patient: {
         id: apt.patient.id,
         fullname: apt.patient.fullname,
-        age: apt.patient.profile?.age,
         gender: apt.patient.profile?.gender
       },
       createdAt: apt.createdAt
@@ -223,17 +217,12 @@ exports.getMyAppointments = async (req, res) => {
 
     res.json(formatted);
 
-  } catch (error) {
-    console.error('GetMyAppointments error:', error);
-    res.status(500).json({ error: 'Failed to get appointments' });
-  }
-};
+});
 
 // ============================================
 // GET APPOINTMENT BY ID
 // ============================================
-exports.getAppointmentById = async (req, res) => {
-  try {
+exports.getAppointmentById = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const userId = req.user.id;
     const userType = req.user.userType;
@@ -257,17 +246,12 @@ exports.getAppointmentById = async (req, res) => {
 
     res.json(appointment);
 
-  } catch (error) {
-    console.error('GetAppointmentById error:', error);
-    res.status(500).json({ error: 'Failed to get appointment' });
-  }
-};
+});
 
 // ============================================
 // UPDATE APPOINTMENT STATUS (Doctor confirms/completes/cancels)
 // ============================================
-exports.updateAppointmentStatus = async (req, res) => {
-  try {
+exports.updateAppointmentStatus = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const { status, notes } = req.body;
     const userId = req.user.id;
@@ -367,17 +351,12 @@ exports.updateAppointmentStatus = async (req, res) => {
       appointment: responseAppointment
     });
 
-  } catch (error) {
-    console.error('UpdateAppointmentStatus error:', error);
-    res.status(500).json({ error: 'Failed to update appointment' });
-  }
-};
+});
 
 // ============================================
 // CANCEL APPOINTMENT (Patient can cancel)
 // ============================================
-exports.cancelAppointment = async (req, res) => {
-  try {
+exports.cancelAppointment = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const userId = req.user.id;
 
@@ -412,135 +391,15 @@ exports.cancelAppointment = async (req, res) => {
 
     res.json({ message: 'Appointment cancelled', appointment: updated });
 
-  } catch (error) {
-    console.error('CancelAppointment error:', error);
-    res.status(500).json({ error: 'Failed to cancel appointment' });
-  }
-};
+});
 
 // ============================================
-exports.startVideoSession = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const userId = req.user.id;
-
-    const appointment = await prisma.appointment.findUnique({
-      where: { id },
-      include: { doctor: true, patient: true }
-    });
-
-    if (!appointment) {
-      return res.status(404).json({ error: 'Appointment not found' });
-    }
-
-    // Check if user is the doctor
-    if (appointment.doctorId !== userId) {
-      return res.status(403).json({ error: 'Only the doctor can start the video session' });
-    }
-
-    // Start the video session
-    const updated = await prisma.appointment.update({
-      where: { id },
-      data: {
-        videoSessionActive: true,
-        videoSessionStartedAt: new Date()
-      }
-    });
-
-    res.json({
-      message: 'Video session started',
-      appointment: updated
-    });
-
-  } catch (error) {
-    console.error('StartVideoSession error:', error);
-    res.status(500).json({ error: 'Failed to start video session' });
-  }
-};
-
+// URGENT REQUESTS
 // ============================================
-// END VIDEO SESSION
-// ============================================
-exports.endVideoSession = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const userId = req.user.id;
-
-    const appointment = await prisma.appointment.findUnique({
-      where: { id }
-    });
-
-    if (!appointment) {
-      return res.status(404).json({ error: 'Appointment not found' });
-    }
-
-    if (appointment.doctorId !== userId && appointment.patientId !== userId) {
-      return res.status(403).json({ error: 'Not authorized' });
-    }
-
-    const updated = await prisma.appointment.update({
-      where: { id },
-      data: {
-        videoSessionActive: false,
-        videoSessionEndedAt: new Date()
-      }
-    });
-
-    res.json({
-      message: 'Video session ended',
-      appointment: updated
-    });
-
-  } catch (error) {
-    console.error('EndVideoSession error:', error);
-    res.status(500).json({ error: 'Failed to end video session' });
-  }
-};
-
-// ============================================
-// GET ACTIVE VIDEO SESSION (for patient)
-// ============================================
-exports.getActiveVideoSession = async (req, res) => {
-  try {
-    const userId = req.user.id;
-
-    const appointment = await prisma.appointment.findFirst({
-      where: {
-        patientId: userId,
-        videoSessionActive: true
-      },
-      include: {
-        doctor: { include: { profile: true } },
-        patient: true
-      }
-    });
-
-    if (!appointment) {
-      return res.json({ activeSession: null });
-    }
-
-    res.json({
-      activeSession: {
-        id: appointment.id,
-        appointmentDate: appointment.appointmentDate,
-        appointmentTime: appointment.appointmentTime,
-        doctorId: appointment.doctorId,
-        doctorName: appointment.doctor.fullname,
-        doctorSpecialty: appointment.doctor.profile?.specialite || 'Psychologue'
-      }
-    });
-
-  } catch (error) {
-    console.error('GetActiveVideoSession error:', error);
-    res.status(500).json({ error: 'Failed to get active session' });
-  }
-};
-
 // ============================================
 // CREATE URGENT REQUEST (Patient)
 // ============================================
-exports.createUrgentRequest = async (req, res) => {
-  try {
+exports.createUrgentRequest = asyncHandler(async (req, res) => {
     const patientId = req.user.id;
     const { doctorId, notes, appointmentTime } = req.body;
 
@@ -607,18 +466,12 @@ exports.createUrgentRequest = async (req, res) => {
       urgentRequest
     });
 
-  } catch (error) {
-    console.error('CreateUrgentRequest error:', error.message);
-    console.error('Stack:', error.stack);
-    res.status(500).json({ error: 'Failed to create urgent request: ' + error.message });
-  }
-};
+});
 
 // ============================================
 // GET URGENT REQUESTS (Patient or Doctor) - Excludes expired (1 hour)
 // ============================================
-exports.getUrgentRequests = async (req, res) => {
-  try {
+exports.getUrgentRequests = asyncHandler(async (req, res) => {
     const userId = req.user.id;
     const userType = req.user.userType;
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
@@ -645,17 +498,12 @@ exports.getUrgentRequests = async (req, res) => {
 
     res.json(urgentRequests);
 
-  } catch (error) {
-    console.error('GetUrgentRequests error:', error);
-    res.status(500).json({ error: 'Failed to get urgent requests' });
-  }
-};
+});
 
 // ============================================
 // ACCEPT URGENT REQUEST (Doctor)
 // ============================================
-exports.acceptUrgentRequest = async (req, res) => {
-  try {
+exports.acceptUrgentRequest = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const doctorId = req.user.id;
 
@@ -702,17 +550,13 @@ exports.acceptUrgentRequest = async (req, res) => {
       startCall: true
     });
 
-  } catch (error) {
-    console.error('AcceptUrgentRequest error:', error);
-    res.status(500).json({ error: 'Failed to accept urgent request' });
-  }
-};
+});
+
 
 // ============================================
 // REJECT URGENT REQUEST (Doctor)
 // ============================================
-exports.rejectUrgentRequest = async (req, res) => {
-  try {
+exports.rejectUrgentRequest = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const { reason } = req.body;
 
@@ -742,40 +586,15 @@ exports.rejectUrgentRequest = async (req, res) => {
       urgentRequest
     });
 
-  } catch (error) {
-    console.error('RejectUrgentRequest error:', error);
-    res.status(500).json({ error: 'Failed to reject urgent request' });
-  }
-};
+});
 
 // ============================================
 // COMPLETE URGENT REQUEST (Doctor)
 // ============================================
-exports.completeUrgentRequest = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const urgentRequest = await prisma.urgentRequest.update({
-      where: { id },
-      data: { status: 'completed' }
-    });
-
-    res.json({
-      message: 'Urgent request completed',
-      urgentRequest
-    });
-
-  } catch (error) {
-    console.error('CompleteUrgentRequest error:', error);
-    res.status(500).json({ error: 'Failed to complete urgent request' });
-  }
-};
-
 // ============================================
 // GET URGENT ACCESS STATUS (Patient)
 // ============================================
-exports.getUrgentAccessStatus = async (req, res) => {
-  try {
+exports.getUrgentAccessStatus = asyncHandler(async (req, res) => {
     const userId = req.user.id;
     
     const user = await prisma.user.findUnique({
@@ -794,17 +613,12 @@ exports.getUrgentAccessStatus = async (req, res) => {
       daysLeft: Math.max(0, daysLeft)
     });
 
-  } catch (error) {
-    console.error('GetUrgentAccessStatus error:', error);
-    res.status(500).json({ error: 'Failed to get urgent access status' });
-  }
-};
+});
 
 // ============================================
 // ACTIVATE URGENT ACCESS (7 days) - After payment
 // ============================================
-exports.activateUrgentAccess = async (req, res) => {
-  try {
+exports.activateUrgentAccess = asyncHandler(async (req, res) => {
     const userId = req.user.id;
     
     const now = new Date();
@@ -826,17 +640,12 @@ exports.activateUrgentAccess = async (req, res) => {
       expiryDate: user.urgentAccessExpiry
     });
 
-  } catch (error) {
-    console.error('ActivateUrgentAccess error:', error);
-    res.status(500).json({ error: 'Failed to activate urgent access' });
-  }
-};
+});
 
 // ============================================
 // START CALL STATE (Doctor starts call)
 // ============================================
-exports.startCallState = async (req, res) => {
-  try {
+exports.startCallState = asyncHandler(async (req, res) => {
     const userId = req.user.id;
     const { patientId, appointmentId } = req.body;
 
@@ -874,17 +683,12 @@ exports.startCallState = async (req, res) => {
 
     res.json({ success: true, message: 'Call state started', doctorId: userId, patientId });
 
-  } catch (error) {
-    console.error('StartCallState error:', error);
-    res.status(500).json({ error: 'Failed to start call state' });
-  }
-};
+});
 
 // ============================================
 // END CALL STATE (Doctor or Patient ends call)
 // ============================================
-exports.endCallState = async (req, res) => {
-  try {
+exports.endCallState = asyncHandler(async (req, res) => {
     const userId = req.user.id;
     const userType = req.user.userType;
 
@@ -938,17 +742,12 @@ exports.endCallState = async (req, res) => {
 
     res.json({ success: true, message: 'Call state ended' });
 
-  } catch (error) {
-    console.error('EndCallState error:', error);
-    res.status(500).json({ error: 'Failed to end call state' });
-  }
-};
+});
 
 // ============================================
 // GET MY CALL STATUS (Patient or Doctor)
 // ============================================
-exports.getMyCallStatus = async (req, res) => {
-  try {
+exports.getMyCallStatus = asyncHandler(async (req, res) => {
     const userId = req.user.id;
 
     const user = await prisma.user.findUnique({
@@ -986,17 +785,12 @@ exports.getMyCallStatus = async (req, res) => {
       startedAt: user.currentCallStartedAt
     });
 
-  } catch (error) {
-    console.error('GetMyCallStatus error:', error);
-    res.status(500).json({ error: 'Failed to get call status' });
-  }
-};
+});
 
 // ============================================
 // GET CALL STATUS (Patient checks if doctor is in call)
 // ============================================
-exports.getCallStatus = async (req, res) => {
-  try {
+exports.getCallStatus = asyncHandler(async (req, res) => {
     const { doctorId } = req.params;
     const patientId = req.user.id;
 
@@ -1028,9 +822,4 @@ exports.getCallStatus = async (req, res) => {
       appointmentId: doctor.currentCallId,
       startedAt: doctor.currentCallStartedAt
     });
-
-  } catch (error) {
-    console.error('GetCallStatus error:', error);
-    res.status(500).json({ error: 'Failed to get call status' });
-  }
-};
+});

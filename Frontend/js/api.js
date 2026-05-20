@@ -108,10 +108,6 @@ const doctorAPI = {
     return fetchAPI(`/doctors/${doctorId}/availability${queryString}`);
   },
 
-  getMyProfile: async () => {
-    return fetchAPI('/doctors/profile/me');
-  },
-
   updateProfile: async (profileData) => {
     return fetchAPI('/doctors/profile', {
       method: 'PUT',
@@ -148,10 +144,6 @@ const doctorAPI = {
     return fetchAPI(`/doctors/schedule/${slotId}/unblock`, {
       method: 'PUT'
     });
-  },
-
-  getWeekAppointments: async (startDate, endDate) => {
-    return fetchAPI(`/appointments?startDate=${startDate}&endDate=${endDate}`);
   },
 
   getDashboard: async (params = {}) => {
@@ -280,12 +272,6 @@ const appointmentAPI = {
   activateUrgentAccess: async () => {
     return fetchAPI('/appointments/urgent/activate', {
       method: 'POST'
-    });
-  },
-
-  completeUrgent: async (id) => {
-    return fetchAPI(`/appointments/urgent/${id}/complete`, {
-      method: 'PUT'
     });
   },
 
@@ -485,10 +471,6 @@ const reviewAPI = {
       method: 'POST',
       body: JSON.stringify(data)
     });
-  },
-
-  getDoctorReviews: async (doctorId) => {
-    return fetchAPI(`/reviews/doctor/${doctorId}`);
   }
 };
 

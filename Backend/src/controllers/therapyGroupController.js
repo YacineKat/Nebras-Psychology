@@ -1,4 +1,6 @@
 const prisma = require('../prisma');
+const asyncHandler = require('../utils/asyncHandler');
+const { recalculateDoctorRating } = require('./reviewController');
 
 // =============================================
 // REAL-TIME BROADCAST HELPERS
@@ -18,8 +20,7 @@ function broadcastGroupChange(type, details = {}) {
 // =============================================
 
 // Create a new therapy group (psychologue only)
-async function createGroup(req, res) {
-  try {
+const createGroup = asyncHandler(async (req, res) => {
     const psychologueId = req.user?.id;
     if (!psychologueId) {
       return res.status(401).json({ error: 'Non autorisé' });
@@ -68,22 +69,17 @@ async function createGroup(req, res) {
         price: group.price
       }
     });
-  } catch (error) {
-    console.error('Error creating group:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
-  }
-}
+});
 
 // Get groups created by the psychologue
-async function getMyGroups(req, res) {
-  try {
+const getMyGroups = asyncHandler(async (req, res) => {
     const psychologueId = req.user?.id;
     if (!psychologueId) {
       return res.status(401).json({ error: 'Non autorisé' });
     }
 
     const groups = await prisma.therapyGroup.findMany({
-      where: { psychologueId },
+      where: { psychologueId, isActive: true },
       orderBy: { createdAt: 'desc' }
     });
 
@@ -133,15 +129,10 @@ async function getMyGroups(req, res) {
     }));
 
     res.json({ groups: groupsWithCounts });
-  } catch (error) {
-    console.error('Error fetching my groups:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
-  }
-}
+});
 
 // Update a therapy group
-async function updateGroup(req, res) {
-  try {
+const updateGroup = asyncHandler(async (req, res) => {
     const psychologueId = req.user?.id;
     if (!psychologueId) {
       return res.status(401).json({ error: 'Non autorisé' });
@@ -190,15 +181,10 @@ async function updateGroup(req, res) {
         price: group.price
       }
     });
-  } catch (error) {
-    console.error('Error updating group:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
-  }
-}
+});
 
 // Delete a therapy group
-async function deleteGroup(req, res) {
-  try {
+const deleteGroup = asyncHandler(async (req, res) => {
     const psychologueId = req.user?.id;
     if (!psychologueId) {
       return res.status(401).json({ error: 'Non autorisé' });
@@ -229,15 +215,10 @@ async function deleteGroup(req, res) {
     broadcastGroupChange('group-deleted', { groupId, psychologueId });
 
     res.json({ success: true, message: 'Groupe supprimé' });
-  } catch (error) {
-    console.error('Error deleting group:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
-  }
-}
+});
 
 // Get group details (for managing waiting list and participants)
-async function getGroupDetails(req, res) {
-  try {
+const getGroupDetails = asyncHandler(async (req, res) => {
     const psychologueId = req.user?.id;
     if (!psychologueId) {
       return res.status(401).json({ error: 'Non autorisé' });
@@ -303,15 +284,10 @@ async function getGroupDetails(req, res) {
         } : null
       }
     });
-  } catch (error) {
-    console.error('Error fetching group details:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
-  }
-}
+});
 
 // Accept a patient request (from waiting list to participants)
-async function acceptPatientRequest(req, res) {
-  try {
+const acceptPatientRequest = asyncHandler(async (req, res) => {
     const psychologueId = req.user?.id;
     if (!psychologueId) {
       return res.status(401).json({ error: 'Non autorisé' });
@@ -371,15 +347,10 @@ async function acceptPatientRequest(req, res) {
     broadcastGroupChange('group-member-accepted', { groupId: member.groupId, psychologueId });
 
     res.json({ success: true, message: 'Patient accepté dans le groupe' });
-  } catch (error) {
-    console.error('Error accepting request:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
-  }
-}
+});
 
 // Reject a patient request
-async function rejectPatientRequest(req, res) {
-  try {
+const rejectPatientRequest = asyncHandler(async (req, res) => {
     const psychologueId = req.user?.id;
     if (!psychologueId) {
       return res.status(401).json({ error: 'Non autorisé' });
@@ -421,16 +392,11 @@ async function rejectPatientRequest(req, res) {
     broadcastGroupChange('group-member-rejected', { groupId: member.groupId, psychologueId });
 
     res.json({ success: true, message: 'Demande refusée' });
-  } catch (error) {
-    console.error('Error rejecting request:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
-  }
-}
+});
 
 // End a group session — notify all accepted + pending members in real-time,
 // delete video room, mark group inactive, and clean up stale pending requests
-async function endGroupSession(req, res) {
-  try {
+const endGroupSession = asyncHandler(async (req, res) => {
     const psychologueId = req.user?.id;
     if (!psychologueId) {
       return res.status(401).json({ error: 'Non autorisé' });
@@ -446,16 +412,16 @@ async function endGroupSession(req, res) {
       return res.status(404).json({ error: 'Groupe introuvable' });
     }
 
-    // 1. Get accepted members BEFORE deleting group (for notifications)
+    // 1. Get accepted members BEFORE deactivating group (for notifications)
     const acceptedMemberRecords = await prisma.groupMember.findMany({
       where: { groupId, status: 'accepted' },
       include: { user: { select: { id: true } } }
     });
 
-    // 2. Delete group permanently - remove from database entirely so it never reappears
-    //    (Cascade will automatically delete all groupMember records)
-    await prisma.therapyGroup.delete({
-      where: { id: groupId }
+    // 2. Deactivate group instead of deleting — preserves history, avoids FK issues
+    await prisma.therapyGroup.update({
+      where: { id: groupId },
+      data: { isActive: false }
     });
 
     // 3. Notify ALL accepted members via socket.io that the group has ended
@@ -496,15 +462,10 @@ async function endGroupSession(req, res) {
     broadcastGroupChange('group-ended', { groupId, psychologueId });
 
     res.json({ success: true, message: 'Session terminée, données nettoyées' });
-  } catch (error) {
-    console.error('Error ending group session:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
-  }
-}
+});
 
 // Rate a group therapy session (patient only)
-async function createGroupSessionRating(req, res) {
-  try {
+const createGroupSessionRating = asyncHandler(async (req, res) => {
     const patientId = req.user?.id;
     if (!patientId) {
       return res.status(401).json({ error: 'Non autorisé' });
@@ -559,46 +520,22 @@ async function createGroupSessionRating(req, res) {
       }
     });
 
-    // Update doctor's overall rating
-    const allRatings = await prisma.groupSessionRating.findMany({
-      where: { doctorId },
-      select: { rating: true }
-    });
-    const reviewRatings = await prisma.review.findMany({
-      where: { doctorId },
-      select: { rating: true }
-    });
-    const allScores = [
-      ...allRatings.map(r => r.rating),
-      ...reviewRatings.map(r => r.rating)
-    ];
-    const avgRating = allScores.length > 0
-      ? Math.round((allScores.reduce((a, b) => a + b, 0) / allScores.length) * 100) / 100
-      : 0;
-
-    await prisma.profile.updateMany({
-      where: { userId: doctorId },
-      data: { rating: avgRating }
-    });
+    // Update doctor's overall rating using shared helper
+    await recalculateDoctorRating(doctorId);
 
     res.status(201).json({
       success: true,
       message: 'Note enregistrée',
       rating: ratingRecord
     });
-  } catch (error) {
-    console.error('Error creating group session rating:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
-  }
-}
+});
 
 // =============================================
 // PATIENT-FACING FUNCTIONS (existing)
 // =============================================
 
 // Get all active therapy groups
-async function getGroups(req, res) {
-  try {
+const getGroups = asyncHandler(async (req, res) => {
     const groups = await prisma.therapyGroup.findMany({
       where: { isActive: true },
       orderBy: { dayOfWeek: 'asc' }
@@ -641,15 +578,10 @@ async function getGroups(req, res) {
     });
 
     res.json({ groups: formattedGroups });
-  } catch (error) {
-    console.error('Error fetching groups:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
-  }
-}
+});
 
 // Join a therapy group - creates pending request
-async function joinGroup(req, res) {
-  try {
+const joinGroup = asyncHandler(async (req, res) => {
     const userId = req.user?.id;
     if (!userId) {
       return res.status(401).json({ error: 'Non autorisé' });
@@ -736,11 +668,7 @@ async function joinGroup(req, res) {
     emitJoinRequestNotification(group.psychologueId, userId, groupId, patientUser?.fullname);
 
     res.json({ success: true, message: 'Demande envoyée, en attente de validation' });
-  } catch (error) {
-    console.error('Error joining group:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
-  }
-}
+});
 
 // Helper: emit real-time join request notification to the psychologue
 function emitJoinRequestNotification(psychologueId, patientId, groupId, patientName) {
@@ -753,57 +681,8 @@ function emitJoinRequestNotification(psychologueId, patientId, groupId, patientN
   });
 }
 
-// Leave a therapy group
-async function leaveGroup(req, res) {
-  try {
-    const userId = req.user?.id;
-    if (!userId) {
-      return res.status(401).json({ error: 'Non autorisé' });
-    }
-
-    const { groupId } = req.body;
-    if (!groupId) {
-      return res.status(400).json({ error: 'ID du groupe requis' });
-    }
-
-    // Check membership
-    const membership = await prisma.groupMember.findUnique({
-      where: {
-        groupId_userId: {
-          groupId,
-          userId
-        }
-      }
-    });
-
-    if (!membership) {
-      return res.status(400).json({ error: 'Vous n\'êtes pas membre de ce groupe' });
-    }
-
-    // Remove member and decrement count
-    await prisma.$transaction([
-      prisma.groupMember.delete({
-        where: { id: membership.id }
-      }),
-      prisma.therapyGroup.update({
-        where: { id: groupId },
-        data: { currentParticipants: { decrement: 1 } }
-      })
-    ]);
-
-    // Broadcast real-time update
-    broadcastGroupChange('group-member-left', { groupId, userId });
-
-    res.json({ success: true, message: 'Désinscription réussie' });
-  } catch (error) {
-    console.error('Error leaving group:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
-  }
-}
-
 // Get user's joined groups (for patients)
-async function getMyGroupsAsPatient(req, res) {
-  try {
+const getMyGroupsAsPatient = asyncHandler(async (req, res) => {
     const userId = req.user?.id;
     if (!userId) {
       return res.status(401).json({ error: 'Non autorisé' });
@@ -858,132 +737,7 @@ async function getMyGroupsAsPatient(req, res) {
     }));
 
     res.json({ groups });
-  } catch (error) {
-    console.error('Error fetching user groups:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
-  }
-}
-
-// Get pending requests (for psychologues)
-async function getPendingRequests(req, res) {
-  try {
-    const userId = req.user?.id;
-    if (!userId) {
-      return res.status(401).json({ error: 'Non autorisé' });
-    }
-
-    const requests = await prisma.groupMember.findMany({
-      where: { status: 'pending' },
-      include: {
-        user: { select: { id: true, fullname: true, email: true } },
-        group: { select: { id: true, name: true } }
-      },
-      orderBy: { joinedAt: 'desc' }
-    });
-
-    res.json({ requests });
-  } catch (error) {
-    console.error('Error fetching pending requests:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
-  }
-}
-
-// Accept a join request
-async function acceptRequest(req, res) {
-  try {
-    const userId = req.user?.id;
-    if (!userId) {
-      return res.status(401).json({ error: 'Non autorisé' });
-    }
-
-    const { memberId } = req.body;
-    if (!memberId) {
-      return res.status(400).json({ error: 'ID du membre requis' });
-    }
-
-    // Get the member and group
-    const member = await prisma.groupMember.findUnique({
-      where: { id: memberId },
-      include: { group: true }
-    });
-
-    if (!member) {
-      return res.status(404).json({ error: 'Demande introuvable' });
-    }
-
-    if (member.group.currentParticipants >= member.group.maxParticipants) {
-      return res.status(400).json({ error: 'Groupe complet' });
-    }
-
-    // Accept the request and increment count
-    await prisma.$transaction([
-      prisma.groupMember.update({
-        where: { id: memberId },
-        data: { status: 'accepted' }
-      }),
-      prisma.therapyGroup.update({
-        where: { id: member.groupId },
-        data: { currentParticipants: { increment: 1 } }
-      })
-    ]);
-
-    res.json({ success: true, message: 'Demande acceptée' });
-  } catch (error) {
-    console.error('Error accepting request:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
-  }
-}
-
-// Reject a join request
-async function rejectRequest(req, res) {
-  try {
-    const userId = req.user?.id;
-    if (!userId) {
-      return res.status(401).json({ error: 'Non autorisé' });
-    }
-
-    const { memberId } = req.body;
-    if (!memberId) {
-      return res.status(400).json({ error: 'ID du membre requis' });
-    }
-
-    await prisma.groupMember.update({
-      where: { id: memberId },
-      data: { status: 'rejected' }
-    });
-
-    res.json({ success: true, message: 'Demande refusée' });
-  } catch (error) {
-    console.error('Error rejecting request:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
-  }
-}
-
-// Seed default groups (for development)
-async function seedGroups(req, res) {
-  try {
-    const defaultGroups = [
-      { name: 'Gestion du stress', description: 'Apprenez à gérer votre stress quotidien avec des techniques de relaxation.', dayOfWeek: 3, time: '19:00', duration: 90, maxParticipants: 8, icon: 'stress' },
-      { name: 'Confiance en soi', description: 'Développez votre estime personnelle dans un cadre sécurisant.', dayOfWeek: 1, time: '18:00', duration: 90, maxParticipants: 6, icon: 'confidence' },
-      { name: 'Relations de couple', description: 'Améliorez votre communication et renforcez votre couple.', dayOfWeek: 2, time: '20:00', duration: 120, maxParticipants: 10, icon: 'couple' },
-      { name: 'Dépasser l\'anxiété', description: 'Identifiez et surmontez vos angoisses avec un accompagnement adapté.', dayOfWeek: 4, time: '17:00', duration: 90, maxParticipants: 8, icon: 'anxiety' },
-      { name: 'Gestion du deuil', description: 'Accompagnement dans le processus de deuil et la reconstruction.', dayOfWeek: 5, time: '18:30', duration: 90, maxParticipants: 8, icon: 'heart' }
-    ];
-
-    for (const g of defaultGroups) {
-      await prisma.therapyGroup.upsert({
-        where: { name: g.name },
-        update: g,
-        create: g
-      });
-    }
-
-    res.json({ success: true, message: 'Groupes种子已添加' });
-  } catch (error) {
-    console.error('Error seeding groups:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
-  }
-}
+});
 
 module.exports = {
   // Psychologue functions
@@ -998,11 +752,6 @@ module.exports = {
   // Patient functions
   getGroups,
   joinGroup,
-  leaveGroup,
   getMyGroupsAsPatient,
-  getPendingRequests,
-  acceptRequest,
-  rejectRequest,
   createGroupSessionRating,
-  seedGroups
 };

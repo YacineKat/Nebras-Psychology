@@ -166,8 +166,24 @@ app.use((req, res) => {
 
 // Global error handler
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ error: 'Something went wrong!' });
+  console.error(`[${req.method} ${req.originalUrl}]`, err.message || err);
+
+  if (err.code === 'P2002') {
+    return res.status(409).json({ error: 'Cette ressource existe déjà' });
+  }
+  if (err.code === 'P2025') {
+    return res.status(404).json({ error: 'Ressource non trouvée' });
+  }
+  if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
+    return res.status(401).json({ error: 'Token invalide ou expiré' });
+  }
+  if (err.type === 'entity.parse.failed') {
+    return res.status(400).json({ error: 'Format JSON invalide' });
+  }
+
+  res.status(err.statusCode || 500).json({
+    error: err.statusCode ? err.message : 'Erreur interne du serveur'
+  });
 });
 
 // ============================================
