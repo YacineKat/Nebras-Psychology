@@ -3,7 +3,6 @@
 // ============================================
 
 const express = require('express');
-const cors = require('cors');
 const path = require('path');
 const http = require('http');
 const { Server } = require('socket.io');
@@ -29,32 +28,20 @@ const app = express();
 const server = http.createServer(app);
 
 // ============================================
-// CORS — raw middleware before any route definitions
+// CORS — set headers on every response,
+// then handle OPTIONS via explicit route
 // ============================================
 app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  const allowed = [
-    'https://nebras-psychology.netlify.app',
-    'http://localhost:3000',
-    'http://localhost:5500',
-    'http://127.0.0.1:5500',
-  ];
-
-  if (origin && allowed.indexOf(origin) !== -1) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-  } else if (!origin) {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-  }
-
+  res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
-
-  if (req.method === 'OPTIONS') {
-    return res.status(204).end();
-  }
-
+  res.setHeader('Vary', 'Origin');
   next();
+});
+
+app.options('*', (req, res) => {
+  res.status(204).end();
 });
 
 const io = new Server(server, {
