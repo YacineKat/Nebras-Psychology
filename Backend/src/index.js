@@ -27,6 +27,23 @@ const { initVideoSignaling } = require('./videoSignaling');
 
 const app = express();
 const server = http.createServer(app);
+
+// ============================================
+// CORS — applied before any route definitions
+// ============================================
+app.use(cors({
+  origin: [
+    'https://nebras-psychology.netlify.app',
+    'http://localhost:3000',
+    'http://localhost:5500',
+    'http://127.0.0.1:5500',
+  ],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
+
+app.options('*', cors());
+
 const io = new Server(server, {
     cors: { origin: '*', methods: ['GET', 'POST'] }
 });
@@ -49,18 +66,15 @@ io.use((socket, next) => {
 // Make io available globally
 global.io = io;
 
-// Initialize video signaling on the same server
-initVideoSignaling(io, app);
+// ============================================
+// BODY PARSER
+// ============================================
+app.use(express.json({ limit: '10mb' }));
 
 // ============================================
-// MIDDLEWARE
+// VIDEO SIGNALING (WebRTC / room management)
 // ============================================
-app.use(cors({
-    origin: '*', // Allow all origins
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization']
-})); // Allow cross-origin requests
-app.use(express.json({ limit: '10mb' })); // Parse JSON bodies (increased for avatar uploads)
+initVideoSignaling(io, app);
 
 // ============================================
 // SERVE FRONTEND STATIC FILES
