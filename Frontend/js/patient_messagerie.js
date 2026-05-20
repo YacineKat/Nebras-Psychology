@@ -10,6 +10,7 @@ let currentMessages = [];
 let currentMessageIds = new Set();
 let patientMessagingSocket = null;
 let patientMessagingSocketBound = false;
+let chatHistoryPushed = false;
 
 document.addEventListener('DOMContentLoaded', init);
 
@@ -42,6 +43,12 @@ async function init() {
         updateUnreadBadgeFromState();
 
     connectMessagingRealtime();
+
+    window.addEventListener('popstate', () => {
+        if (document.body.classList.contains('chat-open')) {
+            closeChatViewInternal(true);
+        }
+    });
 
     // Open pre-selected conversation if exists
     if (preSelectedId) {
@@ -106,6 +113,7 @@ async function openChat(conv) {
     currentMessagesSignature = '';
     currentMessages = [];
     currentMessageIds = new Set();
+    enterChatView();
     const userId = conv.partner?.id;
     const userName = conv.partner?.fullname || 'Utilisateur';
     const avatarHtml = renderAvatarMarkup(conv.partner, 40, '18px');
@@ -119,6 +127,9 @@ async function openChat(conv) {
     area.innerHTML = `
         <div class="chat-header">
             <div class="chat-user">
+                <button class="chat-back-btn" type="button" onclick="closeChatView()" aria-label="Retour">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+                </button>
                 ${avatarHtml}
                 <span class="name">${escapeHtml(userName)}</span>
             </div>
@@ -201,11 +212,15 @@ async function sendMsg() {
 
 function startNewChat(doctorId, doctorName) {
     currentChat = { partner: { id: doctorId, fullname: doctorName } };
+    enterChatView();
     
     const area = document.querySelector('.conversation-area');
     area.innerHTML = `
         <div class="chat-header">
             <div class="chat-user">
+                <button class="chat-back-btn" type="button" onclick="closeChatView()" aria-label="Retour">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+                </button>
                 ${renderAvatarMarkup(currentChat.partner, 40, '18px')}
                 <span class="name">${escapeHtml(doctorName)}</span>
             </div>
@@ -226,6 +241,31 @@ async function loadCurrentThread() {
     if (!currentChat?.partner?.id) return;
     const messages = await messageAPI.getWithUser(currentChat.partner.id) || [];
     renderMessages(messages, currentChat.partner.id);
+}
+
+function closeChatView() {
+    closeChatViewInternal(false);
+}
+
+function enterChatView() {
+    document.body.classList.add('chat-open');
+
+    if (window.matchMedia('(max-width: 900px)').matches && !chatHistoryPushed) {
+        window.history.pushState({ chatView: true }, '');
+        chatHistoryPushed = true;
+    }
+}
+
+function closeChatViewInternal(fromPopState) {
+    document.body.classList.remove('chat-open');
+
+    if (!fromPopState && chatHistoryPushed && window.matchMedia('(max-width: 900px)').matches) {
+        chatHistoryPushed = false;
+        window.history.back();
+        return;
+    }
+
+    chatHistoryPushed = false;
 }
 
 function connectMessagingRealtime() {
@@ -416,3 +456,4 @@ async function updateUnreadBadge() {
 // Expose functions globally
 window.openChatById = openChatById;
 window.sendMsg = sendMsg;
+window.closeChatView = closeChatView;

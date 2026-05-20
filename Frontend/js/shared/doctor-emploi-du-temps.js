@@ -3,6 +3,7 @@
 // ============================================
 
 let currentWeekStart = null;
+let mobileCurrentDate = null;
 let timeSlots = [];
 let weekAppointments = [];
 let allAppointments = [];
@@ -44,6 +45,11 @@ function initWeek() {
     const diff = -dayOfWeek;
     currentWeekStart = new Date(today.getFullYear(), today.getMonth(), today.getDate() + diff);
     currentWeekStart.setHours(0, 0, 0, 0);
+
+    if (!mobileCurrentDate) {
+        mobileCurrentDate = new Date();
+        mobileCurrentDate.setHours(0, 0, 0, 0);
+    }
 }
 
 function initEventListeners() {
@@ -220,6 +226,32 @@ function setLoading(show) {
 // RENDERING
 // ============================================
 function renderAll() {
+    const isMobile = window.matchMedia('(max-width: 900px)').matches;
+    const weekNav = document.querySelector('.week-navigation');
+    if (weekNav) {
+        weekNav.style.display = isMobile ? 'none' : 'flex';
+    }
+
+    const weekSectionTitle = document.querySelector('#weekView')?.closest('.dashboard-section')?.querySelector('h2');
+    if (weekSectionTitle && isMobile) {
+        weekSectionTitle.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <button onclick="navigateMobileDay(-1)" style="padding: 6px; background: transparent; border: none; cursor: pointer; color: var(--primary-dark);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                </button>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20" height="20"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    <span>Vue du jour</span>
+                </div>
+                <button onclick="navigateMobileDay(1)" style="padding: 6px; background: transparent; border: none; cursor: pointer; color: var(--primary-dark);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </button>
+            </div>
+        `;
+    } else if (weekSectionTitle && !isMobile) {
+        weekSectionTitle.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20" height="20"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Vue de la semaine';
+    }
+
     updateWeekRange();
     renderStats();
     renderWeekView();
@@ -227,6 +259,17 @@ function renderAll() {
 }
 
 function updateWeekRange() {
+    if (window.matchMedia('(max-width: 900px)').matches) {
+        const weekRangeEl = document.getElementById('weekRange');
+        if (weekRangeEl) {
+            const dayDate = mobileCurrentDate ? new Date(mobileCurrentDate) : new Date();
+            const isToday = dayDate.toDateString() === new Date().toDateString();
+            const prefix = isToday ? "Aujourd'hui" : dayDate.toLocaleDateString('fr-FR', { weekday: 'long' });
+            weekRangeEl.textContent = `${prefix} · ${dayDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}`;
+        }
+        return;
+    }
+
     const weekEnd = new Date(currentWeekStart);
     weekEnd.setDate(weekEnd.getDate() + 6);
 
@@ -421,12 +464,21 @@ function renderWeekView() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
+    const isMobile = window.matchMedia('(max-width: 900px)').matches;
+    container.style.gridTemplateColumns = isMobile ? '1fr' : 'repeat(7, 1fr)';
+
     let html = '';
     const weekDays = [];
-    for (let i = 0; i < 7; i++) {
-        const date = new Date(currentWeekStart);
-        date.setDate(date.getDate() + i);
-        weekDays.push(date);
+    if (isMobile) {
+        const dayDate = mobileCurrentDate ? new Date(mobileCurrentDate) : new Date();
+        dayDate.setHours(0, 0, 0, 0);
+        weekDays.push(dayDate);
+    } else {
+        for (let i = 0; i < 7; i++) {
+            const date = new Date(currentWeekStart);
+            date.setDate(date.getDate() + i);
+            weekDays.push(date);
+        }
     }
 
     html += weekDays.map((date, i) => {
@@ -436,7 +488,7 @@ function renderWeekView() {
         const dateStr = formatDateOnly(date);
         const isToday = dateStr === formatDateOnly(today);
         return `
-            <div style="background: ${isToday ? '#44AA99' : '#091346'}; color: white; padding: 12px 8px; border-radius: 8px; text-align: center;">
+            <div style="background: ${isToday ? '#44AA99' : '#091346'}; color: white; padding: 12px 8px; border-radius: 8px; text-align: center; ${isMobile ? 'margin-bottom: 10px;' : ''}">
                 <div style="font-weight: 600; font-size: 13px;">${dayName}</div>
                 <div style="font-size: 18px; font-weight: 700;">${dayNum}</div>
                 <div style="font-size: 11px; opacity: 0.9;">${month}</div>
@@ -509,7 +561,7 @@ function renderWeekView() {
 
         const hasContent = allItems.length > 0;
 
-        html += `<div style="min-height: 200px; background: #f9f9f9; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 8px;">`;
+        html += `<div style="min-height: 200px; background: #f9f9f9; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 8px; ${isMobile ? 'margin-bottom: 12px;' : ''}">`;
 
         if (!hasContent) {
             html += `<div style="color: #999; font-size: 12px; text-align: center; padding: 20px;">Aucun créneau</div>`;
@@ -566,6 +618,8 @@ function navigateWeek(direction) {
 
 function goToToday() {
     initWeek();
+    mobileCurrentDate = new Date();
+    mobileCurrentDate.setHours(0, 0, 0, 0);
     loadAllData();
     showToast('Semaine en cours', 'info');
 }
@@ -970,3 +1024,18 @@ window.addEventListener('load', () => {
         document.querySelector('.nav-menu').scrollTop = scrollPos;
     }
 });
+
+// --- Mobile Day Navigation ---
+function navigateMobileDay(direction) {
+    if (!window.matchMedia('(max-width: 900px)').matches) return;
+    if (!mobileCurrentDate) {
+        mobileCurrentDate = new Date();
+    }
+    mobileCurrentDate.setDate(mobileCurrentDate.getDate() + Number(direction));
+    mobileCurrentDate.setHours(0, 0, 0, 0);
+    renderAll();
+}
+window.navigateMobileDay = navigateMobileDay;
+
+
+

@@ -152,3 +152,35 @@
         flex-direction: column;
     }
 }
+
+@media (max-width: 900px) {
+    .psycho-cards-container {
+        margin: 24px auto !important;
+        padding: 0 16px !important;
+        gap: 16px !important;
+    }
+
+    .psycho-card {
+        min-width: 0 !important;
+        border-radius: 18px !important;
+        box-shadow: none !important;
+    }
+
+    .card-header,
+    .card-header.vip-header {
+        padding: 18px !important;
+    }
+
+    .card-header h2 {
+        font-size: 18px !important;
+    }
+
+    .card-body {
+        padding: 18px !important;
+    }
+
+    .btn-inscription {
+        width: 100% !important;
+        justify-content: center !important;
+    }
+}

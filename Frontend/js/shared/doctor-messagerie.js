@@ -4,6 +4,7 @@ let conversationsSignature = '';
 let currentMessagesSignature = '';
 let isChatOpen = false;
 let messagingSocketBound = false;
+let chatHistoryPushed = false;
 
 document.addEventListener('DOMContentLoaded', init);
 
@@ -35,6 +36,13 @@ async function init() {
     await loadConversations();
     await updateUnreadBadge();
     connectMessagingRealtime();
+
+    window.addEventListener('popstate', () => {
+        if (document.body.classList.contains('chat-open')) {
+            closeChatViewInternal(true);
+        }
+    });
+
     highlightCurrentSidebarLink();
 }
 
@@ -92,6 +100,7 @@ async function openChat(conv) {
     currentMessagesSignature = '';
     currentMessages = [];
     currentMessageIds = new Set();
+    enterChatView();
     const userId = conv.partner?.id;
     const userName = conv.partner?.fullname || 'Patient';
 
@@ -102,6 +111,9 @@ async function openChat(conv) {
     area.innerHTML = `
         <div class="chat-header">
             <div class="chat-user">
+                <button class="chat-back-btn" type="button" onclick="closeChatView()" aria-label="Retour">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+                </button>
                 ${renderAvatarMarkup(conv.partner, 40, '18px')}
                 <span class="name">${escapeHtml(userName)}</span>
             </div>
@@ -180,6 +192,33 @@ async function sendMsg() {
         console.error(e);
         showToast('Erreur: ' + e.message, 'error');
     }
+}
+
+function closeChatView() {
+    closeChatViewInternal(false);
+}
+
+function enterChatView() {
+    isChatOpen = true;
+    document.body.classList.add('chat-open');
+
+    if (window.matchMedia('(max-width: 900px)').matches && !chatHistoryPushed) {
+        window.history.pushState({ chatView: true }, '');
+        chatHistoryPushed = true;
+    }
+}
+
+function closeChatViewInternal(fromPopState) {
+    isChatOpen = false;
+    document.body.classList.remove('chat-open');
+
+    if (!fromPopState && chatHistoryPushed && window.matchMedia('(max-width: 900px)').matches) {
+        chatHistoryPushed = false;
+        window.history.back();
+        return;
+    }
+
+    chatHistoryPushed = false;
 }
 
 function connectMessagingRealtime() {
@@ -398,3 +437,4 @@ document.addEventListener('visibilitychange', () => {
 
 window.openChatById = openChatById;
 window.sendMsg = sendMsg;
+window.closeChatView = closeChatView;
