@@ -5,10 +5,33 @@
   var INSTALL_FLAG_KEY = 'nebras_install_dismissed';
 
   /* ============================================
-     1. SERVICE WORKER REGISTRATION
+     1. SERVICE WORKER REGISTRATION + UPDATE
      ============================================ */
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js').catch(function () {});
+    navigator.serviceWorker.register('./sw.js').then(function(reg) {
+      // Detect new SW waiting to activate
+      reg.addEventListener('updatefound', function() {
+        var newWorker = reg.installing;
+        newWorker.addEventListener('statechange', function() {
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            // New version available — activate immediately
+            newWorker.postMessage({ action: 'skipWaiting' });
+          }
+        });
+      });
+
+      // Check for updates every 30 minutes
+      setInterval(function() { reg.update(); }, 30 * 60 * 1000);
+    }).catch(function () {});
+
+    // Reload when new SW takes control
+    var refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', function() {
+      if (!refreshing) {
+        refreshing = true;
+        window.location.reload();
+      }
+    });
   }
 
   /* ============================================

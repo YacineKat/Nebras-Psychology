@@ -1,4 +1,6 @@
-var CACHE_NAME = 'nebras-static-v1';
+importScripts('./js/version.js');
+
+var CACHE_NAME = 'nebras-static-v' + (typeof APP_VERSION !== 'undefined' ? APP_VERSION.replace(/\./g, '-') : '0');
 var STATIC_ASSETS = [
   '/home.html',
   '/auth.html',
@@ -8,6 +10,7 @@ var STATIC_ASSETS = [
   '/css/pwa.css',
   '/js/api.js',
   '/js/config.js',
+  '/js/version.js',
   '/js/pwa.js',
   '/assets/image/logo.png',
   '/assets/image/icon-192.png',
@@ -39,7 +42,13 @@ self.addEventListener('activate', function(event) {
       );
     })
   );
-  self.clients.claim();
+  return self.clients.claim();
+});
+
+self.addEventListener('message', function(event) {
+  if (event.data && event.data.action === 'skipWaiting') {
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener('fetch', function(event) {
