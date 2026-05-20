@@ -1,36 +1,35 @@
-// ============================================
-// PROJECT CONFIGURATION - Environment settings
-// ============================================
-
-// Configuration - Update these values for your deployment
 const CONFIG = {
-    // Manual override - set to true to use production URLs
-    useProduction: false,
-
-    // Production URLs (update these for your deployed server)
     production: {
-        videoServerUrl: 'https://your-domain.com'
+        apiUrl: 'https://nebras-psychology.onrender.com',
     },
-
-    // Development URLs (localhost)
     development: {
-        videoServerUrl: 'http://localhost:5000'
+        apiUrl: 'http://localhost:3000',
     }
 };
 
-// Get current environment settings
-const currentConfig = CONFIG.useProduction ? CONFIG.production : CONFIG.development;
-
-// Auto-detect: If not manually overridden, check if running on localhost
-if (!CONFIG.useProduction) {
+(function () {
     const hostname = window.location.hostname;
-    if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
-        // Not localhost - assume production (will need manual config update)
-        console.log('Non-localhost detected. Update config.js for production URLs.');
-    }
-}
+    const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
+    let env = isLocalhost ? 'development' : 'production';
+    let activeConfig = CONFIG[env];
 
-// Export for use in other files
-window.APP_CONFIG = {
-    videoServerUrl: currentConfig.videoServerUrl
-};
+    window.APP_CONFIG = {
+        apiUrl: activeConfig.apiUrl,
+        videoServerUrl: activeConfig.apiUrl,
+    };
+
+    window.API_URL = activeConfig.apiUrl + '/api';
+
+    // Fallback mechanism: if production URL is unreachable, fallback to localhost
+    if (!isLocalhost) {
+        fetch(activeConfig.apiUrl + '/api/settings', { method: 'HEAD' })
+            .catch(function () {
+                console.warn('[Config] Production URL unreachable, falling back to localhost');
+                window.APP_CONFIG = {
+                    apiUrl: CONFIG.development.apiUrl,
+                    videoServerUrl: CONFIG.development.apiUrl,
+                };
+                window.API_URL = CONFIG.development.apiUrl + '/api';
+            });
+    }
+})();

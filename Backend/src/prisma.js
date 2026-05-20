@@ -11,4 +11,14 @@ process.on('beforeExit', async () => {
   await prisma.$disconnect();
 });
 
+process.on('SIGTERM', async () => {
+  await prisma.$disconnect();
+  process.exit(0);
+});
+
+process.on('SIGINT', async () => {
+  await prisma.$disconnect();
+  process.exit(0);
+});
+
 module.exports = prisma;

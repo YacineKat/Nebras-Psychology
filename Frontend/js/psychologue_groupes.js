@@ -345,26 +345,6 @@ async function updateMessagesBadge() {
     }
 }
 
-function isGroupPast(group) {
-    if (!group.day || !group.time) return false;
-    
-    const dayMap = { 'Dimanche': 0, 'Lundi': 1, 'Mardi': 2, 'Mercredi': 3, 'Jeudi': 4, 'Vendredi': 5, 'Samedi': 6 };
-    const dayIndex = dayMap[group.day];
-    if (dayIndex === undefined) return false;
-    
-    const now = new Date();
-    const currentDay = now.getDay();
-    const currentTime = now.getHours() * 60 + now.getMinutes();
-    
-    const [hours, minutes] = group.time.split(':').map(Number);
-    const groupTime = hours * 60 + minutes;
-    
-    if (dayIndex < currentDay) return true;
-    if (dayIndex === currentDay && groupTime < currentTime) return true;
-    
-    return false;
-}
-
 function renderGroups() {
     const container = document.getElementById('groupsList');
     if (!container) return;
@@ -374,22 +354,23 @@ function renderGroups() {
         return;
     }
 
-    // Sort: upcoming groups first (by dayOfWeek/time), then past groups
-    const sorted = [...groups].sort((a, b) => {
-        const aPast = isGroupPast(a);
-        const bPast = isGroupPast(b);
-        if (aPast !== bPast) return aPast ? 1 : -1;
-        const dayMap = { 'Dimanche': 0, 'Lundi': 1, 'Mardi': 2, 'Mercredi': 3, 'Jeudi': 4, 'Vendredi': 5, 'Samedi': 6 };
-        const aDay = dayMap[a.day] ?? 0;
-        const bDay = dayMap[b.day] ?? 0;
-        if (aDay !== bDay) return aDay - bDay;
-        const aTime = a.time ? parseInt(a.time.split(':')[0]) * 60 + parseInt(a.time.split(':')[1] || '0') : 0;
-        const bTime = b.time ? parseInt(b.time.split(':')[0]) * 60 + parseInt(b.time.split(':')[1] || '0') : 0;
-        return aTime - bTime;
+    // Pre-compute sort keys once instead of parsing on every comparison
+    const dayMap = { 'Dimanche': 0, 'Lundi': 1, 'Mardi': 2, 'Mercredi': 3, 'Jeudi': 4, 'Vendredi': 5, 'Samedi': 6 };
+    const now = new Date();
+    const currentDay = now.getDay();
+    const currentTime = now.getHours() * 60 + now.getMinutes();
+
+    const withKeys = groups.map(g => {
+        const dayIndex = dayMap[g.day] ?? 0;
+        const [hh, mm] = (g.time || '00:00').split(':').map(Number);
+        const timeMinutes = hh * 60 + (mm || 0);
+        const isPast = dayIndex < currentDay || (dayIndex === currentDay && timeMinutes < currentTime);
+        return { group: g, sortKey: (isPast ? 1 : 0) + '|' + String(dayIndex).padStart(2, '0') + '|' + String(timeMinutes).padStart(5, '0'), isPast };
     });
 
-    container.innerHTML = sorted.map(group => {
-        const isPast = isGroupPast(group);
+    withKeys.sort((a, b) => a.sortKey < b.sortKey ? -1 : a.sortKey > b.sortKey ? 1 : 0);
+
+    container.innerHTML = withKeys.map(({ group, isPast }) => {
         const cardStyle = isPast ? 'opacity: 0.6; filter: grayscale(0.5);' : '';
         const pastBadge = isPast ? '<span style="background: #94a3b8; color: white; padding: 2px 10px; border-radius: 12px; font-size: 11px; margin-left: 8px;">Passée</span>' : '';
         return `

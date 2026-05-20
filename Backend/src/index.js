@@ -1,5 +1,5 @@
 // ============================================
-// NEBRAS BACKEND - Main Server File
+// NEBRAS BACKEND - Main Server File (Unified)
 // ============================================
 
 const express = require('express');
@@ -10,6 +10,8 @@ const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
+const config = require('./config');
+
 // Import Routes
 const authRoutes = require('./routes/authRoutes');
 const doctorRoutes = require('./routes/doctorRoutes');
@@ -19,6 +21,9 @@ const therapyGroupRoutes = require('./routes/therapyGroupRoutes');
 const reviewRoutes = require('./routes/reviewRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const { createMessageRecord } = require('./controllers/messageController');
+
+// Video signaling (WebRTC / room management)
+const { initVideoSignaling } = require('./videoSignaling');
 
 const app = express();
 const server = http.createServer(app);
@@ -33,7 +38,7 @@ io.use((socket, next) => {
       return next(new Error('No token provided'));
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, config.jwtSecret);
     socket.user = { id: decoded.id, userType: decoded.userType };
     next();
   } catch (error) {
@@ -43,6 +48,9 @@ io.use((socket, next) => {
 
 // Make io available globally
 global.io = io;
+
+// Initialize video signaling on the same server
+initVideoSignaling(io, app);
 
 // ============================================
 // MIDDLEWARE
@@ -57,9 +65,6 @@ app.use(express.json({ limit: '10mb' })); // Parse JSON bodies (increased for av
 // ============================================
 // SERVE FRONTEND STATIC FILES
 // ============================================
-// Serves from: C:\Dev Env\Web Project\Nebras\Frontend\
-// This avoids file:// protocol CORS issues when the frontend
-// calls the API from the same origin (http://localhost:3000)
 app.use(express.static(path.join(__dirname, '../../Frontend')));
 
 // ============================================
@@ -189,7 +194,7 @@ app.use((err, req, res, next) => {
 // ============================================
 // START SERVER
 // ============================================
-const PORT = process.env.PORT || 3000;
+const PORT = config.port;
 
 if (require.main === module) {
   server.listen(PORT, () => {

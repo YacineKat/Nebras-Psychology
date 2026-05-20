@@ -1,6 +1,7 @@
 const prisma = require('../prisma');
 const asyncHandler = require('../utils/asyncHandler');
 const { recalculateDoctorRating } = require('./reviewController');
+const { deleteRoom } = require('../videoSignaling');
 
 // =============================================
 // REAL-TIME BROADCAST HELPERS
@@ -447,15 +448,12 @@ const endGroupSession = asyncHandler(async (req, res) => {
       }
     }
 
-    // 4. Delete video server room for this group
-    const VIDEO_SERVER_URL = process.env.VIDEO_SERVER_URL || 'http://localhost:5000';
+    // 4. Delete video room for this group (local — same server)
     const roomId = `group_${groupId}`;
     try {
-      await fetch(`${VIDEO_SERVER_URL}/api/rooms/${roomId}`, {
-        method: 'DELETE'
-      });
+      deleteRoom(roomId);
     } catch (videoErr) {
-      console.log('Video server room deletion (non-blocking):', videoErr.message);
+      console.log('Video room deletion (non-blocking):', videoErr.message);
     }
 
     // Broadcast real-time update so ALL clients re-fetch

@@ -45,7 +45,7 @@ function initPatientCallListener() {
     // Initialize Socket.io for real-time updates
     initSessionSocket();
 
-    // Keep polling as fallback
+    // Start polling as initial fallback (stopped if socket connects)
     startCallPolling();
     window.addEventListener('storage', handleStorageChange);
 
@@ -75,6 +75,11 @@ function initSessionSocket() {
             console.log('Session socket connected');
             // Join patient room for real-time events
             sessionSocket.emit('join-patient-room', user.id);
+            // Stop polling — socket provides real-time updates
+            if (callCheckInterval) {
+                clearInterval(callCheckInterval);
+                callCheckInterval = null;
+            }
         });
 
         sessionSocket.on('session-started', (data) => {
@@ -179,6 +184,8 @@ function initSessionSocket() {
 
         sessionSocket.on('disconnect', () => {
             console.log('Session socket disconnected');
+            // Restart polling fallback when socket disconnects
+            startCallPolling();
         });
 
         sessionSocket.on('connect_error', (error) => {

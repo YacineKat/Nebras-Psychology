@@ -2,7 +2,8 @@ require('dotenv').config();
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 (async () => {
   const token = process.env.TEST_ADMIN_JWT || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlclR5cGUiOiJhZG1pbiIsImlhdCI6MTc3OTEwNDc1NSwiZXhwIjoxNzc5MTQ3OTU1fQ.t5ZLHtzqu4z82Z177CFkql1DuMrUz7TXwhiX14Q98qk';
-  const url = 'http://localhost:3000/api/admin/settings';
+  const SERVER_URL = process.env.SERVER_URL || 'http://localhost:3000';
+  const url = `${SERVER_URL}/api/admin/settings`;
   const payload = {
     siteName: 'TestSiteFromScript',
     contactEmail: 'adminscript@test.local',

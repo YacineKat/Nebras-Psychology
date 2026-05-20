@@ -3,7 +3,21 @@
 // Connects frontend to backend APIs
 // ============================================
 
-window.API_URL = 'http://localhost:3000/api';
+// API_URL is set by config.js — loaded before this file.
+// Fallback: self-initialize if config.js was not loaded.
+
+if (typeof window.API_URL === 'undefined') {
+  (function () {
+    var hostname = window.location.hostname;
+    var isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
+    var apiUrl = isLocalhost ? 'http://localhost:3000' : 'https://nebras-backend.onrender.com';
+
+    window.APP_CONFIG = window.APP_CONFIG || {};
+    window.APP_CONFIG.apiUrl = apiUrl;
+    window.APP_CONFIG.videoServerUrl = apiUrl;
+    window.API_URL = apiUrl + '/api';
+  })();
+}
 
 function setApiBaseUrl(url) {
   window.API_URL = url.replace(/\/+$/, '') + '/api';
@@ -373,13 +387,22 @@ function getMessagingSocket() {
 // ============================================
 // UTILITY FUNCTIONS
 // ============================================
+let _cachedCurrentUser = null;
+
+window.addEventListener('storage', () => {
+  _cachedCurrentUser = null;
+});
+
 function isLoggedIn() {
   return !!localStorage.getItem('nebras_token');
 }
 
 function getCurrentUser() {
-  const userStr = localStorage.getItem('nebras_user');
-  return userStr ? JSON.parse(userStr) : null;
+  if (!_cachedCurrentUser) {
+    const userStr = localStorage.getItem('nebras_user');
+    _cachedCurrentUser = userStr ? JSON.parse(userStr) : null;
+  }
+  return _cachedCurrentUser;
 }
 
 function getUserType() {

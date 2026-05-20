@@ -11,7 +11,8 @@
 async function connectToVideoServer() {
     return new Promise((resolve, reject) => {
         videoSocket = io(videoServerUrl, {
-            transports: ['polling', 'websocket']
+            transports: ['polling', 'websocket'],
+            auth: { token: localStorage.getItem('nebras_token') }
         });
 
         videoSocket.on('connect', () => {
@@ -130,7 +131,8 @@ async function connectToVideoServer() {
 function connectGroupToVideoServer() {
     return new Promise((resolve, reject) => {
         videoSocket = io(videoServerUrl, {
-            transports: ['polling', 'websocket']
+            transports: ['polling', 'websocket'],
+            auth: { token: localStorage.getItem('nebras_token') }
         });
 
         videoSocket.on('connect', () => {
@@ -280,7 +282,8 @@ function connectGroupToVideoServer() {
 function doctorConnectGroupToVideoServer() {
     return new Promise((resolve, reject) => {
         videoSocket = io(videoServerUrl, {
-            transports: ['polling', 'websocket']
+            transports: ['polling', 'websocket'],
+            auth: { token: localStorage.getItem('nebras_token') }
         });
 
         videoSocket.on('connect', () => {

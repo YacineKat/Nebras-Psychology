@@ -23,8 +23,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    await loadAppointments();
-    await loadUserProfile();
+    // Load appointments and profile in parallel
+    await Promise.all([
+        loadAppointments(),
+        loadUserProfile()
+    ]);
     highlightCurrentSidebarLink();
     await handleJoinCallRequest();
     checkPendingRating();
@@ -1132,13 +1135,6 @@ function leavePatientSession() {
         videoContainer.remove();
     }
 }
-
-window.togglePatientMute = togglePatientMute;
-window.togglePatientVideo = togglePatientVideo;
-window.leavePatientSession = leavePatientSession;
-window.togglePatientChat = togglePatientChat;
-window.sendPatientMessage = sendPatientMessage;
-window.handlePatientChatKeyPress = handlePatientChatKeyPress;
 
 function togglePatientChat() {
     const chatSection = document.getElementById('patientChatSection');
