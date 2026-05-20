@@ -31,7 +31,7 @@ const server = http.createServer(app);
 // ============================================
 // CORS — applied before any route definitions
 // ============================================
-app.use(cors({
+const corsOptions = {
   origin: [
     'https://nebras-psychology.netlify.app',
     'http://localhost:3000',
@@ -40,9 +40,12 @@ app.use(cors({
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-}));
+  credentials: true,
+  optionsSuccessStatus: 204,
+};
 
-app.options('*', cors());
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 const io = new Server(server, {
     cors: { origin: '*', methods: ['GET', 'POST'] }
