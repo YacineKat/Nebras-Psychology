@@ -7,8 +7,18 @@
     <link rel="stylesheet" href="./css/hom.css"/>
 
     <link rel="icon" type="image" href="./assets/image/logo.png">
+    <link rel="manifest" href="./manifest.json">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link rel="stylesheet" href="./css/pwa.css"/>
 </head>
 <body>
+    <!-- Splash Screen -->
+    <div class="nebras-splash" aria-hidden="true">
+        <img class="nebras-splash-logo" src="./assets/image/logo.png" alt="">
+        <div class="nebras-splash-text">Nebras</div>
+        <div class="nebras-splash-version">v1.0.0</div>
+    </div>
     <!-- Header -->
     <div class="header">
         <div class="logo">
@@ -301,6 +311,7 @@
     </footer>
 
     <script src="js/api.js"></script>
+    <script src="js/pwa.js"></script>
     <script src="js/pages/home.js"></script>
     <script src="js/settings.js"></script>
 
