@@ -529,6 +529,25 @@ body {
         grid-template-columns: 1fr !important;
     }
 
+    .profile-tabs {
+        flex-wrap: wrap !important;
+        gap: 8px !important;
+    }
+
+    .profile-tabs .tab-btn {
+        flex: 1 !important;
+        min-width: 0 !important;
+        justify-content: center !important;
+        text-align: center !important;
+        padding: 12px !important;
+        font-size: 0 !important;
+    }
+
+    .profile-tabs .tab-btn .tab-icon svg {
+        width: 22px !important;
+        height: 22px !important;
+    }
+
     .actions-buttons,
     .filters-bar,
     .header-actions,
@@ -550,6 +569,24 @@ body {
     .espace-vip-container {
         border-radius: 18px !important;
         box-shadow: none !important;
+    }
+
+    .search-section {
+        flex-wrap: wrap !important;
+        gap: 10px !important;
+    }
+
+    .search-section .search-bar {
+        min-width: 0 !important;
+        flex: 1 1 auto !important;
+        padding: 10px 14px !important;
+    }
+
+    .search-section .filter-button {
+        padding: 10px 16px !important;
+        font-size: 13px !important;
+        white-space: nowrap !important;
+        flex-shrink: 0 !important;
     }
 
     .action-btn,

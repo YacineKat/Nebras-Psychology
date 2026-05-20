@@ -648,6 +648,10 @@ a.btn-signin:hover, a.cta-button:hover, a.cta-banner-btn:hover, a[class*="btn"]:
         gap: 8px !important;
     }
 
+    .offers-text-box {
+        padding: 24px 20px !important;
+    }
+
     .offers-tab-btn,
     .offers-cta-btn,
     .psycho-btn,
@@ -655,6 +659,7 @@ a.btn-signin:hover, a.cta-button:hover, a.cta-banner-btn:hover, a[class*="btn"]:
     .btn-signin {
         width: 100% !important;
         justify-content: center !important;
+        box-sizing: border-box !important;
     }
 
     .auth-box {
@@ -986,6 +991,7 @@ a.btn-signin:hover, a.cta-button:hover, a.cta-banner-btn:hover, a[class*="btn"]:
   font-size: 15px;
   transition: all 0.2s ease;
   box-shadow: 0 4px 10px rgba(20, 53, 89, 0.2);
+  box-sizing: border-box;
 }
 
 .offers-cta-btn svg {
