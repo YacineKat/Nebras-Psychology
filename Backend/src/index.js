@@ -29,23 +29,33 @@ const app = express();
 const server = http.createServer(app);
 
 // ============================================
-// CORS — applied before any route definitions
+// CORS — raw middleware before any route definitions
 // ============================================
-const corsOptions = {
-  origin: [
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  const allowed = [
     'https://nebras-psychology.netlify.app',
     'http://localhost:3000',
     'http://localhost:5500',
     'http://127.0.0.1:5500',
-  ],
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true,
-  optionsSuccessStatus: 204,
-};
+  ];
 
-app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
+  if (origin && allowed.indexOf(origin) !== -1) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  } else if (!origin) {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+  }
+
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(204).end();
+  }
+
+  next();
+});
 
 const io = new Server(server, {
     cors: { origin: '*', methods: ['GET', 'POST'] }
